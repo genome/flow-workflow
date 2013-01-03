@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from collections import defaultdict
-from graph import transitive_reduction
+from flow.orchestrator.graph import transitive_reduction
 from xml.dom.minidom import parseString
 import json
 import os
@@ -233,7 +233,7 @@ class Parser(object):
 
 
 if __name__ == "__main__":
-    from dispatcher import InlineDispatcher
+    from flow.orchestrator.dispatcher import InlineDispatcher
     import sys
     if len(sys.argv) != 2:
         print "Give filename!"
@@ -253,5 +253,4 @@ if __name__ == "__main__":
     print "Ops"
     redis = redis.Redis()
     flow = p.flow(redis)
-    #flow.node(0).execute_step(0)
-    disp(flow.node(0))
+    disp.dispatch(flow.node(0))
