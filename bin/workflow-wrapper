@@ -24,9 +24,7 @@ def command(args, inputs_file, outputs_file):
 
 def command_filter_inputs(args, inputs):
     if args.parallel_by != None:
-        arr = json.loads(inputs[args.parallel_by])
-        inputs[args.parallel_by] = json.dumps(arr[args.parallel_by_index])
-    return inputs
+        return inputs[args.parallel_by][args.parallel_by_index]
 
 def event(args, inputs_file, outputs_file):
     return [
