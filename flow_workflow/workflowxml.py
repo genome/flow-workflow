@@ -3,41 +3,55 @@
 from collections import defaultdict
 from flow.orchestrator.graph import transitive_reduction
 from xml.dom.minidom import parseString
+import flow_workflow.nodes as wfnodes
 import json
 import os
 import re
 import sys
-import redis
 
 from flow.orchestrator.types import *
 
 MAX_FILENAME_LEN = 30
 WORKFLOW_WRAPPER = 'workflow-wrapper'
 
+
 class WorkflowEntity(object):
     def __init__(self, job_number):
         self.job_number = job_number
 
-    def steps(self, redis, node_key):
-        return []
+    def node(self, redis, flow_key):
+        raise NotImplementedError("node not implemented in %s" %
+                                  self.__class__.__name__)
 
 
 class WorkflowOperation(WorkflowEntity):
 
-    def __init__(self, job_number, log_dir, xml):
+    def __init__(self, job_number, xml):
         WorkflowEntity.__init__(self, job_number)
 
         self.name = xml.attributes["name"].nodeValue
         self.job_number = job_number
-        self._set_log_files(log_dir)
 
         type_nodes = xml.getElementsByTagName("operationtype")
         if len(type_nodes) != 1:
-            raise RuntimeError("Wrong number of <operationtype> tags in operation %s" %name)
+            raise RuntimeError(
+                "Wrong number of <operationtype> tags in operation %s" % name
+            )
 
         self._type_node = type_nodes[0]
         self._operation_attributes = dict(xml.attributes.items())
         self._type_attributes = dict(self._type_node.attributes.items())
+
+
+class CommandOperation(WorkflowOperation):
+    def __init__(self, job_number, log_dir, xml):
+        WorkflowOperation.__init__(self, job_number, xml)
+        self.perl_class = self._type_attributes['commandClass']
+        self._set_log_files(log_dir)
+
+        self.parallel_by = ""
+        if "parallelBy" in self._operation_attributes:
+            self.parallel_by = self._operation_attributes["parallelBy"]
 
     def _set_log_files(self, log_dir):
         basename = re.sub("[^A-Za-z0-9_.-]", "_", self.name)[:MAX_FILENAME_LEN]
@@ -46,22 +60,26 @@ class WorkflowOperation(WorkflowEntity):
         self.stdout_log_file = os.path.join(log_dir, out_file)
         self.stderr_log_file = os.path.join(log_dir, err_file)
 
-
-class CommandOperation(WorkflowOperation):
-    def __init__(self, job_number, log_dir, xml):
-        WorkflowOperation.__init__(self, job_number, log_dir, xml)
-        self.command_class = self._type_attributes['commandClass']
-
-    def steps(self, redis, node_key):
-        shortcut = ShellCommandStep(connection=redis, node_key=node_key)
-        shortcut.command_line = [WORKFLOW_WRAPPER, "command", "shortcut",
-                                 shortcut.key]
-
-        execute = ShellCommandStep(connection=redis, node_key=node_key)
-        execute.command_line = [WORKFLOW_WRAPPER, "command", "execute",
-                                execute.key]
-
-        return [shortcut, execute]
+    def node(self, redis, flow_key):
+        if self.parallel_by:
+            return wfnodes.ParallelByCommandFlow.create(
+                    connection=redis,
+                    flow_key=flow_key,
+                    perl_class=self.perl_class,
+                    stdout_log_file=self.stdout_log_file,
+                    stderr_log_file=self.stderr_log_file,
+                    parallel_by_property=self.parallel_by,
+                    name = self.name,
+                    )
+        else:
+            return wfnodes.CommandNode.create(
+                    connection=redis,
+                    flow_key=flow_key,
+                    perl_class=self.perl_class,
+                    stdout_log_file=self.stdout_log_file,
+                    stderr_log_file=self.stderr_log_file,
+                    name = self.name,
+                    )
 
 
 class ConvergeOperation(WorkflowOperation):
@@ -77,11 +95,15 @@ class ConvergeOperation(WorkflowOperation):
                 %name)
         self.output_name = output[0].firstChild.nodeValue
 
-    def steps(self, redis):
-        step = ShellCommandStep(connection=redis, node_key=node_key)
-        step.command_line = [WORKFLOW_WRAPPER, "converge", step.key,
-                             self.output_name]
-        step.command_line.extend(self.input_properties)
+    def node(self, redis, flow_key):
+        return wfnodes.ConvergeNode(
+                connection=redis,
+                flow_key=flow_key,
+                input_property_order=self.input_properties,
+                output_property=self.output_property,
+                name = self.name,
+                )
+
 
 class InputConnector(WorkflowEntity):
     def __init__(self, job_number, outputs):
@@ -89,10 +111,9 @@ class InputConnector(WorkflowEntity):
         self.name = "input connector"
         self.outputs = outputs
 
-    def steps(self, redis, node_key):
-        return [PassThroughStep(connection=redis, data=self.outputs,
-                                node_key=node_key)]
-
+    def node(self, redis, flow_key):
+        return StartNode.create(connection=redis, flow_key=flow_key,
+                                name="start node", outputs=self.outputs)
 
 
 class OutputConnector(WorkflowEntity):
@@ -100,6 +121,9 @@ class OutputConnector(WorkflowEntity):
         WorkflowEntity.__init__(self, job_number)
         self.name = "output connector"
 
+    def node(self, redis, flow_key):
+        return StopNode.create(connection=redis, flow_key=flow_key,
+                               name="stop node")
 
 class Parser(object):
     input_connector_id = 0
@@ -204,12 +228,9 @@ class Parser(object):
         self.operations.append(op)
 
     def flow(self, redis):
-        flow = Flow(connection=redis, name=self.wf_name)
+        flow = Flow.create(connection=redis, name=self.wf_name)
 
-        nodes = [
-            Node(connection=redis, name=op.name, flow_key=flow.key)
-            for idx, op in enumerate(self.operations)
-        ]
+        nodes = [op.node(redis, flow.key) for op in self.operations]
 
         for idx, op in enumerate(self.operations):
             node = nodes[idx]
@@ -217,8 +238,6 @@ class Parser(object):
                 node.successors = self.edges[idx]
             else:
                 node.successors = set()
-
-            node.step_keys.extend(s.key for s in op.steps(redis, node.key))
 
         for dst_idx, props in self.input_connections.iteritems():
             store = dict((k, json.dumps(v)) for k, v in props.iteritems())
@@ -233,24 +252,50 @@ class Parser(object):
 
 
 if __name__ == "__main__":
-    from flow.orchestrator.dispatcher import InlineDispatcher
+    import flow.orchestrator.redisom as rom
+    import subprocess
+
+    class FakeCommandLineService(object):
+        def __init__(self, conn):
+            self.conn = conn
+
+        def submit(self, cmdline, return_identifier=None, executor_options=None):
+            cmdline = map(str, cmdline)
+            print "EXEC", cmdline
+            services = {
+                    wfnodes.GENOME_SHORTCUT_SERVICE: self,
+                    wfnodes.GENOME_EXECUTE_SERVICE: self,
+                    }
+            rv = subprocess.call(cmdline)
+            if rv == 0:
+                callback = return_identifier['on_success']
+            else:
+                callback = return_identifier['on_failure']
+
+            rom.invoke_instance_method(self.conn, callback, services=services,
+                                       return_identifier=return_identifier)
+
+
+    import redis
     import sys
     if len(sys.argv) != 2:
         print "Give filename!"
         sys.exit(1)
 
-    disp = InlineDispatcher()
-
     xml = open(sys.argv[1]).read()
     inputs = {
-        'a': 'operation A',
-        'b': 'operation B',
-        'c': 'operation C',
-        'd': 'operation D',
+        "a": '"BQcKC29wZXJhdGlvbiBB\\n"',
+        "b": '"BQcKC29wZXJhdGlvbiBC\\n"',
+        "c": '"BQcKC29wZXJhdGlvbiBD\\n"',
+        "d": '"BQcKC29wZXJhdGlvbiBE\\n"',
     }
     p = Parser(xml, inputs)
     print p.edges
     print "Ops"
     redis = redis.Redis()
     flow = p.flow(redis)
-    disp.dispatch(flow.node(0))
+    services = {
+        wfnodes.GENOME_SHORTCUT_SERVICE: FakeCommandLineService(redis),
+        wfnodes.GENOME_EXECUTE_SERVICE: FakeCommandLineService(redis),
+    }
+    flow.node(0).execute(services)
