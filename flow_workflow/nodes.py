@@ -161,7 +161,7 @@ class ConvergeNode(NodeBase):
 
 
 def _success_routing_key(method):
-    return 'genome.%s.complete.success' % method
+    return 'genome.%s.success' % method
 
 def _failure_routing_key(method):
-    return 'genome.%s.complete.failure' % method
+    return 'genome.%s.failure' % method
