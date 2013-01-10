@@ -19,6 +19,8 @@ class LoggingNodeBase(NodeBase):
 class ParallelByCommandFlow(Flow):
     perl_class = RedisScalar
     parallel_by_property = RedisScalar
+    stdout_log_file = RedisScalar
+    stderr_log_file = RedisScalar
 
     def _create_child_node(self, index):
         name = self.name.value + " (#%d)" % index
