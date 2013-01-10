@@ -22,7 +22,7 @@ class ParallelByCommandFlow(Flow):
     stdout_log_file = RedisScalar
     stderr_log_file = RedisScalar
 
-    def _create_child_node(self, index):
+    def _create_child_node(self, index, **kwargs):
         name = self.name.value + " (#%d)" % index
         return ParallelByCommandChildNode.create(
                 connection=self._connection,
@@ -31,6 +31,7 @@ class ParallelByCommandFlow(Flow):
                 perl_class=self.perl_class,
                 parallel_by_property=self.parallel_by_property,
                 parallel_by_index=index,
+                **kwargs
                 )
 
     def _execute(self, services):
@@ -54,7 +55,10 @@ class ParallelByCommandFlow(Flow):
         stop_node_index = 1
 
         for i in xrange(num_nodes):
-            node = self._create_child_node(i)
+            out = "%s.%d" % (self.stdout_log_file.value, i)
+            err = "%s.%d" % (self.stderr_log_file.value, i)
+            node = self._create_child_node(i, stdout_log_file=out,
+                                           stderr_log_file=err)
             node.indegree = 1
 
             # list append returns the new size of the list, so
