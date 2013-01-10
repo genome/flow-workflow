@@ -43,7 +43,7 @@ class ParallelByCommandFlow(Flow):
                 connection=self._connection,
                 name=self.name.value + " (start node)",
                 flow_key=self.key,
-                outputs=inputs)
+                outputs=json.dumps(inputs))
 
         stop_node = StopNode.create(
                 connection=self._connection,
