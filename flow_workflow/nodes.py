@@ -57,8 +57,10 @@ class ParallelByCommandFlow(Flow):
         for i in xrange(num_nodes):
             out = "%s.%d" % (self.stdout_log_file.value, i)
             err = "%s.%d" % (self.stderr_log_file.value, i)
-            node = self._create_child_node(i, stdout_log_file=out,
-                                           stderr_log_file=err)
+            input_connections = {start_node: json.dumps({})}
+            node = self._create_child_node(
+                i, stdout_log_file=out, stderr_log_file=err,
+                input_connections=input_connections)
             node.indegree = 1
 
             # list append returns the new size of the list, so
