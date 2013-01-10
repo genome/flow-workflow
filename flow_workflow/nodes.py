@@ -39,11 +39,12 @@ class ParallelByCommandFlow(Flow):
         num_nodes = len(inputs[self.parallel_by_property.value])
         name_base = self.name
 
+        outputs = dict((k, json.dumps(v)) for k, v in inputs.iteritems())
         start_node = StartNode.create(
                 connection=self._connection,
                 name=self.name.value + " (start node)",
                 flow_key=self.key,
-                outputs=json.dumps(inputs))
+                outputs=outputs)
 
         stop_node = StopNode.create(
                 connection=self._connection,
