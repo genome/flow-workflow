@@ -100,7 +100,7 @@ class CommandNode(LoggingNodeBase):
         service.submit(
             self._command_line(method),
             return_identifier=return_identifier,
-            executor_options=executor_options
+            **executor_options
             )
 
     def _execute(self, services):
