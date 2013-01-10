@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from backend.redisbackend import RedisBackend
+from flow.orchestrator import redisom
 from redis import Redis
 from tempfile import NamedTemporaryFile
 import argparse
@@ -48,12 +48,16 @@ def converge(args, inputs_file, outputs_file):
 
 def respond(exit_code):
     url = os.environ["AMQP_URL"]
-    return_id = os.environ["WORKFLOW_RETURN_IDENTIFIER"]
+    return_id = json.loads(os.environ["WORKFLOW_RETURN_IDENTIFIER"])
     if exit_code == 0:
         routing_key = os.environ["WORKFLOW_ROUTING_KEY_SUCCESS"]
     else:
         routing_key = os.environ["WORKFLOW_ROUTING_KEY_FAILURE"]
-    body = json.dumps({ "return_identifier": return_id, "exit_code": exit_code })
+    body = json.dumps({
+        "return_identifier": return_id,
+        "message_class": "CommandLineResponseMessage",
+        "exit_code": exit_code,
+    })
 
     conn = pika.BlockingConnection(pika.URLParameters(url))
     qchannel = conn.channel()
@@ -74,22 +78,23 @@ def respond(exit_code):
 
 def main(args):
     conn = Redis("vmpool83")
-    backend = RedisBackend(conn)
-    outputs_file = NamedTemporaryFile(delete=False)
-    inputs = backend.job_inputs(args.flow_id, args.job_id)
+
+    node = redisom.get_object(args.node_key)
+    inputs = node.inputs
     if args.filter_inputs != None:
         inputs = args.filter_inputs(args, inputs)
 
     inputs_file = NamedTemporaryFile(delete=False)
     inputs_file.write(json.dumps(inputs))
     inputs_file.close()
+    outputs_file = NamedTemporaryFile(delete=False)
 
     cmdline = [PERL_WRAPPER]
     cmdline.extend(args.build_cmdline(args, inputs_file.name, outputs_file.name))
     exit_code = subprocess.call(cmdline)
     if exit_code == 0:
         outputs = json.load(outputs_file)
-        backend.store_job_outputs(args.flow_id, args.job_id, outputs)
+        node.outputs = outputs
 
     os.unlink(inputs_file.name)
     os.unlink(outputs_file.name)
@@ -102,8 +107,7 @@ def parse_args():
     cmd_parser = subparsers.add_parser("command")
     cmd_parser.add_argument("method", help="shortcut or execute")
     cmd_parser.add_argument("command", help="The command class")
-    cmd_parser.add_argument("flow_id", help="The workflow id")
-    cmd_parser.add_argument("job_id", help="The job id")
+    cmd_parser.add_argument("node_key", help="The redis key of the node")
     cmd_parser.add_argument("--parallel_by")
     cmd_parser.add_argument("--parallel_by_index", type=int)
     cmd_parser.add_argument("--reply", action="store_true", default=False)
@@ -135,6 +139,7 @@ if __name__ == "__main__":
     try:
         exit_code = main(args)
     finally:
-        if getattr(args, "reply"):
+        if args.reply:
+#        if getattr(args, "reply"):
             respond(exit_code)
     sys.exit(exit_code)
