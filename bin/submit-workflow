@@ -12,8 +12,6 @@ import sys
 import tempfile
 import workflowxml
 
-redis_inputs_host = os.getenv("INPUTS_REDIS_URL") or "linus129"
-
 if __name__ == "__main__":
     uid = os.getuid()
     user_name = pwd.getpwuid(uid).pw_name
@@ -36,7 +34,7 @@ if __name__ == "__main__":
     flow = workflowxml.Parser(xml).flow
     input_str = open(args.inputs).read()
     initial_outputs = json.loads(input_str)
-    conn = Redis("linus129")
+    conn = Redis("vmpool83")
     backend = RedisBackend(conn)
     backend.store_flow(flow)
     backend.store_job_outputs(flow.id, 0, initial_outputs)
