@@ -82,8 +82,13 @@ class CommandNode(LoggingNodeBase):
 
     def _submit_cmdline(self, method, service):
         return_identifier = self._return_identifier(method)
+        environment = self.flow.environment.value
+        environment['WORKFLOW_RETURN_IDENTIFIER'] = return_identifier
+        environment['WORKFLOW_ROUTING_KEY_SUCCESS'] = _success_routing_key(method)
+        environment['WORKFLOW_ROUTING_KEY_FAILURE'] = _failure_routing_key(method)
+
         executor_options = {
-            "environment": self.flow.environment.value,
+            "environment": environment,
             "user_id": self.flow.user_id.value,
             "working_directory": self.flow.working_directory.value,
             "stdout": self.stdout_log_file.value,
@@ -142,3 +147,10 @@ class ConvergeNode(NodeBase):
         inputs = self.inputs
         out = [inputs[x] for x in self.input_property_order]
         self.outputs[self.output_property] = json.dumps(out)
+
+
+def _success_routing_key(method):
+    return 'genome.%s.complete.success' % method
+
+def _failure_routing_key(method):
+    return 'genome.%s.complete.failure' % method
