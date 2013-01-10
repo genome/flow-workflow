@@ -78,7 +78,7 @@ sub run_workflow {
     my $json = new JSON->allow_nonref;
     $json_fh->write($json->encode(\%params));
     $json_fh->close();
-    my $cmd = "submit-workflow $xml $json_path --block";
+    my $cmd = "submit-workflow $xml $json_path";
     print "EXEC: $cmd\n";
     my $ret = system($cmd);
     if (!WIFEXITED($ret) || WEXITSTATUS($ret)) {
