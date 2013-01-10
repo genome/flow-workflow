@@ -77,9 +77,9 @@ def respond(exit_code):
     )
 
 def main(args):
-    conn = Redis("vmpool83")
+    conn = Redis("linus129")
 
-    node = redisom.get_object(args.node_key)
+    node = redisom.get_object(conn, args.node_key)
     inputs = node.inputs
     if args.filter_inputs != None:
         inputs = args.filter_inputs(args, inputs)
