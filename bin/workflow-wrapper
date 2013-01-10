@@ -1,6 +1,140 @@
 #!/usr/bin/env python
 
+from backend.redisbackend import RedisBackend
+from redis import Redis
+from tempfile import NamedTemporaryFile
+import argparse
+import json
+import os
+import pika
+import subprocess
 import sys
 
+mypath = os.path.dirname(sys.argv[0])
+PERL_WRAPPER = os.path.join(mypath, "workflow-wrapper.pl")
+
+def command(args, inputs_file, outputs_file):
+    return [
+        "command",
+        args.method,
+        args.command,
+        inputs_file,
+        outputs_file
+    ]
+
+def command_filter_inputs(args, inputs):
+    if args.parallel_by != None:
+        arr = json.loads(inputs[args.parallel_by])
+        inputs[args.parallel_by] = json.dumps(arr[args.parallel_by_index])
+    return inputs
+
+def event(args, inputs_file, outputs_file):
+    return [
+        "event",
+        args.event_id,
+        inputs_file,
+        outputs_file
+    ]
+
+def converge(args, inputs_file, outputs_file):
+    rv = [
+        "converge",
+        args.output_name,
+        inputs_file,
+        outputs_file
+    ]
+    rv.extend(args.input_properties)
+    return rv
+
+def respond(exit_code):
+    url = os.environ["AMQP_URL"]
+    return_id = os.environ["WORKFLOW_RETURN_IDENTIFIER"]
+    if exit_code == 0:
+        routing_key = os.environ["WORKFLOW_ROUTING_KEY_SUCCESS"]
+    else:
+        routing_key = os.environ["WORKFLOW_ROUTING_KEY_FAILURE"]
+    body = json.dumps({ "return_identifier": return_id, "exit_code": exit_code })
+
+    conn = pika.BlockingConnection(pika.URLParameters(url))
+    qchannel = conn.channel()
+    qchannel.exchange_declare(
+        exchange="workflow",
+        exchange_type="topic",
+        durable=True,
+        arguments={"alternate-exchange": "workflow.alt"}
+        )
+    qchannel.basic_publish(
+        exchange="workflow",
+        routing_key=routing_key,
+        body=body,
+        properties=pika.BasicProperties(
+            delivery_mode=2,
+        )
+    )
+
+def main(args):
+    conn = Redis("vmpool83")
+    backend = RedisBackend(conn)
+    outputs_file = NamedTemporaryFile(delete=False)
+    inputs = backend.job_inputs(args.flow_id, args.job_id)
+    if args.filter_inputs != None:
+        inputs = args.filter_inputs(args, inputs)
+
+    inputs_file = NamedTemporaryFile(delete=False)
+    inputs_file.write(json.dumps(inputs))
+    inputs_file.close()
+
+    cmdline = [PERL_WRAPPER]
+    cmdline.extend(args.build_cmdline(args, inputs_file.name, outputs_file.name))
+    exit_code = subprocess.call(cmdline)
+    if exit_code == 0:
+        outputs = json.load(outputs_file)
+        backend.store_job_outputs(args.flow_id, args.job_id, outputs)
+
+    os.unlink(inputs_file.name)
+    os.unlink(outputs_file.name)
+    return exit_code
+
+def parse_args():
+    parser = argparse.ArgumentParser('Interact with workflow')
+
+    subparsers = parser.add_subparsers()
+    cmd_parser = subparsers.add_parser("command")
+    cmd_parser.add_argument("method", help="shortcut or execute")
+    cmd_parser.add_argument("command", help="The command class")
+    cmd_parser.add_argument("flow_id", help="The workflow id")
+    cmd_parser.add_argument("job_id", help="The job id")
+    cmd_parser.add_argument("--parallel_by")
+    cmd_parser.add_argument("--parallel_by_index", type=int)
+    cmd_parser.add_argument("--reply", action="store_true", default=False)
+    cmd_parser.set_defaults(build_cmdline=command)
+    cmd_parser.set_defaults(filter_inputs=command_filter_inputs)
+
+    cvg_parser = subparsers.add_parser("converge")
+    cvg_parser.add_argument("output_name", help="The name of the output property")
+    cvg_parser.add_argument("flow_id", help="The workflow id")
+    cvg_parser.add_argument("job_id", help="The job id")
+    cvg_parser.add_argument("input_properties", nargs='+')
+    cvg_parser.set_defaults(build_cmdline=converge)
+    cvg_parser.set_defaults(filter_inputs=None)
+    cvg_parser.add_argument("--reply", action="store_true", default=False)
+
+    event_parser = subparsers.add_parser("event")
+    event_parser.add_argument("event_id", help="The event id")
+    event_parser.add_argument("flow_id", help="The workflow id")
+    event_parser.add_argument("job_id", help="The job id")
+    event_parser.set_defaults(build_cmdline=event)
+    event_parser.set_defaults(filter_inputs=None)
+    event_parser.add_argument("--reply", action="store_true", default=False)
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    print sys.argv
+    args = parse_args()
+    exit_code = 1
+    try:
+        exit_code = main(args)
+    finally:
+        if getattr(args, "reply"):
+            respond(exit_code)
+    sys.exit(exit_code)
