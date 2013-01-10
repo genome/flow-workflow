@@ -7,7 +7,7 @@ use File::Slurp qw/read_file/;
 use Data::Dumper;
 use NullCommand;
 use JSON;
-use Ruote;
+use Flow;
 use strict;
 use warnings;
 
@@ -18,7 +18,7 @@ sub load_inputs {
     my $inputs = $json->decode($inputs_str);
     %$inputs = map {
         my $val = $inputs->{$_};
-        $_ => $val eq '' ? '' : Ruote::decode($val)
+        $_ => $val eq '' ? '' : Flow::decode($val)
     } keys %$inputs;
     return $inputs;
 }
@@ -47,7 +47,7 @@ sub run_command {
     %outputs = map {
         my $prop_name = $_->property_name;
         my $prop_val = $cmd->$prop_name;
-        $prop_name => Ruote::encode($prop_val);
+        $prop_name => Flow::encode($prop_val);
     } @cmd_outputs;
 
     my $out_fh = new IO::File($outputs_file, "w");
@@ -62,7 +62,7 @@ sub converge {
 
     my ($output_name, $inputs_file, $outputs_file, @input_properties) = @_;
     my $inputs = load_inputs($inputs_file);
-    my $output_value = Ruote::encode([
+    my $output_value = Flow::encode([
         map { ref($inputs->{$_}) eq 'ARRAY' ? @{$inputs->{$_}} : $inputs->{$_} } @input_properties
     ]);
     my %outputs = ($output_name => $output_value);

@@ -1,4 +1,4 @@
-package Ruote;
+package Flow;
 
 use Storable qw/nfreeze thaw/;
 use Carp qw/confess/;
