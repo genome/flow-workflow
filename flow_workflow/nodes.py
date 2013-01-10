@@ -107,24 +107,24 @@ class CommandNode(LoggingNodeBase):
         self._submit_cmdline("shortcut", services[GENOME_SHORTCUT_SERVICE])
         self.status = Status.dispatched
 
-    def on_shortcut_failure(self, services, return_identifier):
+    def on_shortcut_failure(self, services):
         print "Shortcut failure for %s" % self.name
         self._submit_cmdline("execute", services[GENOME_EXECUTE_SERVICE])
 
-    def on_shortcut_success(self, services, return_identifier):
+    def on_shortcut_success(self, services):
         print "Shortcut success for %s" % self.name
-        self.on_success(services, return_identifier)
+        self.on_success(services)
 
-    def on_execute_success(self, services, return_identifier):
+    def on_execute_success(self, services):
         print "Execute success for %s" % self.name
-        self.on_success(services, return_identifier)
+        self.on_success(services)
 
-    def on_execute_failure(self, services, return_identifier):
+    def on_execute_failure(self, services):
         print "Execute failure for %s" % self.name
         self.status = Status.failure
         self.fail(services)
 
-    def on_success(self, services, return_identifier):
+    def on_success(self, services):
         self.status = Status.success
         self.complete(services)
 
