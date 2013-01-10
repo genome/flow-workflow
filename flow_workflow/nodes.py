@@ -69,6 +69,8 @@ class CommandNode(LoggingNodeBase):
 
     def _command_line(self, method):
         cmd = [WORKFLOW_WRAPPER, "command", method, self.perl_class, self.key]
+        if method == "execute":
+            cmd.append("--reply")
         return cmd
 
     def _return_identifier(self, method):
@@ -137,6 +139,8 @@ class ParallelByCommandChildNode(CommandNode):
         cmd = [WORKFLOW_WRAPPER, "command", method, self.perl_class, self.key,
                "--parallel-by", self.parallel_by_property,
                "--parallel-by-index", self.parallel_by_index]
+        if method == "execute":
+            cmd.append("--reply")
         return cmd
 
 
