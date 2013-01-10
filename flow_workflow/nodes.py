@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import json
 import re
 from flow.orchestrator.types import *
 from flow.orchestrator.redisom import *
@@ -83,7 +84,7 @@ class CommandNode(LoggingNodeBase):
     def _submit_cmdline(self, method, service):
         return_identifier = self._return_identifier(method)
         environment = self.flow.environment.value
-        environment['WORKFLOW_RETURN_IDENTIFIER'] = return_identifier
+        environment['WORKFLOW_RETURN_IDENTIFIER'] = json.dumps(return_identifier)
         environment['WORKFLOW_ROUTING_KEY_SUCCESS'] = _success_routing_key(method)
         environment['WORKFLOW_ROUTING_KEY_FAILURE'] = _failure_routing_key(method)
 
