@@ -1,5 +1,5 @@
 <?xml version='1.0' standalone='yes'?>
-<workflow name="Mark likes the letter N" executor="Workflow::Executor::SerialDeferred" logDir="/tmp">
+<workflow name="Mark likes the letter N" executor="Workflow::Executor::SerialDeferred" logDir="/gscuser/tabbott/tmp/wflogbot">
   <link fromOperation="input connector" fromProperty="a" toOperation="A" toProperty="param" />
   <link fromOperation="input connector" fromProperty="b" toOperation="B" toProperty="param" />
   <link fromOperation="input connector" fromProperty="c" toOperation="C" toProperty="param" />
