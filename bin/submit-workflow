@@ -1,57 +1,69 @@
 #!/usr/bin/env python
 
-from backend.redisbackend import RedisBackend
 from redis import Redis
 import argparse
-import flow
+import flow_workflow.workflowxml as wfxml
 import json
 import os
+import pika
 import pwd
 import subprocess
 import sys
 import tempfile
-import workflowxml
 
 if __name__ == "__main__":
+    redis_url = os.getenv("FLOW_REDIS_URL")
+    amqp_url = os.getenv("AMQP_URL")
+    if not redis_url:
+        print "Environment variable FLOW_REDIS_URL not defined!"
+        sys.exit(1)
+
+    if not redis_url:
+        print "Environment variable AMQP_URL not defined!"
+        sys.exit(1)
+
     uid = os.getuid()
     user_name = pwd.getpwuid(uid).pw_name
-    fields = {
-        "user_id": uid,
-        "user_name": user_name,
-        "environment": os.environ.data,
-        "working_directory": os.getcwd()
-    }
 
     parser = argparse.ArgumentParser(description="Submit a workflow to be run")
     parser.add_argument('xml', help="A valid workflow xml file")
     parser.add_argument('inputs', help="A json file containing the workflow inputs")
-    parser.add_argument('--block', action="store_true", default=False,
-                        help="Block until workflow execution is complete")
 
     args = parser.parse_args()
+    conn = Redis(redis_url)
 
     xml = open(args.xml).read()
-    flow = workflowxml.Parser(xml).flow
     input_str = open(args.inputs).read()
     initial_outputs = json.loads(input_str)
-    conn = Redis("vmpool83")
-    backend = RedisBackend(conn)
-    backend.store_flow(flow)
-    backend.store_job_outputs(flow.id, 0, initial_outputs)
+    wfxml= wfxml.Parser(xml, initial_outputs)
+    flow = wfxml.flow(conn)
+    flow.user_id = uid
+    flow.environment = os.environ.data
+    flow.working_directory = os.getcwd()
+
     mypath = os.path.dirname(os.path.realpath(sys.argv[0]))
     basedir = os.path.dirname(mypath)
     os.chdir(basedir)
-    submit_ruote = os.path.join(mypath, "submit-ruote")
-    tmp = tempfile.NamedTemporaryFile(delete=False)
-    ruote_dsl = json.dumps(flow.ruote_dsl(fields))
-    tmp.write(ruote_dsl)
-    tmp.close()
-    print "Ruote process definition written to", tmp.name
-    cmdline = ["bundle", "exec", submit_ruote, tmp.name]
-    if args.block:
-        cmdline.append("--block")
-    ret = subprocess.call(cmdline)
-    tmp.unlink(tmp.name)
-    if ret != 0:
-        print "Workflow submission failed!"
-        sys.exit(ret)
+
+    routing_key = "flow.node.execute"
+    body = json.dumps({
+        "node_key": flow.node(0).key,
+        "message_class": "ExecuteNodeMessage",
+    })
+
+    conn = pika.BlockingConnection(pika.URLParameters(amqp_url))
+    qchannel = conn.channel()
+    qchannel.exchange_declare(
+        exchange="workflow",
+        exchange_type="topic",
+        durable=True,
+        arguments={"alternate-exchange": "workflow.alt"}
+        )
+    qchannel.basic_publish(
+        exchange="workflow",
+        routing_key=routing_key,
+        body=body,
+        properties=pika.BasicProperties(
+            delivery_mode=2,
+        )
+    )
