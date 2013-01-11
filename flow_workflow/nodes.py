@@ -106,7 +106,7 @@ class CommandNode(LoggingNodeBase):
             "stdout": self.stdout_log_file.value,
             "stderr": self.stderr_log_file.value,
         }
-        mail_user = os.getenv("FLOW_MAIL_USER")
+        mail_user = environment.get('FLOW_MAIL_USER')
         if mail_user:
             executor_options["mail_user"] = mail_user
 
@@ -114,8 +114,7 @@ class CommandNode(LoggingNodeBase):
         service.submit(
             self._command_line(method),
             return_identifier=return_identifier,
-            executor_options=executor_options
-            )
+            **executor_options)
 
     def _execute(self, services):
         self._submit_cmdline("shortcut", services[GENOME_SHORTCUT_SERVICE])
