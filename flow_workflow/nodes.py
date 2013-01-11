@@ -106,6 +106,9 @@ class CommandNode(LoggingNodeBase):
             "stdout": self.stdout_log_file.value,
             "stderr": self.stderr_log_file.value,
         }
+        mail_user = os.getenv("FLOW_MAIL_USER")
+        if mail_user:
+            executor_options["mail_user"] = mail_user
 
         print "%s submits command with method %s" % (self.name, method)
         service.submit(
