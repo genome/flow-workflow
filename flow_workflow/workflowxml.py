@@ -4,7 +4,6 @@ from collections import defaultdict
 from flow.orchestrator.graph import transitive_reduction
 from xml.dom.minidom import parseString
 import flow_workflow.nodes as wfnodes
-import json
 import os
 import re
 import sys
@@ -240,8 +239,7 @@ class Parser(object):
                 node.successors = set()
 
         for dst_idx, props in self.input_connections.iteritems():
-            store = dict((k, json.dumps(v)) for k, v in props.iteritems())
-            nodes[dst_idx].input_connections = store
+            nodes[dst_idx].input_connections = props
 
         for idx, node in enumerate(nodes):
             if idx in self.rev_edges:
