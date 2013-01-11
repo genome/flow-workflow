@@ -33,23 +33,36 @@ sub _decode_array {
     return \@decoded;
 }
 
+sub _encode_hash {
+    my $hashref = shift;
+    my %encoded = map {_encode_scalar($_) => _encode_scalar($hashref->{$_})} keys %$hashref;
+    return \%encoded;
+}
+
+sub _decode_hash {
+    my $hashref = shift;
+    my %decoded = map {_decode_scalar($_) => _decode_scalar($hashref->{$_})} keys %$hashref;
+    return \%decoded;
+}
+
 sub encode {
     my $obj = shift;
     if (ref($obj) eq "ARRAY") {
         $obj = _encode_array($obj);
+    } elsif (ref($obj) eq "HASH") {
+        $obj = _encode_hash($obj);
     } else {
         $obj = _encode_scalar($obj);
     }
-    my $json = new JSON->allow_nonref;
-    return $json->encode($obj);
+    return $obj;
 }
 
 sub decode {
-    my $str = shift;
-    my $json = new JSON->allow_nonref;
-    my $obj = $json->decode($str);
+    my $obj = shift;
     if (ref($obj) eq "ARRAY") {
         return _decode_array($obj);
+    } elsif (ref($obj) eq "HASH") {
+        $obj = _decode_hash($obj);
     } else {
         return _decode_scalar($obj);
     }
