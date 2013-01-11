@@ -91,7 +91,7 @@ def main(args):
     inputs_file.close()
     outputs_file = NamedTemporaryFile(delete=False)
 
-    cmdline = [PERL_WRAPPER]
+    cmdline = ["annotate-log", PERL_WRAPPER]
     cmdline.extend(args.build_cmdline(args, inputs_file.name, outputs_file.name))
     exit_code = subprocess.call(cmdline)
     if exit_code == 0:
