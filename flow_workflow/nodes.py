@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
+from flow.orchestrator.types import *
+import flow.orchestrator.redisom as rom
 import json
 import re
-from flow.orchestrator.types import *
-from flow.orchestrator.redisom import *
 
 MAX_FILENAME_LEN = 30
 WORKFLOW_WRAPPER = 'workflow-wrapper'
@@ -12,15 +12,15 @@ GENOME_SHORTCUT_SERVICE = 'genome_shortcut'
 GENOME_EXECUTE_SERVICE = 'genome_execute'
 
 class LoggingNodeBase(NodeBase):
-    stdout_log_file = RedisScalar
-    stderr_log_file = RedisScalar
+    stdout_log_file = rom.Property(rom.Scalar)
+    stderr_log_file = rom.Property(rom.Scalar)
 
 
 class ParallelByCommandFlow(Flow):
-    perl_class = RedisScalar
-    parallel_by_property = RedisScalar
-    stdout_log_file = RedisScalar
-    stderr_log_file = RedisScalar
+    perl_class = rom.Property(rom.Scalar)
+    parallel_by_property = rom.Property(rom.Scalar)
+    stdout_log_file = rom.Property(rom.Scalar)
+    stderr_log_file = rom.Property(rom.Scalar)
 
     def _create_child_node(self, index, **kwargs):
         name = self.name.value + " (#%d)" % index
@@ -35,11 +35,10 @@ class ParallelByCommandFlow(Flow):
                 )
 
     def _execute(self, services):
-        inputs = self.inputs
-        num_nodes = len(inputs[self.parallel_by_property.value])
+        outputs = self.inputs
+        num_nodes = len(outputs[self.parallel_by_property.value])
         name_base = self.name
 
-        outputs = dict((k, json.dumps(v)) for k, v in inputs.iteritems())
         start_node = StartNode.create(
                 connection=self._connection,
                 name=self.name.value + " (start node)",
@@ -59,7 +58,7 @@ class ParallelByCommandFlow(Flow):
         for i in xrange(num_nodes):
             out = "%s.%d" % (self.stdout_log_file.value, i)
             err = "%s.%d" % (self.stderr_log_file.value, i)
-            input_connections = {start_node_index: json.dumps({})}
+            input_connections = {start_node_index: {}}
             node = self._create_child_node(
                 i, stdout_log_file=out, stderr_log_file=err,
                 input_connections=input_connections)
@@ -75,7 +74,7 @@ class ParallelByCommandFlow(Flow):
 
 
 class CommandNode(LoggingNodeBase):
-    perl_class = RedisScalar
+    perl_class = rom.Property(rom.Scalar)
 
     def _command_line(self, method):
         cmd = [WORKFLOW_WRAPPER, "command", method, self.perl_class, self.key]
@@ -112,7 +111,7 @@ class CommandNode(LoggingNodeBase):
         service.submit(
             self._command_line(method),
             return_identifier=return_identifier,
-            **executor_options
+            executor_options=executor_options
             )
 
     def _execute(self, services):
@@ -142,8 +141,8 @@ class CommandNode(LoggingNodeBase):
 
 
 class ParallelByCommandChildNode(CommandNode):
-    parallel_by_property = RedisScalar
-    parallel_by_index = RedisScalar
+    parallel_by_property = rom.Property(rom.Scalar)
+    parallel_by_index = rom.Property(rom.Scalar)
 
     def _command_line(self, method):
         cmd = [WORKFLOW_WRAPPER, "command", method, self.perl_class, self.key,
@@ -155,13 +154,13 @@ class ParallelByCommandChildNode(CommandNode):
 
 
 class ConvergeNode(NodeBase):
-    output_property = RedisScalar
-    input_property_order = RedisList
+    output_property = rom.Property(rom.Scalar)
+    input_property_order = rom.Property(rom.List)
 
     def execute(self):
         inputs = self.inputs
         out = [inputs[x] for x in self.input_property_order]
-        self.outputs[self.output_property] = json.dumps(out)
+        self.outputs[self.output_property] = out
 
 
 def _success_routing_key(method):
