@@ -28,6 +28,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Submit a workflow to be run")
     parser.add_argument('xml', help="A valid workflow xml file")
     parser.add_argument('inputs', help="A json file containing the workflow inputs")
+    parser.add_argument('--block', default=False, action="store_true",
+                        help="Block until the workflow is finished")
 
     args = parser.parse_args()
     conn = Redis(redis_url)
@@ -67,3 +69,7 @@ if __name__ == "__main__":
             delivery_mode=2,
         )
     )
+
+    if args.block:
+        cmdline = ['wait_for_flow.py', flow.key]
+        sys.exit(subprocess.call(cmdline))
