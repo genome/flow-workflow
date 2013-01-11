@@ -5,7 +5,6 @@ use Genome;
 use IO::File;
 use File::Slurp qw/read_file/;
 use Data::Dumper;
-use NullCommand;
 use JSON;
 use Flow;
 use strict;
