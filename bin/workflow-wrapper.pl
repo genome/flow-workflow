@@ -10,7 +10,7 @@ use Flow;
 use strict;
 use warnings;
 
-my $json = JSON->new;
+my $json = JSON->new->allow_nonref;
 sub load_inputs {
     my $file = shift;
     my $inputs_str = read_file($file);

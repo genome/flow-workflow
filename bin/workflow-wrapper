@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from pprint import pprint
 from flow.orchestrator import redisom
 from redis import Redis
 from tempfile import NamedTemporaryFile
@@ -24,7 +25,8 @@ def command(args, inputs_file, outputs_file):
 
 def command_filter_inputs(args, inputs):
     if args.parallel_by != None:
-        return inputs[args.parallel_by][args.parallel_by_index]
+        inputs[args.parallel_by] = inputs[args.parallel_by][args.parallel_by_index]
+    return inputs
 
 def event(args, inputs_file, outputs_file):
     return [
@@ -83,6 +85,8 @@ def main(args):
         inputs = args.filter_inputs(args, inputs)
 
     inputs_file = NamedTemporaryFile(delete=False)
+    print "Dumping out inputs:"
+    pprint(inputs)
     inputs_file.write(json.dumps(inputs))
     inputs_file.close()
     outputs_file = NamedTemporaryFile(delete=False)
