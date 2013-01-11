@@ -1,7 +1,6 @@
 #!/usr/bin/env genome-perl
 
-use lib '.';
-use Genome;
+use above 'Genome';
 use IO::File;
 use File::Slurp qw/read_file/;
 use Data::Dumper;
