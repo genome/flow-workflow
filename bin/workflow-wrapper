@@ -75,7 +75,7 @@ def respond(exit_code):
     )
 
 def main(args):
-    conn = Redis("linus129")
+    conn = Redis("blade14-2-5")
 
     node = redisom.get_object(conn, args.node_key)
     inputs = node.inputs

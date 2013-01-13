@@ -271,9 +271,9 @@ class OutputConnector(WorkflowEntity):
 
 
 class Parser(object):
-    def __init__(self, xml):
-        self.xml = xml
-        self.model = ModelOperation(0, xml)
+    def __init__(self, xml_text):
+        self.xml = etree.XML(xml_text)
+        self.model = ModelOperation(0, self.xml)
 
     def flow(self, redis):
         return self.model.node(redis, None)

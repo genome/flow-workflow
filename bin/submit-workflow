@@ -46,7 +46,7 @@ if __name__ == "__main__":
     flow.working_directory = os.getcwd()
 
     dn = DataNode.create(connection=conn,
-                         data=flow_inputs,
+                         outputs=flow_inputs,
                          name="Inputs for %s" % flow.name.value)
 
     flow.input_connections = { dn.key: {} }
