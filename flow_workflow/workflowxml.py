@@ -106,7 +106,7 @@ class ConvergeOperation(WorkflowOperation):
             raise RuntimeError(
                 "Wrong number of <outputproperty> tags (%d) in operation %s" %
                 (len(outputs), self.name))
-        self.output_property = outputs[0].text
+        self.output_properties = [x.text for x in outputs]
 
         inputs = self._type_node.findall("inputproperty")
         self.input_properties = [x.text for x in inputs]
@@ -116,7 +116,7 @@ class ConvergeOperation(WorkflowOperation):
                 connection=redis,
                 flow_key=flow_key,
                 input_property_order=self.input_properties,
-                output_property=self.output_property,
+                output_properties=self.output_properties,
                 name=self.name,
                 )
 

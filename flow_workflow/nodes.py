@@ -167,13 +167,14 @@ class ParallelByCommandChildNode(CommandNode):
 
 
 class ConvergeNode(NodeBase):
-    output_property = rom.Property(rom.Scalar)
+    output_properties = rom.Property(rom.List)
     input_property_order = rom.Property(rom.List)
 
     def execute(self):
         inputs = self.inputs
         out = [inputs[x] for x in self.input_property_order]
-        self.outputs[self.output_property] = out
+        for p in self.output_properties:
+            self.outputs[p] = out
 
 
 def _success_routing_key(method):
