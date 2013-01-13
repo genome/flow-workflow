@@ -37,6 +37,7 @@ sub run_event {
     exit(1) if !$cmd->can($method);
     my $ret = $cmd->$method();
     exit(1) unless $ret;
+    UR::Context->commit();
 
     my %outputs = (result => 1);
     my $out_fh = new IO::File($outputs_file, "w");
