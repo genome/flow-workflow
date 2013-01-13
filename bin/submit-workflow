@@ -31,9 +31,15 @@ if __name__ == "__main__":
     parser.add_argument('inputs', help="A json file containing the workflow inputs")
     parser.add_argument('--block', default=False, action="store_true",
                         help="Block until the workflow is finished")
+    parser.add_argument('--outputs-file', default=None,
+                        help="Store workflow outputs in the given file "
+                             "(implies --block)")
 
     args = parser.parse_args()
     conn = Redis(redis_url)
+
+    if args.outputs_file:
+        args.block = True
 
     xml = open(args.xml).read()
     input_str = open(args.inputs).read()
@@ -50,10 +56,6 @@ if __name__ == "__main__":
                          name="Inputs for %s" % flow.name.value)
 
     flow.input_connections = { dn.key: {} }
-
-    mypath = os.path.dirname(os.path.realpath(sys.argv[0]))
-    basedir = os.path.dirname(mypath)
-    os.chdir(basedir)
 
     routing_key = "flow.node.execute"
     body = json.dumps({
@@ -80,4 +82,15 @@ if __name__ == "__main__":
 
     if args.block:
         cmdline = ['wait_for_flow.py', flow.key]
-        sys.exit(subprocess.call(cmdline))
+        rv = subprocess.call(cmdline)
+        if not flow.status.value:
+            print "Flow %s claims completion but status is None" % flow.key
+        else:
+            print "Completed flow %s: status=%s" % (flow.key, flow.status.value)
+
+        if rv == 0 and args.outputs_file:
+            fp = open(args.outputs_file, "w")
+            fp.write(json.dumps(flow.outputs.value))
+            fp.close()
+            print "Outputs written to", args.outputs_file
+        sys.exit(rv)

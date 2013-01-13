@@ -2,6 +2,7 @@ package Flow;
 
 use Storable qw/nfreeze thaw/;
 use Carp qw/confess/;
+use File::Slurp qw/read_file write_file/;
 use POSIX qw/WIFEXITED WEXITSTATUS/;
 use JSON;
 use Workflow;
@@ -72,7 +73,8 @@ sub run_workflow {
     my $workflow = shift;
     my $xml = $workflow;
 
-    my $tmpdir = tempdir(CLEANUP => 1);
+    my $cleanup = !exists $ENV{FLOW_WORKFLOW_NO_CLEANUP};
+    my $tmpdir = tempdir(CLEANUP => $cleanup);
     if (ref($workflow)) {
         $xml = join("/", $tmpdir, "workflow.xml");
         my $xml_fh = new IO::File($xml, "w");
@@ -86,19 +88,26 @@ sub run_workflow {
     print Dumper(\%params);
 
     my $json_path = join("/", $tmpdir, "inputs.json");
+    my $outputs_path = join("/", $tmpdir, "outputs.json");
     my $json_fh = new IO::File($json_path, "w");
 
     print "Saved xml to $xml\n";
     my $json = new JSON->allow_nonref;
     $json_fh->write($json->encode(\%params));
     $json_fh->close();
-    my $cmd = "submit-workflow $xml $json_path --block";
+    my $cmd = "submit-workflow $xml $json_path --block --outputs-file $outputs_path";
     print "EXEC: $cmd\n";
     my $ret = system($cmd);
     if (!WIFEXITED($ret) || WEXITSTATUS($ret)) {
         confess "Workflow submission failed";
     }
-    return 1;
+    my $outputs_str = read_file($outputs_path);
+    my $outputs = $json->decode($outputs_str);
+    %$outputs = map {
+        my $val = $outputs->{$_};
+        $_ => $val eq '' ? '' : Flow::decode($val)
+    } keys %$outputs;
+    return $outputs;
 }
 
 1;

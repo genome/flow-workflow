@@ -70,6 +70,7 @@ sub run_command {
         my $prop_val = $cmd->$prop_name;
         $prop_name => Flow::encode($prop_val);
     } @cmd_outputs;
+    UR::Context->commit();
 
     my $out_fh = new IO::File($outputs_file, "w");
     $out_fh->write($json->encode(\%outputs));
