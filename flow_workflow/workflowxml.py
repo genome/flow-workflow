@@ -78,7 +78,7 @@ class CommandOperation(WorkflowOperation):
                     perl_class=self.perl_class,
                     stdout_log_file=self.stdout_log_file,
                     stderr_log_file=self.stderr_log_file,
-                    name = self.name,
+                    name=self.name,
                     )
 
 
@@ -231,6 +231,7 @@ class ModelOperation(WorkflowOperation):
         flow = Flow.create(
                 connection=redis,
                 name=self.name,
+                flow_key=flow_key,
                 )
 
         nodes = [x.node(redis, flow.key) for x in self.operations]
