@@ -1,5 +1,6 @@
 #!/usr/bin/env genome-perl
 
+use POSIX;
 use above 'Genome';
 use IO::File;
 use File::Slurp qw/read_file/;
@@ -22,8 +23,8 @@ sub load_inputs {
 }
 
 sub run_event {
-    if ($#_ != 3) {
-        print STDERR "Usage: $0 event <shortcut|execute> <event_id>\n";
+    if ($#_ != 1) {
+        print STDERR "Usage: $0 event <shortcut|execute> <event_id> <outputs.json>\n";
         exit 1;
     }
 
@@ -32,10 +33,14 @@ sub run_event {
         die "Invalid method '$method' for command: $method";
     }
 
-    my $cmd = Genome::Model::Event->get(event_id => $event_id) || die "No event $event_id";
+    my $cmd = Genome::Model::Event->get($event_id) || die "No event $event_id";
     exit(1) if !$cmd->can($method);
     my $ret = $cmd->$method();
     exit(1) unless $ret;
+
+    my %outputs = (result => 1);
+    my $out_fh = new IO::File($outputs_file, "w");
+    $out_fh->write($json->encode(\%outputs));
 }
 
 sub run_command {
@@ -93,6 +98,7 @@ if (@ARGV == 0) {
 my $action = shift @ARGV;
 SWITCH: for ($action) {
     $_ eq "command" && do { run_command(@ARGV); last SWITCH; };
+    $_ eq "event" && do { run_event(@ARGV); last SWITCH; };
     $_ eq "converge" && do { converge(@ARGV); last SWITCH; };
     die "Unknown argument $_";
     exit 1;

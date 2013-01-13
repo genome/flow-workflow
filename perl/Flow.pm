@@ -82,6 +82,7 @@ sub run_workflow {
 
     my %params = @_;
     %params = map {$_ => encode($params{$_})} keys %params;
+#    $params{result} = 1;
     print Dumper(\%params);
 
     my $json_path = join("/", $tmpdir, "inputs.json");

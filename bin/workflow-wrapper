@@ -31,7 +31,9 @@ def command_filter_inputs(args, inputs):
 def event(args, inputs_file, outputs_file):
     return [
         "event",
+        args.method,
         args.event_id,
+        outputs_file,
     ]
 
 def converge(args, inputs_file, outputs_file):
@@ -89,8 +91,10 @@ def main(args):
     inputs_file.close()
     outputs_file = NamedTemporaryFile(delete=False)
 
-    cmdline = ["annotate-log", PERL_WRAPPER]
-    cmdline.extend(args.build_cmdline(args, inputs_file.name, outputs_file.name))
+#    cmdline = ["annotate-log", PERL_WRAPPER]
+    cmdline = [PERL_WRAPPER]
+    cmdline.extend(args.build_cmdlin(args, inputs_file.name, outputs_file.name))
+
     exit_code = subprocess.call(cmdline)
     if exit_code == 0:
         outputs = json.load(outputs_file)
@@ -99,6 +103,16 @@ def main(args):
     os.unlink(inputs_file.name)
     os.unlink(outputs_file.name)
     return exit_code
+
+#def run_event(args):
+##    cmdline = ["annotate-log", PERL_WRAPPER]
+#    cmdline = [PERL_WRAPPER]
+#    cmdline.extend(event(args))
+#    return subprocess.call(cmdline)
+#
+#def main(args):
+#    args.do_cmdline(args)
+
 
 def parse_args():
     parser = argparse.ArgumentParser('Interact with workflow')
@@ -115,6 +129,7 @@ def parse_args():
     cmd_parser.set_defaults(filter_inputs=command_filter_inputs)
 
     event_parser = subparsers.add_parser("event")
+    event_parser.add_argument("method", help="shortcut or execute")
     event_parser.add_argument("event_id", help="The event id")
     event_parser.add_argument("node_key", help="The redis key of the node")
     event_parser.set_defaults(build_cmdline=event)

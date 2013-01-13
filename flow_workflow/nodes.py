@@ -152,6 +152,10 @@ class EventNode(OperationNodeBase):
             cmd.append("--reply")
         return cmd
 
+#    def on_success(self, services):
+#        OperationNodeBase.on_success(self, services)
+#        self.outputs = {'result': 1}
+
 
 class ParallelByCommandChildNode(CommandNode):
     parallel_by_property = rom.Property(rom.Scalar)
@@ -170,11 +174,13 @@ class ConvergeNode(NodeBase):
     output_properties = rom.Property(rom.List)
     input_property_order = rom.Property(rom.List)
 
-    def execute(self):
+    def execute(self, services):
         inputs = self.inputs
         out = [inputs[x] for x in self.input_property_order]
         for p in self.output_properties:
             self.outputs[p] = out
+
+        self.complete(services)
 
 
 def _success_routing_key(method):
