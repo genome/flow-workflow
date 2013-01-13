@@ -32,8 +32,6 @@ def event(args, inputs_file, outputs_file):
     return [
         "event",
         args.event_id,
-        inputs_file,
-        outputs_file
     ]
 
 def converge(args, inputs_file, outputs_file):
@@ -116,19 +114,9 @@ def parse_args():
     cmd_parser.set_defaults(build_cmdline=command)
     cmd_parser.set_defaults(filter_inputs=command_filter_inputs)
 
-    cvg_parser = subparsers.add_parser("converge")
-    cvg_parser.add_argument("output_name", help="The name of the output property")
-    cvg_parser.add_argument("flow_id", help="The workflow id")
-    cvg_parser.add_argument("job_id", help="The job id")
-    cvg_parser.add_argument("input_properties", nargs='+')
-    cvg_parser.set_defaults(build_cmdline=converge)
-    cvg_parser.set_defaults(filter_inputs=None)
-    cvg_parser.add_argument("--reply", action="store_true", default=False)
-
     event_parser = subparsers.add_parser("event")
     event_parser.add_argument("event_id", help="The event id")
-    event_parser.add_argument("flow_id", help="The workflow id")
-    event_parser.add_argument("job_id", help="The job id")
+    event_parser.add_argument("node_key", help="The redis key of the node")
     event_parser.set_defaults(build_cmdline=event)
     event_parser.set_defaults(filter_inputs=None)
     event_parser.add_argument("--reply", action="store_true", default=False)

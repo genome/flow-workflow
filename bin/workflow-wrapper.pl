@@ -21,6 +21,23 @@ sub load_inputs {
     return $inputs;
 }
 
+sub run_event {
+    if ($#_ != 3) {
+        print STDERR "Usage: $0 event <shortcut|execute> <event_id>\n";
+        exit 1;
+    }
+
+    my ($method, $event_id) = @_;
+    if ($method ne "shortcut" && $method ne "execute") {
+        die "Invalid method '$method' for command: $method";
+    }
+
+    my $cmd = Genome::Model::Event->get(event_id => $event_id) || die "No event $event_id";
+    exit(1) if !$cmd->can($method);
+    my $ret = $cmd->$method();
+    exit(1) unless $ret;
+}
+
 sub run_command {
     if ($#_ != 3) {
         print STDERR "Usage: $0 command <shortcut|execute> <package> <inputs.json> <outputs.json>\n";

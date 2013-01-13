@@ -73,14 +73,7 @@ class ParallelByCommandFlow(Flow):
         start_node.execute(services)
 
 
-class CommandNode(LoggingNodeBase):
-    perl_class = rom.Property(rom.Scalar)
-
-    def _command_line(self, method):
-        cmd = [WORKFLOW_WRAPPER, "command", method, self.perl_class, self.key]
-        if method == "execute":
-            cmd.append("--reply")
-        return cmd
+class OperationNodeBase(LoggingNodeBase):
 
     def _return_identifier(self, method):
         success_callback = self.method_descriptor("on_%s_success" % method)
@@ -140,6 +133,26 @@ class CommandNode(LoggingNodeBase):
     def on_success(self, services):
         self.status = Status.success
         self.complete(services)
+
+
+class CommandNode(OperationNodeBase):
+    perl_class = rom.Property(rom.Scalar)
+
+    def _command_line(self, method):
+        cmd = [WORKFLOW_WRAPPER, "command", method, self.perl_class, self.key]
+        if method == "execute":
+            cmd.append("--reply")
+        return cmd
+
+
+class EventNode(OperationNodeBase):
+    event_id = rom.Property(rom.Scalar)
+
+    def _command_line(self, method):
+        cmd = [WORKFLOW_WRAPPER, "event", method, self.event_id, self.key]
+        if method == "execute":
+            cmd.append("--reply")
+        return cmd
 
 
 class ParallelByCommandChildNode(CommandNode):

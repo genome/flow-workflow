@@ -2,6 +2,7 @@
 
 from redis import Redis
 import argparse
+from flow.orchestrator.types import DataNode
 import flow_workflow.workflowxml as wfxml
 import json
 import os
@@ -36,12 +37,19 @@ if __name__ == "__main__":
 
     xml = open(args.xml).read()
     input_str = open(args.inputs).read()
-    initial_outputs = json.loads(input_str)
-    wfxml= wfxml.Parser(xml, initial_outputs)
+    flow_inputs = json.loads(input_str)
+
+    wfxml= wfxml.Parser(xml)
     flow = wfxml.flow(conn)
     flow.user_id = uid
     flow.environment = os.environ.data
     flow.working_directory = os.getcwd()
+
+    dn = DataNode.create(connection=conn,
+                         data=flow_inputs,
+                         name="Inputs for %s" % flow.name.value)
+
+    flow.input_connections = { dn.key: {} }
 
     mypath = os.path.dirname(os.path.realpath(sys.argv[0]))
     basedir = os.path.dirname(mypath)
