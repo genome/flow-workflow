@@ -35,15 +35,13 @@ class ParallelByCommandFlow(Flow):
                 )
 
     def _execute(self, services):
-        outputs = self.inputs
         num_nodes = len(outputs[self.parallel_by_property.value])
         name_base = self.name
 
         start_node = StartNode.create(
                 connection=self._connection,
                 name=self.name.value + " (start node)",
-                flow_key=self.key,
-                outputs=outputs)
+                flow_key=self.key)
 
         stop_node = StopNode.create(
                 connection=self._connection,
