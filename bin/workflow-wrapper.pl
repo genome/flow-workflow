@@ -23,12 +23,12 @@ sub load_inputs {
 }
 
 sub run_event {
-    if ($#_ != 1) {
+    if ($#_ != 2) {
         print STDERR "Usage: $0 event <shortcut|execute> <event_id> <outputs.json>\n";
         exit 1;
     }
 
-    my ($method, $event_id) = @_;
+    my ($method, $event_id, $outputs_file) = @_;
     if ($method ne "shortcut" && $method ne "execute") {
         die "Invalid method '$method' for command: $method";
     }

@@ -93,7 +93,7 @@ def main(args):
 
 #    cmdline = ["annotate-log", PERL_WRAPPER]
     cmdline = [PERL_WRAPPER]
-    cmdline.extend(args.build_cmdlin(args, inputs_file.name, outputs_file.name))
+    cmdline.extend(args.build_cmdline(args, inputs_file.name, outputs_file.name))
 
     exit_code = subprocess.call(cmdline)
     if exit_code == 0:
