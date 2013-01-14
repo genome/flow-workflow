@@ -159,16 +159,11 @@ class ModelOperation(WorkflowOperation):
         self.edges = transitive_reduction(self.edges)
         self.rev_edges = {}
         for src, dst_set in self.edges.iteritems():
-            print src, dst_set
             for dst in dst_set:
                 self.rev_edges.setdefault(dst, set()).add(src)
 
     def _parse_workflow_simple(self):
-        self._parse_operations()
-        # We expect input/output connectors, and a single operation
-        if len(self.operations) != 3:
-            raise RuntimeError("Simple workflow with more than a single operation!")
-
+        self._add_operation(self.xml)
         self.input_connections[self.first_operation_id][self.input_connector_id] = {}
         self.add_edge(self.input_connector_id, self.first_operation_id)
         self.add_edge(self.first_operation_id, self.output_connector_id)
