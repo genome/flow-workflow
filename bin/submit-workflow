@@ -50,6 +50,7 @@ if __name__ == "__main__":
     flow.user_id = uid
     flow.environment = os.environ.data
     flow.working_directory = os.getcwd()
+    print "Submitting workflow", flow
 
     dn = DataNode.create(connection=conn,
                          outputs=flow_inputs,
@@ -81,6 +82,7 @@ if __name__ == "__main__":
     )
 
     if args.block:
+        print "Waiting for workflow", flow.name
         cmdline = ['wait_for_flow.py', flow.key]
         rv = subprocess.call(cmdline)
         if not flow.status.value:
@@ -93,4 +95,6 @@ if __name__ == "__main__":
             fp.write(json.dumps(flow.outputs.value))
             fp.close()
             print "Outputs written to", args.outputs_file
+            print "Outputs were", flow.outputs.value
+        print "Workflow wrapper exiting with exit code", rv, sys.argv
         sys.exit(rv)
