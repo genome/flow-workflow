@@ -1,0 +1,132 @@
+<?xml version='1.0' standalone='yes'?>
+<workflow name="132942475 all stages" executor="Workflow::Executor::SerialDeferred" notifyUrl="https://imp.gsc.wustl.edu/cachetrigger/genome/model/build/reference-alignment/solexa/status.html?id=132942475 https://imp.gsc.wustl.edu/cachetrigger/workflow/operation/instance/statuspopup.html?id=[WORKFLOW_ID]">
+  <link fromOperation="input connector" fromProperty="prior_result" toOperation="132942475 reference_preparation" toProperty="prior_result" />
+  <link fromOperation="132942475 reference_preparation" fromProperty="result" toOperation="132942475 alignment" toProperty="prior_result" />
+  <link fromOperation="132942475 alignment" fromProperty="result" toOperation="132942475 merge_and_deduplication" toProperty="prior_result" />
+  <link fromOperation="132942475 merge_and_deduplication" fromProperty="result" toOperation="132942475 variant_detection" toProperty="prior_result" />
+  <link fromOperation="132942475 variant_detection" fromProperty="result" toOperation="132942475 transcript_annotation" toProperty="prior_result" />
+  <link fromOperation="132942475 transcript_annotation" fromProperty="result" toOperation="132942475 generate_reports" toProperty="prior_result" />
+  <link fromOperation="132942475 generate_reports" fromProperty="result" toOperation="output connector" toProperty="result" />
+  <operation name="132942475 reference_preparation">
+    <link fromOperation="input connector" fromProperty="prior_result" toOperation="prepare-reference-sequence-index 132942534" toProperty="prior_result" />
+    <link fromOperation="prepare-reference-sequence-index 132942534" fromProperty="result" toOperation="merge results" toProperty="result_1" />
+    <link fromOperation="merge results" fromProperty="result" toOperation="output connector" toProperty="result" />
+    <operation name="prepare-reference-sequence-index 132942534">
+      <operationtype eventId="132942534" lsfProject="build132942475" lsfQueue="apipe" lsfResource="-R 'select[mem&gt;=10000 &amp;&amp; tmp&gt;=15000] rusage[mem=10000, tmp=15000]' -M 10000000 -q long -o /gscmnt/gc8001/info/model_data/2880887847/build132942475/logs//132942534.out -e /gscmnt/gc8001/info/model_data/2880887847/build132942475/logs//132942534.err" typeClass="Workflow::OperationType::Event" />
+    </operation>
+    <operation name="merge results">
+      <operationtype typeClass="Workflow::OperationType::Converge">
+        <inputproperty>result_1</inputproperty>
+        <outputproperty>all_results</outputproperty>
+        <outputproperty>result</outputproperty>
+      </operationtype>
+    </operation>
+    <operationtype typeClass="Workflow::OperationType::Model">
+      <inputproperty>prior_result</inputproperty>
+      <outputproperty>result</outputproperty>
+    </operationtype>
+  </operation>
+  <operation name="132942475 alignment">
+    <link fromOperation="input connector" fromProperty="prior_result" toOperation="align-reads 132942535" toProperty="prior_result" />
+    <link fromOperation="align-reads 132942535" fromProperty="result" toOperation="merge results" toProperty="result_1" />
+    <link fromOperation="merge results" fromProperty="result" toOperation="output connector" toProperty="result" />
+    <operation name="align-reads 132942535">
+      <operationtype eventId="132942535" lsfProject="build132942475" lsfQueue="apipe" lsfResource="-R 'select[ncpus &gt;= 2 &amp;&amp; mem &gt;= 8192 &amp;&amp; gtmp &gt;= 0.1015625] span[hosts=1] rusage[mem=8192, gtmp=0.1015625]' -M 8388608 -n 2 -q alignment-pd -o /gscmnt/gc8001/info/model_data/2880887847/build132942475/logs//132942535.out -e /gscmnt/gc8001/info/model_data/2880887847/build132942475/logs//132942535.err" typeClass="Workflow::OperationType::Event" />
+    </operation>
+    <operation name="merge results">
+      <operationtype typeClass="Workflow::OperationType::Converge">
+        <inputproperty>result_1</inputproperty>
+        <outputproperty>all_results</outputproperty>
+        <outputproperty>result</outputproperty>
+      </operationtype>
+    </operation>
+    <operationtype typeClass="Workflow::OperationType::Model">
+      <inputproperty>prior_result</inputproperty>
+      <outputproperty>result</outputproperty>
+    </operationtype>
+  </operation>
+  <operation name="132942475 merge_and_deduplication">
+    <link fromOperation="input connector" fromProperty="prior_result" toOperation="merge-alignments 132942536" toProperty="prior_result" />
+    <link fromOperation="merge-alignments 132942536" fromProperty="result" toOperation="merge results" toProperty="result_1" />
+    <link fromOperation="merge results" fromProperty="result" toOperation="output connector" toProperty="result" />
+    <operation name="merge-alignments 132942536">
+      <operationtype eventId="132942536" lsfProject="build132942475" lsfQueue="apipe" lsfResource="-R 'select[model!=Opteron250 &amp;&amp; type==LINUX64] span[hosts=1] rusage[tmp=90000:mem=16000]' -M 16000000 -o /gscmnt/gc8001/info/model_data/2880887847/build132942475/logs/all_sequences/132942536.out -e /gscmnt/gc8001/info/model_data/2880887847/build132942475/logs/all_sequences/132942536.err" typeClass="Workflow::OperationType::Event" />
+    </operation>
+    <operation name="merge results">
+      <operationtype typeClass="Workflow::OperationType::Converge">
+        <inputproperty>result_1</inputproperty>
+        <outputproperty>all_results</outputproperty>
+        <outputproperty>result</outputproperty>
+      </operationtype>
+    </operation>
+    <operationtype typeClass="Workflow::OperationType::Model">
+      <inputproperty>prior_result</inputproperty>
+      <outputproperty>result</outputproperty>
+    </operationtype>
+  </operation>
+  <operation name="132942475 variant_detection">
+    <link fromOperation="input connector" fromProperty="prior_result" toOperation="detect-variants 132942537" toProperty="prior_result" />
+    <link fromOperation="detect-variants 132942537" fromProperty="result" toOperation="merge results" toProperty="result_1" />
+    <link fromOperation="merge results" fromProperty="result" toOperation="output connector" toProperty="result" />
+    <operation name="detect-variants 132942537">
+      <operationtype eventId="132942537" lsfProject="build132942475" lsfQueue="apipe" lsfResource="-R 'select[tmp&gt;4000] rusage[tmp=4000]' -q long -o /gscmnt/gc8001/info/model_data/2880887847/build132942475/logs//132942537.out -e /gscmnt/gc8001/info/model_data/2880887847/build132942475/logs//132942537.err" typeClass="Workflow::OperationType::Event" />
+    </operation>
+    <operation name="merge results">
+      <operationtype typeClass="Workflow::OperationType::Converge">
+        <inputproperty>result_1</inputproperty>
+        <outputproperty>all_results</outputproperty>
+        <outputproperty>result</outputproperty>
+      </operationtype>
+    </operation>
+    <operationtype typeClass="Workflow::OperationType::Model">
+      <inputproperty>prior_result</inputproperty>
+      <outputproperty>result</outputproperty>
+    </operationtype>
+  </operation>
+  <operation name="132942475 transcript_annotation">
+    <link fromOperation="input connector" fromProperty="prior_result" toOperation="annotate-adaptor 132942538" toProperty="prior_result" />
+    <link fromOperation="annotate-adaptor 132942538" fromProperty="result" toOperation="annotate-transcript-variants 132942539" toProperty="prior_result" />
+    <link fromOperation="annotate-transcript-variants 132942539" fromProperty="result" toOperation="merge results" toProperty="result_1" />
+    <link fromOperation="merge results" fromProperty="result" toOperation="output connector" toProperty="result" />
+    <operation name="annotate-adaptor 132942538">
+      <operationtype eventId="132942538" lsfProject="build132942475" lsfQueue="apipe" lsfResource="-R 'select[model!=Opteron250 &amp;&amp; type==LINUX64] span[hosts=1]' -o /gscmnt/gc8001/info/model_data/2880887847/build132942475/logs//132942538.out -e /gscmnt/gc8001/info/model_data/2880887847/build132942475/logs//132942538.err" typeClass="Workflow::OperationType::Event" />
+    </operation>
+    <operation name="annotate-transcript-variants 132942539">
+      <operationtype eventId="132942539" lsfProject="build132942475" lsfQueue="apipe" lsfResource="-R 'select[model!=Opteron250 &amp;&amp; type==LINUX64] span[hosts=1]' -o /gscmnt/gc8001/info/model_data/2880887847/build132942475/logs//132942539.out -e /gscmnt/gc8001/info/model_data/2880887847/build132942475/logs//132942539.err" typeClass="Workflow::OperationType::Event" />
+    </operation>
+    <operation name="merge results">
+      <operationtype typeClass="Workflow::OperationType::Converge">
+        <inputproperty>result_1</inputproperty>
+        <outputproperty>all_results</outputproperty>
+        <outputproperty>result</outputproperty>
+      </operationtype>
+    </operation>
+    <operationtype typeClass="Workflow::OperationType::Model">
+      <inputproperty>prior_result</inputproperty>
+      <outputproperty>result</outputproperty>
+    </operationtype>
+  </operation>
+  <operation name="132942475 generate_reports">
+    <link fromOperation="input connector" fromProperty="prior_result" toOperation="run-reports 132942540" toProperty="prior_result" />
+    <link fromOperation="run-reports 132942540" fromProperty="result" toOperation="merge results" toProperty="result_1" />
+    <link fromOperation="merge results" fromProperty="result" toOperation="output connector" toProperty="result" />
+    <operation name="run-reports 132942540">
+      <operationtype eventId="132942540" lsfProject="build132942475" lsfQueue="apipe" lsfResource="-R 'select[model!=Opteron250 &amp;&amp; type==LINUX64] span[hosts=1]' -o /gscmnt/gc8001/info/model_data/2880887847/build132942475/logs//132942540.out -e /gscmnt/gc8001/info/model_data/2880887847/build132942475/logs//132942540.err" typeClass="Workflow::OperationType::Event" />
+    </operation>
+    <operation name="merge results">
+      <operationtype typeClass="Workflow::OperationType::Converge">
+        <inputproperty>result_1</inputproperty>
+        <outputproperty>all_results</outputproperty>
+        <outputproperty>result</outputproperty>
+      </operationtype>
+    </operation>
+    <operationtype typeClass="Workflow::OperationType::Model">
+      <inputproperty>prior_result</inputproperty>
+      <outputproperty>result</outputproperty>
+    </operationtype>
+  </operation>
+  <operationtype typeClass="Workflow::OperationType::Model">
+    <inputproperty>prior_result</inputproperty>
+    <outputproperty>result</outputproperty>
+  </operationtype>
+</workflow>
