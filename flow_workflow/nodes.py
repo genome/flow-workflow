@@ -35,7 +35,7 @@ class ParallelByCommandFlow(Flow):
                 )
 
     def _execute(self, services):
-        num_nodes = len(outputs[self.parallel_by_property.value])
+        num_nodes = len(self.inputs[self.parallel_by_property.value])
         name_base = self.name
 
         start_node = StartNode.create(
@@ -56,7 +56,7 @@ class ParallelByCommandFlow(Flow):
         for i in xrange(num_nodes):
             out = "%s.%d" % (self.stdout_log_file.value, i)
             err = "%s.%d" % (self.stderr_log_file.value, i)
-            input_connections = {start_node_index: {}}
+            input_connections = {start_node.key: {}}
             node = self._create_child_node(
                 i, stdout_log_file=out, stderr_log_file=err,
                 input_connections=input_connections)
@@ -151,10 +151,6 @@ class EventNode(OperationNodeBase):
         if method == "execute":
             cmd.append("--reply")
         return cmd
-
-#    def on_success(self, services):
-#        OperationNodeBase.on_success(self, services)
-#        self.outputs = {'result': 1}
 
 
 class ParallelByCommandChildNode(CommandNode):
