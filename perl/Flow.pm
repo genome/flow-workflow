@@ -84,7 +84,6 @@ sub run_workflow {
 
     my %params = @_;
     %params = map {$_ => encode($params{$_})} keys %params;
-#    $params{result} = 1;
     print Dumper(\%params);
 
     my $json_path = join("/", $tmpdir, "inputs.json");
@@ -101,13 +100,18 @@ sub run_workflow {
     if (!WIFEXITED($ret) || WEXITSTATUS($ret)) {
         confess "Workflow submission failed";
     }
-    my $outputs_str = read_file($outputs_path);
-    my $outputs = $json->decode($outputs_str);
-    %$outputs = map {
-        my $val = $outputs->{$_};
-        $_ => $val eq '' ? '' : Flow::decode($val)
-    } keys %$outputs;
-    return $outputs;
+    if (-s $outputs_path) {
+        my $outputs_str = read_file($outputs_path);
+        my $outputs = $json->decode($outputs_str);
+        %$outputs = map {
+            my $val = $outputs->{$_};
+            $_ => $val eq '' ? '' : Flow::decode($val)
+        } keys %$outputs;
+        return $outputs;
+    }
+    else {
+        return 1;
+    }
 }
 
 1;
