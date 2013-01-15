@@ -45,12 +45,12 @@ if __name__ == "__main__":
     input_str = open(args.inputs).read()
     flow_inputs = json.loads(input_str)
 
-    wfxml= wfxml.Parser(xml)
-    flow = wfxml.flow(conn)
+    model = wfxml.convert_workflow_xml(xml)
+    flow = model.node(conn, None)
     flow.user_id = uid
     flow.environment = os.environ.data
     flow.working_directory = os.getcwd()
-    print "Submitting workflow", flow
+    print "Submitting workflow", str(flow.key)
 
     dn = DataNode.create(connection=conn,
                          outputs=flow_inputs,

@@ -3,6 +3,7 @@
 use POSIX;
 use above 'Genome';
 use IO::File;
+use NullCommand;
 use File::Slurp qw/read_file/;
 use Data::Dumper;
 use JSON;

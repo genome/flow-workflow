@@ -24,7 +24,6 @@ class WorkflowEntity(object):
 
 
 class WorkflowOperation(WorkflowEntity):
-
     def __init__(self, job_number, log_dir, xml):
         WorkflowEntity.__init__(self, job_number)
         self.name = xml.attrib["name"]
@@ -266,13 +265,9 @@ class OutputConnector(WorkflowEntity):
                                name="stop node")
 
 
-class Parser(object):
-    def __init__(self, xml_text):
-        self.xml = etree.XML(xml_text)
-        self.model = ModelOperation(0, self.xml)
-
-    def flow(self, redis):
-        return self.model.node(redis, None)
+def convert_workflow_xml(xml_text):
+    xml = etree.XML(xml_text)
+    return ModelOperation(0, xml)
 
 if __name__ == "__main__":
     import flow.orchestrator.redisom as rom
