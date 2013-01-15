@@ -12,6 +12,7 @@ setup(
             'redis',
         ],
         tests_require = [
+            'nose',
             'mock',
             'fakeredis',
         ],
