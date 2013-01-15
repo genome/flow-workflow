@@ -10,6 +10,7 @@ setup(
         install_requires = [
             'argparse',
             'redis',
+            'lxml',
         ],
         tests_require = [
             'nose',
