@@ -2,13 +2,11 @@
 
 from collections import defaultdict
 from flow.orchestrator.graph import transitive_reduction
+from flow.orchestrator.types import Flow, StartNode, StopNode
 from lxml import etree
 import flow_workflow.nodes as wfnodes
 import os
 import re
-import sys
-
-from flow.orchestrator.types import *
 
 MAX_FILENAME_LEN = 30
 WORKFLOW_WRAPPER = 'workflow-wrapper'
@@ -27,25 +25,24 @@ class WorkflowOperation(WorkflowEntity):
     def __init__(self, job_number, log_dir, xml):
         WorkflowEntity.__init__(self, job_number)
         self.name = xml.attrib["name"]
-        self.log_dir = log_dir
-        self._set_log_files()
 
         self.job_number = job_number
 
         type_nodes = xml.findall("operationtype")
         if len(type_nodes) != 1:
             raise RuntimeError(
-                "Wrong number of <operationtype> tags in operation %s" % name
+                "Wrong number of <operationtype> tags in operation %s" %
+                self.name
             )
 
         self._type_node = type_nodes[0]
         self._operation_attributes = xml.attrib
         self._type_attributes = self._type_node.attrib
 
-    def _set_log_files(self):
+        self.log_dir = log_dir
         basename = re.sub("[^A-Za-z0-9_.-]", "_", self.name)[:MAX_FILENAME_LEN]
-        out_file = "%d-%s.out" %(self.job_number, basename)
-        err_file = "%d-%s.err" %(self.job_number, basename)
+        out_file = "%d-%s.out" % (self.job_number, basename)
+        err_file = "%d-%s.err" % (self.job_number, basename)
         self.stdout_log_file = os.path.join(self.log_dir, out_file)
         self.stderr_log_file = os.path.join(self.log_dir, err_file)
 
@@ -150,7 +147,8 @@ class ModelOperation(WorkflowOperation):
         self.optype = xml.find("operationtype")
         type_class = self.optype.attrib["typeClass"]
 
-        if xml.tag == "operation" and type_class != "Workflow::OperationType::Model":
+        if (xml.tag == "operation" and
+                type_class != "Workflow::OperationType::Model"):
             self._parse_workflow_simple()
         else:
             self._parse_workflow()
@@ -163,9 +161,10 @@ class ModelOperation(WorkflowOperation):
 
     def _parse_workflow_simple(self):
         self._add_operation(self.xml)
-        self.input_connections[self.first_operation_id][self.input_connector_id] = {}
-        self.add_edge(self.input_connector_id, self.first_operation_id)
-        self.add_edge(self.first_operation_id, self.output_connector_id)
+        first_op = self.first_operation_id
+        self.input_connections[first_op][self.input_connector_id] = {}
+        self.add_edge(self.input_connector_id, first_op)
+        self.add_edge(first_op, self.output_connector_id)
 
 
     def _parse_workflow(self):
@@ -214,12 +213,12 @@ class ModelOperation(WorkflowOperation):
                                type_class)
 
         idx = len(self.operations)
-        op = self.operation_types[type_class](
+        operation = self.operation_types[type_class](
                 job_number=idx,
                 xml=operation_node,
                 log_dir=self.log_dir,
                 )
-        self.operations.append(op)
+        self.operations.append(operation)
 
     def node(self, redis, flow_key):
         flow = Flow.create(
