@@ -7,6 +7,10 @@ setup(
         name = 'flow_workflow',
         version = '0.1',
         packages = find_packages(exclude=['unit_tests']),
+        setup_requires = [
+            'nose',
+            'nosexcover',
+        ],
         install_requires = [
             'argparse',
             'redis',
