@@ -13,9 +13,10 @@ setup(
             'lxml',
         ],
         tests_require = [
-            'nose',
-            'mock',
+            'coverage',
             'fakeredis',
+            'mock',
+            'nose',
         ],
         test_suite = 'unit_tests',
 )
