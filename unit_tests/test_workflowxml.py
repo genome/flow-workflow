@@ -113,5 +113,5 @@ class TestWorkflowxml(TestCase):
         self.assertEqual(set([2]), model.rev_edges[3])
         self.assertEqual(set([3]), model.rev_edges[4])
 
-#if __name__ == "__main__":
-    #main()
+if __name__ == "__main__":
+    main()

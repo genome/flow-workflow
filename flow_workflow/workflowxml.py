@@ -1,23 +1,19 @@
-#!/usr/bin/env python
-
 from collections import defaultdict
 from flow.orchestrator.graph import transitive_reduction
-from flow.orchestrator.types import Flow, StartNode, StopNode
 from lxml import etree
-import flow_workflow.nodes as wfnodes
+from flow_workflow.nets import GenomeActionNet
 import os
 import re
 
 MAX_FILENAME_LEN = 30
 WORKFLOW_WRAPPER = 'workflow-wrapper'
 
-
 class WorkflowEntity(object):
     def __init__(self, job_number):
         self.job_number = job_number
 
-    def node(self, redis, flow_key):
-        raise NotImplementedError("node not implemented in %s" %
+    def net(self, builder, input_connections=None):
+        raise NotImplementedError("net not implemented in %s" %
                                   self.__class__.__name__)
 
 
@@ -56,26 +52,16 @@ class CommandOperation(WorkflowOperation):
         if "parallelBy" in self._operation_attributes:
             self.parallel_by = self._operation_attributes["parallelBy"]
 
-    def node(self, redis, flow_key):
+    def net(self, builder, input_connections=None):
         if self.parallel_by:
-            return wfnodes.ParallelByCommandFlow.create(
-                    connection=redis,
-                    flow_key=flow_key,
-                    perl_class=self.perl_class,
-                    stdout_log_file=self.stdout_log_file,
-                    stderr_log_file=self.stderr_log_file,
-                    parallel_by_property=self.parallel_by,
-                    name = self.name,
-                    )
-        else:
-            return wfnodes.CommandNode.create(
-                    connection=redis,
-                    flow_key=flow_key,
-                    perl_class=self.perl_class,
-                    stdout_log_file=self.stdout_log_file,
-                    stderr_log_file=self.stderr_log_file,
-                    name=self.name,
-                    )
+            raise NotImplementedError("No support for parallel_by yet")
+
+        return builder.add_subnet(GenomeActionNet,
+                name=self.name,
+                job_number=self.job_number,
+                action_type="command",
+                perl_class=self.perl_class,
+                input_connections=input_connections)
 
 
 class EventOperation(WorkflowOperation):
@@ -83,14 +69,13 @@ class EventOperation(WorkflowOperation):
         WorkflowOperation.__init__(self, job_number, log_dir, xml)
         self.event_id = self._type_attributes['eventId']
 
-    def node(self, redis, flow_key):
-        return wfnodes.EventNode.create(
-                connection=redis,
-                flow_key=flow_key,
+    def net(self, builder, input_connections=None):
+        return builder.add_subnet(GenomeActionNet,
                 name=self.name,
-                stdout_log_file=self.stdout_log_file,
-                stderr_log_file=self.stderr_log_file,
-                event_id=self.event_id)
+                job_number=self.job_number,
+                action_type="event",
+                perl_class=self.event_id,
+                input_connections=input_connections)
 
 
 class ConvergeOperation(WorkflowOperation):
@@ -107,14 +92,34 @@ class ConvergeOperation(WorkflowOperation):
         inputs = self._type_node.findall("inputproperty")
         self.input_properties = [x.text for x in inputs]
 
-    def node(self, redis, flow_key):
-        return wfnodes.ConvergeNode.create(
-                connection=redis,
-                flow_key=flow_key,
-                input_property_order=self.input_properties,
-                output_properties=self.output_properties,
-                name=self.name,
-                )
+    def net(self, builder, input_connections=None):
+        raise NotImplementedError("No support for converge node yet")
+
+
+class InputConnector(WorkflowEntity):
+    def __init__(self, job_number):
+        WorkflowEntity.__init__(self, job_number)
+        self.name = "input connector"
+
+    def net(self, builder, input_connections=None):
+        net = nb.EmptyNet(builder, self.name)
+        net.start_transition = net.add_transition("input connector start")
+        net.success_transition = net.add_transition("input connector success")
+        builder.bridge_transitions(net.start_transition, net.success_transition)
+        return net
+
+
+class OutputConnector(WorkflowEntity):
+    def __init__(self, job_number):
+        WorkflowEntity.__init__(self, job_number)
+        self.name = "output connector"
+
+    def net(self, builder, input_connections=None):
+        net = nb.EmptyNet(builder, self.name)
+        net.start_transition = net.add_transition("output connector start")
+        net.success_transition = net.add_transition("output connector success")
+        builder.bridge_transitions(net.start_transition, net.success_transition)
+        return net
 
 
 class ModelOperation(WorkflowOperation):
@@ -141,6 +146,7 @@ class ModelOperation(WorkflowOperation):
             InputConnector(job_number=self.input_connector_id),
             OutputConnector(job_number=self.output_connector_id),
         ]
+
         self.edges = {}
         self.input_connections = defaultdict(lambda: defaultdict(dict))
 
@@ -187,6 +193,7 @@ class ModelOperation(WorkflowOperation):
         for link in self.xml.findall("link"):
             src = link.attrib["fromOperation"]
             dst = link.attrib["toOperation"]
+
             src_idx = op_indices[src]
             dst_idx = op_indices[dst]
 
@@ -220,50 +227,63 @@ class ModelOperation(WorkflowOperation):
                 )
         self.operations.append(operation)
 
-    def node(self, redis, flow_key):
-        flow = Flow.create(
-                connection=redis,
-                name=self.name,
-                flow_key=flow_key,
-                )
+    def net(self, builder, input_connections=None):
+        net = nb.SuccessFailureNet(builder, self.name)
+        subnets = []
 
-        nodes = [x.node(redis, flow.key) for x in self.operations]
-        for idx, node in enumerate(nodes):
-            if idx in self.edges:
-                node.successors = self.edges[idx]
+        for idx, op in enumerate(self.operations):
+            input_conns = self.input_connections.get(idx)
+            subnets.append(op.net(builder, input_conns))
 
-            if idx in self.rev_edges:
-                node.indegree = len(self.rev_edges[idx])
+        net.start.arcs_out.add(subnets[0].start_transition)
+        subnets[self.output_connector_id].success_transition.arcs_out.add(
+                net.success)
 
-        for dst_idx, props in self.input_connections.iteritems():
-            props = dict((nodes[k].key, v) for k, v in props.iteritems())
-            nodes[dst_idx].input_connections = props
+        net_failure = net.failure
 
-        flow.node_keys = [n.key for n in nodes]
+        for idx, subnet in enumerate(subnets):
+            edges_out = self.edges.get(idx, [])
+            if edges_out:
+                targets = [subnets[i].start_transition for i in edges_out]
+                success = subnet.success_transition
+                failure = getattr(subnet, "failure_transition", None)
+                for tgt in targets:
+                    print "Briding %s -> %s" % (success.name, tgt.name)
+                    builder.bridge_transitions(success, tgt)
+                    if failure:
+                        failure.arcs_out.add(net_failure)
 
-        return flow
+        #for dst_idx, props in self.input_connections.iteritems():
+            #props = dict((nodes[k].key, v) for k, v in props.iteritems())
+            #nodes[dst_idx].input_connections = props
 
+        #flow.node_keys = [n.key for n in nodes]
 
-class InputConnector(WorkflowEntity):
-    def __init__(self, job_number):
-        WorkflowEntity.__init__(self, job_number)
-        self.name = "input connector"
-
-    def node(self, redis, flow_key):
-        return StartNode.create(connection=redis, flow_key=flow_key,
-                                name="start node")
-
-
-class OutputConnector(WorkflowEntity):
-    def __init__(self, job_number):
-        WorkflowEntity.__init__(self, job_number)
-        self.name = "output connector"
-
-    def node(self, redis, flow_key):
-        return StopNode.create(connection=redis, flow_key=flow_key,
-                               name="stop node")
+        return net
 
 
 def convert_workflow_xml(xml_text):
     xml = etree.XML(xml_text)
     return ModelOperation(0, xml)
+
+
+if __name__ == "__main__":
+    import flow.petri.netbuilder as nb
+    import sys
+    import redis
+
+    builder = nb.NetBuilder("test")
+    xml_text = open(sys.argv[1]).read()
+    xml = etree.XML(xml_text)
+    model = ModelOperation(0, xml, log_dir="tmp")
+    net = model.net(builder)
+    graph = builder.graph()
+    graph.draw("x.ps", prog="dot")
+
+    storage = redis.Redis("vmpool83")
+    snet = builder.store(storage)
+    snet.set_constant("environment", os.environ.data)
+    snet.set_constant("user_id", os.getuid())
+    snet.set_constant("working_directory", os.path.realpath(os.path.curdir))
+    snet.set_constant("mail_user", "tabbott@genome.wustl.edu")
+    print "Stored net:", snet.key

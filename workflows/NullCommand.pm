@@ -22,6 +22,12 @@ class NullCommand {
         param => {
             is => "Text",
             doc => "A number",
+            default_value => "x",
+        },
+    ],
+    has_output => [
+        animal => {
+            is => "Text",
         },
     ],
 };
@@ -30,6 +36,7 @@ sub execute {
     my $self = shift;
     print "param: " . $self->param . "\n";
     print "catcher: " . $self->catcher . "\n";
+    $self->animal("frog");
     return 1;
 }
 

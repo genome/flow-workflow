@@ -15,11 +15,15 @@ my $json = JSON->new->allow_nonref;
 sub load_inputs {
     my $file = shift;
     my $inputs_str = read_file($file);
+    print "DECODING INPUTS STRING:\n\n$inputs_str\n\n";
+    return {} if $inputs_str eq "";
     my $inputs = $json->decode($inputs_str);
+    print "JSON DECODED INPUTS STRING:\n\n" . Dumper($inputs) . "\n\n";
     %$inputs = map {
         my $val = $inputs->{$_};
         $_ => $val eq '' ? '' : Flow::decode($val)
     } keys %$inputs;
+    print "Loaded inputs from $file:\n`$inputs_str'\n";
     return $inputs;
 }
 
@@ -61,6 +65,7 @@ sub run_command {
     my %outputs;
     my $inputs = load_inputs($inputs_file);
 
+    print "Creating command $pkg with inputs " . Dumper($inputs);
     my $cmd = $pkg->create(%$inputs);
     exit(1) if !$pkg->can($method);
     my $ret = $cmd->$method();
