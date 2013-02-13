@@ -14,6 +14,9 @@ def output_variable_name(job_number, output_name):
 
 
 def _flatten_input_connections(input_connections):
+    if input_connections is None:
+        return {}
+
     flat = {}
     for src, props in input_connections.iteritems():
         for dst_prop, src_prop in props.iteritems():
@@ -82,6 +85,10 @@ class StoreOutputsAction(sn.TransitionAction):
 class GenomeActionNet(nb.EmptyNet):
     def __init__(self, builder, name, job_number, action_type, action_id,
             input_connections):
+
+        self.job_number = job_number
+        self.action_type = action_type
+        self.action_id = action_id
 
         flat_input_connections = _flatten_input_connections(input_connections)
         nb.EmptyNet.__init__(self, builder, name)

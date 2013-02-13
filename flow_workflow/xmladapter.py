@@ -213,7 +213,7 @@ class ModelOperation(WorkflowOperation):
         optype_tags = operation_node.findall("operationtype")
         name = operation_node.attrib["name"]
         if len(optype_tags) != 1:
-            raise RuntimeError(
+            raise ValueError(
                     "Wrong number of <operationtype> subtags (%d) in "
                     "operation %s" % (len(optype_tags), name))
 
@@ -221,7 +221,7 @@ class ModelOperation(WorkflowOperation):
         type_class = optype.attrib["typeClass"]
 
         if type_class not in self.operation_types:
-            raise RuntimeError("Unknown operation type %s in workflow xml" %
+            raise ValueError("Unknown operation type %s in workflow xml" %
                                type_class)
 
         idx = len(self.operations)
@@ -253,7 +253,6 @@ class ModelOperation(WorkflowOperation):
                 success = subnet.success_transition
                 failure = getattr(subnet, "failure_transition", None)
                 for tgt in targets:
-                    print "Briding %s -> %s" % (success.name, tgt.name)
                     builder.bridge_transitions(success, tgt)
                     if failure:
                         failure.arcs_out.add(net_failure)
@@ -267,6 +266,5 @@ class ModelOperation(WorkflowOperation):
         return net
 
 
-def convert_workflow_xml(xml_text):
-    xml = etree.XML(xml_text)
-    return ModelOperation(0, xml)
+def convert_workflow_xml(xml_etree):
+    return ModelOperation(0, xml_etree)
