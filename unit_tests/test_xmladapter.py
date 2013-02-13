@@ -31,6 +31,7 @@ serial_xml = """<?xml version='1.0' standalone='yes'?>
 
 wf_command_class = "Workflow::OperationType::Command"
 wf_event_class = "Workflow::OperationType::Event"
+wf_converge_class = "Workflow::OperationType::Converge"
 
 def _make_op_xml(op_attr, type_attr):
     return E.operation(op_attr, E.operationtype(type_attr))
@@ -55,6 +56,14 @@ def _make_event_op_xml(name, event_id, op_attr={}, type_attr={}):
     type_attr['eventId'] = event_id
 
     return _make_op_xml(op_attr, type_attr)
+
+
+def _make_converge_op_xml(name, inputs, outputs):
+    subelts = ([E.inputproperty(x) for x in inputs] +
+            [E.outputproperty(x) for x in outputs])
+
+    return E.operation({"name": name},
+            E.operationtype({"typeClass": wf_converge_class}, *subelts))
 
 
 class TestWorkflowEntity(TestCase):
@@ -110,6 +119,28 @@ class TestWorkflowOperations(TestCase):
         self.assertEqual(4, op.job_number)
         self.assertEqual("evt", op.name)
         self.assertEqual("123", op.event_id)
+
+    def test_converge_exceptions(self):
+        tree = _make_converge_op_xml(name="merge", inputs=[], outputs=["x"])
+        self.assertRaises(ValueError, wfxml.ConvergeOperation, job_number=4,
+                log_dir="/tmp", xml=tree)
+
+        tree = _make_converge_op_xml(name="merge", inputs=["x"], outputs=[])
+        self.assertRaises(ValueError, wfxml.ConvergeOperation, job_number=4,
+                log_dir="/tmp", xml=tree)
+
+    def test_converge(self):
+        inputs = ["a", "b", "c"]
+        outputs = ["x", "y"]
+
+        tree = _make_converge_op_xml(name="merge", inputs=inputs,
+                outputs=outputs)
+
+        op = wfxml.ConvergeOperation(job_number=4, log_dir="/tmp", xml=tree)
+        self.assertEqual(4, op.job_number)
+        self.assertEqual("merge", op.name)
+        self.assertEqual(inputs, op.input_properties)
+        self.assertEqual(outputs, op.output_properties)
 
 
 class TestXmlAdapter(TestCase):

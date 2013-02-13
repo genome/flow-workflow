@@ -84,12 +84,17 @@ class ConvergeOperation(WorkflowOperation):
 
         outputs = self._type_node.findall("outputproperty")
         if len(outputs) < 1:
-            raise RuntimeError(
+            raise ValueError(
                 "Wrong number of <outputproperty> tags (%d) in operation %s" %
                 (len(outputs), self.name))
         self.output_properties = [x.text for x in outputs]
 
         inputs = self._type_node.findall("inputproperty")
+        if len(inputs) < 1:
+            raise ValueError(
+                "Wrong number of <inputproperty> tags (%d) in operation %s" %
+                (len(inputs), self.name))
+
         self.input_properties = [x.text for x in inputs]
 
     def net(self, builder, input_connections=None):
