@@ -12,8 +12,6 @@ GENOME_WRAPPER = "workflow-wrapper"
 def output_variable_name(job_number, output_name):
     return "_wf_outp_%d_%s" % (job_number, output_name)
 
-def input_connections_variable_name(job_number):
-    return "_wf_inpc_%d" % job_number
 
 def _flatten_input_connections(input_connections):
     flat = {}
@@ -42,7 +40,7 @@ class GenomeShortcutAction(InputsMixin, enets.LocalDispatchAction):
 
     def _command_line(self, net, input_data_key):
         return [GENOME_WRAPPER, self.args["action_type"], "shortcut",
-                self.args["perl_class"]]
+                self.args["action_id"]]
 
 
 class GenomeExecuteAction(InputsMixin, enets.LSFDispatchAction):
@@ -52,7 +50,7 @@ class GenomeExecuteAction(InputsMixin, enets.LSFDispatchAction):
 
     def _command_line(self, net, input_data_key):
         return [GENOME_WRAPPER, self.args["action_type"], "execute",
-                self.args["perl_class"]]
+                self.args["action_id"]]
 
 
 class GenomeConvergeAction(sn.TransitionAction, InputsMixin):
@@ -82,26 +80,22 @@ class StoreOutputsAction(sn.TransitionAction):
 
 
 class GenomeActionNet(nb.EmptyNet):
-
-    def __init__(self, builder, name, job_number, action_type, perl_class,
+    def __init__(self, builder, name, job_number, action_type, action_id,
             input_connections):
 
         flat_input_connections = _flatten_input_connections(input_connections)
-        ivar = input_connections_variable_name(job_number)
-        builder.variables[ivar] = flat_input_connections
-
         nb.EmptyNet.__init__(self, builder, name)
 
-        self.start_transition = self.add_transition("%s start_transition" % name)
-        self.success_transition = self.add_transition("%s success_transition" % name)
-        self.failure_transition = self.add_transition("%s failure_transition" % name)
+        self.start_transition = self.add_transition("%s start_trans" % name)
+        self.success_transition = self.add_transition("%s success_trans" % name)
+        self.failure_transition = self.add_transition("%s failure_trans" % name)
 
         self.success_place = self.add_place("%s success" % name)
         self.failure_place = self.add_place("%s failure" % name)
 
         args = {
             "action_type": action_type,
-            "perl_class": perl_class,
+            "action_id": action_id,
             "with_outputs": True,
             "job_number": job_number,
             "input_connections": flat_input_connections,

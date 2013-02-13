@@ -5,7 +5,7 @@ from flow_workflow.nets import GenomeActionNet
 import os
 import re
 
-MAX_FILENAME_LEN = 30
+MAX_FILENAME_LEN = 50
 WORKFLOW_WRAPPER = 'workflow-wrapper'
 
 class WorkflowEntity(object):
@@ -26,7 +26,7 @@ class WorkflowOperation(WorkflowEntity):
 
         type_nodes = xml.findall("operationtype")
         if len(type_nodes) != 1:
-            raise RuntimeError(
+            raise ValueError(
                 "Wrong number of <operationtype> tags in operation %s" %
                 self.name
             )
@@ -60,7 +60,7 @@ class CommandOperation(WorkflowOperation):
                 name=self.name,
                 job_number=self.job_number,
                 action_type="command",
-                perl_class=self.perl_class,
+                action_id=self.perl_class,
                 input_connections=input_connections)
 
 
@@ -74,7 +74,7 @@ class EventOperation(WorkflowOperation):
                 name=self.name,
                 job_number=self.job_number,
                 action_type="event",
-                perl_class=self.event_id,
+                action_id=self.event_id,
                 input_connections=input_connections)
 
 

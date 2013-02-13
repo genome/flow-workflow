@@ -1,10 +1,11 @@
-#!/usr/bin/env python
-
 import flow_workflow.xmladapter as wfxml
 
-from unittest import TestCase, main
-import json
 from lxml import etree
+from lxml.builder import E
+
+from unittest import TestCase, main
+import flow.petri.netbuilder as nb
+import json
 
 serial_xml = """<?xml version='1.0' standalone='yes'?>
 <workflow name="Test workflow" executor="Workflow::Executor::SerialDeferred">
@@ -27,6 +28,89 @@ serial_xml = """<?xml version='1.0' standalone='yes'?>
   </operationtype>
 </workflow>
 """
+
+wf_command_class = "Workflow::OperationType::Command"
+wf_event_class = "Workflow::OperationType::Event"
+
+def _make_op_xml(op_attr, type_attr):
+    return E.operation(op_attr, E.operationtype(type_attr))
+
+
+def _make_command_op_xml(name, perl_class, op_attr=None, type_attr=None):
+    if op_attr is None: op_attr = {}
+    if type_attr is None: type_attr = {}
+
+    op_attr['name'] = name
+    type_attr['commandClass'] = perl_class
+    type_attr['typeClass'] = wf_command_class
+
+    return _make_op_xml(op_attr, type_attr)
+
+
+def _make_event_op_xml(name, event_id, op_attr={}, type_attr={}):
+    if op_attr is None: op_attr = {}
+    if type_attr is None: type_attr = {}
+
+    op_attr['name'] = name
+    type_attr['eventId'] = event_id
+
+    return _make_op_xml(op_attr, type_attr)
+
+
+class TestWorkflowEntity(TestCase):
+    def test_abstract_net(self):
+        builder = nb.NetBuilder("test")
+        entity = wfxml.WorkflowEntity(job_number=0)
+        self.assertRaises(NotImplementedError, entity.net, builder)
+
+
+class TestWorkflowOperations(TestCase):
+    def test_no_operationtype_tag(self):
+        tree = E.operation({"name": "badguy"})
+        self.assertRaises(ValueError, wfxml.WorkflowOperation, job_number=0,
+                log_dir="/tmp", xml=tree)
+
+    def test_multiple_operationtype_tags(self):
+        type_attr = {"commandClass": "A", "typeClass": wf_command_class}
+        tree = E.operation({"name": "badguy"},
+                E.operationtype(type_attr),
+                E.operationtype(type_attr)
+        )
+        self.assertRaises(ValueError, wfxml.WorkflowOperation, job_number=0,
+                log_dir="/tmp", xml=tree)
+
+    def test_command(self):
+        tree = _make_command_op_xml(name="op nums 1/2", perl_class="X",
+                op_attr={"a": "b"}, type_attr={"x": "y"})
+
+        op = wfxml.CommandOperation(job_number=4, log_dir="/tmp", xml=tree)
+        self.assertEqual(4, op.job_number)
+        self.assertEqual("op nums 1/2", op.name)
+        self.assertEqual("b", op._operation_attributes["a"])
+        self.assertEqual("y", op._type_attributes["x"])
+
+        self.assertEqual("/tmp", op.log_dir)
+        self.assertEqual("/tmp/4-op_nums_1_2.out", op.stdout_log_file)
+        self.assertEqual("/tmp/4-op_nums_1_2.err", op.stderr_log_file)
+
+        self.assertEqual("X", op.perl_class)
+        self.assertEqual("", op.parallel_by)
+
+    def test_parallel_by_command(self):
+        tree = _make_command_op_xml(name="pby", perl_class="X",
+            op_attr={"parallelBy": "input_file"})
+
+        op = wfxml.CommandOperation(job_number=4, log_dir="/tmp", xml=tree)
+        self.assertEqual("input_file", op.parallel_by)
+
+    def test_event(self):
+        tree = _make_event_op_xml(name="evt", event_id="123")
+
+        op = wfxml.EventOperation(job_number=4, log_dir="/tmp", xml=tree)
+        self.assertEqual(4, op.job_number)
+        self.assertEqual("evt", op.name)
+        self.assertEqual("123", op.event_id)
+
 
 class TestXmlAdapter(TestCase):
     def test_converge(self):
