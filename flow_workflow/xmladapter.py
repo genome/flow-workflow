@@ -265,25 +265,3 @@ class ModelOperation(WorkflowOperation):
 def convert_workflow_xml(xml_text):
     xml = etree.XML(xml_text)
     return ModelOperation(0, xml)
-
-
-if __name__ == "__main__":
-    import flow.petri.netbuilder as nb
-    import sys
-    import redis
-
-    builder = nb.NetBuilder("test")
-    xml_text = open(sys.argv[1]).read()
-    xml = etree.XML(xml_text)
-    model = ModelOperation(0, xml, log_dir="tmp")
-    net = model.net(builder)
-    graph = builder.graph()
-    graph.draw("x.ps", prog="dot")
-
-    storage = redis.Redis("vmpool83")
-    snet = builder.store(storage)
-    snet.set_constant("environment", os.environ.data)
-    snet.set_constant("user_id", os.getuid())
-    snet.set_constant("working_directory", os.path.realpath(os.path.curdir))
-    snet.set_constant("mail_user", "tabbott@genome.wustl.edu")
-    print "Stored net:", snet.key
