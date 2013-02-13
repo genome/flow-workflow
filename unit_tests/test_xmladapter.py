@@ -144,62 +144,24 @@ class TestWorkflowOperations(TestCase):
 
 
 class TestXmlAdapter(TestCase):
-    def test_converge(self):
-        xml = """<operation name="TestConverge">
-    <operationtype typeClass="Workflow::OperationType::Converge">
-        <inputproperty>1_of_3_merge_operation</inputproperty>
-        <inputproperty>2_of_3_merge_operation</inputproperty>
-        <inputproperty>3_of_3_merge_operation</inputproperty>
-        <outputproperty>output1</outputproperty>
-        <outputproperty>output2</outputproperty>
-    </operationtype>
-</operation>
-"""
-        tree = etree.XML(xml)
-        op = wfxml.ConvergeOperation(3, "/tmp", tree)
-        self.assertEqual(3, op.job_number)
-        self.assertEqual("TestConverge", op.name)
-        self.assertEqual("/tmp", op.log_dir)
-        self.assertEqual("/tmp/3-TestConverge.out", op.stdout_log_file)
-        self.assertEqual("/tmp/3-TestConverge.err", op.stderr_log_file)
+    def test_simple(self):
+        xml = E.operation({"name": "pby_test", "parallelBy": "file"},
+                E.operationtype(
+                    {"typeClass": wf_command_class, "commandClass": "X"}))
 
-        self.assertEqual(
-            ["%d_of_3_merge_operation" %x for x in xrange(1,4)],
-            op.input_properties)
-        self.assertEqual(["output1", "output2"], op.output_properties)
+        model = wfxml.convert_workflow_xml(etree.tostring(xml))
+        self.assertEqual("pby_test", model.name)
+        self.assertEqual(3, len(model.operations))
+        expected_names = ["input connector", "output connector", "pby_test"]
+        self.assertEqual(expected_names, [x.name for x in model.operations])
 
-    def test_command(self):
-        xml = """<operation name="TestCommand">
-    <operationtype commandClass="A::Command" typeClass="Workflow::OperationType::Command" />
-</operation>
-"""
-        tree = etree.XML(xml)
-        op = wfxml.CommandOperation(2, "/tmp", tree)
-        self.assertEqual(2, op.job_number)
-        self.assertEqual("TestCommand", op.name)
-        self.assertEqual("/tmp", op.log_dir)
-        self.assertEqual("/tmp/2-TestCommand.out", op.stdout_log_file)
-        self.assertEqual("/tmp/2-TestCommand.err", op.stderr_log_file)
+        self.assertEqual(set([2]), model.edges[0])
+        self.assertNotIn(1, model.edges)
+        self.assertEqual(set([1]), model.edges[2])
 
-        self.assertEqual("A::Command", op.perl_class)
-        self.assertEqual("", op.parallel_by)
-
-    def test_command_parallel_by(self):
-        xml = """<operation name="TestParallel" parallelBy="builds">
-    <operationtype commandClass="Another::Command" typeClass="Workflow::OperationType::Command" />
-</operation>
-"""
-
-        tree = etree.XML(xml)
-        op = wfxml.CommandOperation(2, "/tmp", tree)
-        self.assertEqual(2, op.job_number)
-        self.assertEqual("TestParallel", op.name)
-        self.assertEqual("/tmp", op.log_dir)
-        self.assertEqual("/tmp/2-TestParallel.out", op.stdout_log_file)
-        self.assertEqual("/tmp/2-TestParallel.err", op.stderr_log_file)
-
-        self.assertEqual("Another::Command", op.perl_class)
-        self.assertEqual("builds", op.parallel_by)
+        self.assertNotIn(0, model.rev_edges)
+        self.assertEqual(set([2]), model.rev_edges[1])
+        self.assertEqual(set([0]), model.rev_edges[2])
 
 
     def test_serial(self):
@@ -217,12 +179,12 @@ class TestXmlAdapter(TestCase):
 
         self.assertEqual(range(0,5), [x.job_number for x in model.operations])
         self.assertEqual(set([2]), model.edges[0])
-        self.assertTrue(1 not in model.edges)
+        self.assertNotIn(1, model.edges)
         self.assertEqual(set([3]), model.edges[2])
         self.assertEqual(set([4]), model.edges[3])
         self.assertEqual(set([1]), model.edges[4])
 
-        self.assertTrue(0 not in model.rev_edges)
+        self.assertNotIn(0, model.rev_edges)
         self.assertEqual(set([4]), model.rev_edges[1])
         self.assertEqual(set([0]), model.rev_edges[2])
         self.assertEqual(set([2]), model.rev_edges[3])
