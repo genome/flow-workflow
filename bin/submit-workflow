@@ -3,7 +3,7 @@
 from redis import Redis
 import argparse
 from flow.orchestrator.types import DataNode
-import flow_workflow.workflowxml as wfxml
+import flow_workflow.xmladapter as wfxml
 import json
 import os
 import pika

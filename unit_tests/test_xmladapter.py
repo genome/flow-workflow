@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import flow_workflow.workflowxml as wfxml
+import flow_workflow.xmladapter as wfxml
 
 from unittest import TestCase, main
 import json
@@ -28,7 +28,7 @@ serial_xml = """<?xml version='1.0' standalone='yes'?>
 </workflow>
 """
 
-class TestWorkflowxml(TestCase):
+class TestXmlAdapter(TestCase):
     def test_converge(self):
         xml = """<operation name="TestConverge">
     <operationtype typeClass="Workflow::OperationType::Converge">
