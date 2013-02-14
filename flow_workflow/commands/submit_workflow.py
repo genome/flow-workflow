@@ -26,6 +26,8 @@ class SubmitWorkflowCommand(CommandBase):
                 help="File containing initial inputs (json format)")
         parser.add_argument('--outputs-file', '-o',
                 help="File to write final outputs to (json format)")
+        parser.add_argument('--email', '-e',
+                help="If set, send notification emails to the given address")
 
 
     def _create_local_net(self, xml_file, builder):
@@ -46,16 +48,7 @@ class SubmitWorkflowCommand(CommandBase):
         t_success = local_net.bridge_places(local_net.success, p_success)
         t_failure = local_net.bridge_places(local_net.failure, p_failure)
 
-    def _set_constants(self, stored_net):
-        stored_net.set_constant("environment", os.environ.data)
-        stored_net.set_constant("user_id", os.getuid())
-        stored_net.set_constant("working_directory",
-                os.path.realpath(os.path.curdir))
-        stored_net.set_constant("mail_user", "tabbott@genome.wustl.edu")
-
     def __call__(self, parsed_arguments):
-        self.broker.connect()
-
         builder = nb.NetBuilder("workflow")
         local_net = self._create_local_net(parsed_arguments.xml, builder)
 
@@ -68,12 +61,17 @@ class SubmitWorkflowCommand(CommandBase):
             print "Image saved to %s" % parsed_arguments.plot
 
         stored_net = builder.store(self.storage)
-        self._set_constants(stored_net)
+        stored_net.capture_environment()
+        if parsed_arguments.email:
+            stored_net.set_constant("mail_user", parsed_arguments.email)
+
+
 
         token = self._create_initial_token(parsed_arguments.inputs_file)
         print "Net key: %s" % stored_net.key
         print "Initial token key: %s" % token.key
         print "Initial inputs: %r" % token.data.value
 
+        self.broker.connect()
         self.orchestrator.set_token(net_key=stored_net.key, place_idx=0,
                 token_key=token.key)
