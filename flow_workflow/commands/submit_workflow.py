@@ -20,8 +20,6 @@ class SubmitWorkflowCommand(CommandBase):
         parser.add_argument('--plot', '-p',
                 help='Save an image of the net. The type is determined by the'
                 'extension provided (e.g., x.ps, x.png, ...)')
-        parser.add_argument('--exchange', '-e',
-                help="The AMQP exchange to submit to")
         parser.add_argument('--block', default=False, action='store_true',
                 help="If set, block until the workflow is complete")
         parser.add_argument('--inputs-file', '-i',
@@ -75,7 +73,7 @@ class SubmitWorkflowCommand(CommandBase):
         token = self._create_initial_token(parsed_arguments.inputs_file)
         print "Net key: %s" % stored_net.key
         print "Initial token key: %s" % token.key
+        print "Initial inputs: %r" % token.data.value
 
         self.orchestrator.set_token(net_key=stored_net.key, place_idx=0,
                 token_key=token.key)
-

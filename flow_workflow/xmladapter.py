@@ -1,6 +1,6 @@
 from collections import defaultdict
 from flow.orchestrator.graph import transitive_reduction
-from flow_workflow.nets import GenomeActionNet
+from flow_workflow.nets import GenomeActionNet, StoreOutputsAction
 from lxml import etree
 import flow.petri.netbuilder as nb
 import os
@@ -109,11 +109,24 @@ class InputConnector(WorkflowEntity):
 
     def net(self, builder, input_connections=None):
         net = builder.add_subnet(nb.EmptyNet, self.name)
-        net.start_transition = net.add_transition("input connector start")
+        args = {
+            "job_number": self.job_number,
+        }
+        net.start_transition = net.add_transition("input connector start",
+                action_class=StoreOutputsAction,
+                action_args=args
+                )
+
         net.start_place = net.add_place("start")
-        net.success_transition = net.add_transition("input connector success")
+
+        net.success_transition = net.add_transition("input connector success",
+                action_class=StoreOutputsAction,
+                action_args=args
+                )
+
         net.start_transition.arcs_out.add(net.start_place)
         net.start_place.arcs_out.add(net.success_transition)
+
         return net
 
 
