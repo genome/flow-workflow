@@ -108,7 +108,7 @@ class GenomeActionNet(nb.EmptyNet):
             "input_connections": flat_input_connections,
         }
 
-        self.shortcut = builder.add_subnet(enets.LocalCommandNet, "%s shortcut" % name,
+        self.shortcut = self.add_subnet(enets.LocalCommandNet, "%s shortcut" % name,
                 action_class=GenomeShortcutAction,
                 action_args=args)
 
@@ -117,18 +117,18 @@ class GenomeActionNet(nb.EmptyNet):
 
         self.start_transition.arcs_out.add(self.shortcut.start)
 
-        self.execute = builder.add_subnet(enets.LSFCommandNet, "%s execute" % name,
+        self.execute = self.add_subnet(enets.LSFCommandNet, "%s execute" % name,
                 action_class=GenomeExecuteAction,
                 action_args=args)
 
         self.execute.execute_success.action_class = StoreOutputsAction
         self.execute.execute_success.action_args = args
 
-        builder.bridge_places(self.shortcut.success, self.success_place)
-        builder.bridge_places(self.shortcut.failure, self.execute.start)
+        self.bridge_places(self.shortcut.success, self.success_place, "")
+        self.bridge_places(self.shortcut.failure, self.execute.start, "")
 
-        builder.bridge_places(self.execute.success, self.success_place)
-        builder.bridge_places(self.execute.failure, self.failure_place)
+        self.bridge_places(self.execute.success, self.success_place, "")
+        self.bridge_places(self.execute.failure, self.failure_place, "")
 
         self.success_place.arcs_out.add(self.success_transition)
         self.failure_place.arcs_out.add(self.failure_transition)

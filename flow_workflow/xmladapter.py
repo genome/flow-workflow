@@ -1,7 +1,8 @@
 from collections import defaultdict
 from flow.orchestrator.graph import transitive_reduction
-from lxml import etree
 from flow_workflow.nets import GenomeActionNet
+from lxml import etree
+import flow.petri.netbuilder as nb
 import os
 import re
 
@@ -107,10 +108,12 @@ class InputConnector(WorkflowEntity):
         self.name = "input connector"
 
     def net(self, builder, input_connections=None):
-        net = nb.EmptyNet(builder, self.name)
+        net = builder.add_subnet(nb.EmptyNet, self.name)
         net.start_transition = net.add_transition("input connector start")
+        net.start_place = net.add_place("start")
         net.success_transition = net.add_transition("input connector success")
-        builder.bridge_transitions(net.start_transition, net.success_transition)
+        net.start_transition.arcs_out.add(net.start_place)
+        net.start_place.arcs_out.add(net.success_transition)
         return net
 
 
@@ -120,10 +123,10 @@ class OutputConnector(WorkflowEntity):
         self.name = "output connector"
 
     def net(self, builder, input_connections=None):
-        net = nb.EmptyNet(builder, self.name)
+        net = builder.add_subnet(nb.EmptyNet, self.name)
         net.start_transition = net.add_transition("output connector start")
         net.success_transition = net.add_transition("output connector success")
-        builder.bridge_transitions(net.start_transition, net.success_transition)
+        net.bridge_transitions(net.start_transition, net.success_transition, "")
         return net
 
 
@@ -233,35 +236,28 @@ class ModelOperation(WorkflowOperation):
         self.operations.append(operation)
 
     def net(self, builder, input_connections=None):
-        net = nb.SuccessFailureNet(builder, self.name)
-        subnets = []
+        net = builder.add_subnet(nb.SuccessFailureNet, self.name)
 
         for idx, op in enumerate(self.operations):
             input_conns = self.input_connections.get(idx)
-            subnets.append(op.net(builder, input_conns))
+            net.subnets.append(op.net(builder, input_conns))
 
-        net.start.arcs_out.add(subnets[0].start_transition)
-        subnets[self.output_connector_id].success_transition.arcs_out.add(
+        net.start.arcs_out.add(net.subnets[0].start_transition)
+        net.subnets[self.output_connector_id].success_transition.arcs_out.add(
                 net.success)
 
         net_failure = net.failure
 
-        for idx, subnet in enumerate(subnets):
+        for idx, subnet in enumerate(net.subnets):
             edges_out = self.edges.get(idx, [])
             if edges_out:
-                targets = [subnets[i].start_transition for i in edges_out]
+                targets = [net.subnets[i].start_transition for i in edges_out]
                 success = subnet.success_transition
                 failure = getattr(subnet, "failure_transition", None)
                 for tgt in targets:
-                    builder.bridge_transitions(success, tgt)
+                    net.bridge_transitions(success, tgt, "")
                     if failure:
                         failure.arcs_out.add(net_failure)
-
-        #for dst_idx, props in self.input_connections.iteritems():
-            #props = dict((nodes[k].key, v) for k, v in props.iteritems())
-            #nodes[dst_idx].input_connections = props
-
-        #flow.node_keys = [n.key for n in nodes]
 
         return net
 
