@@ -14,7 +14,6 @@ setup(
             'nose',
         ],
         install_requires = [
-            'argparse',
             'redis',
             'lxml',
         ],
