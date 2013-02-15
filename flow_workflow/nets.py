@@ -9,8 +9,19 @@ LOG = logging.getLogger(__name__)
 
 GENOME_WRAPPER = "workflow-wrapper"
 
-def output_variable_name(job_number, output_name):
-    return "_wf_outp_%d_%s" % (job_number, output_name)
+def _output_variable_name(operation_id, output_name):
+    return "_wf_outp_%d_%s" % (operation_id, output_name)
+
+
+def _store_outputs(outputs, net, operation_id):
+    for k, v in outputs.iteritems():
+        name = _output_variable_name(operation_id, k)
+        net.set_variable(name, v)
+
+
+def _do_converge(inputs, input_property_order, output_properties):
+    out_list = [inputs[x] for x in input_property_order]
+    return {prop: out_list for prop in output_properties}
 
 
 def _flatten_input_connections(input_connections):
@@ -20,7 +31,7 @@ def _flatten_input_connections(input_connections):
     flat = {}
     for src, props in input_connections.iteritems():
         for dst_prop, src_prop in props.iteritems():
-            src_name = output_variable_name(src, src_prop)
+            src_name = _output_variable_name(src, src_prop)
             flat[src_name] = dst_prop
     return flat
 
@@ -56,15 +67,18 @@ class GenomeExecuteAction(InputsMixin, enets.LSFDispatchAction):
                 self.args["action_id"]]
 
 
-class GenomeConvergeAction(sn.TransitionAction, InputsMixin):
+class GenomeConvergeAction(InputsMixin, sn.TransitionAction):
     output_token_type = "output"
 
-    input_property_order = rom.Property(rom.List)
-    output_properties = rom.Property(rom.List)
-
     def execute(self, input_data, net, services):
-        out = [input_data[x] for x in self.input_property_order.value]
-        return {prop: out for prop in self.output_properties.value}
+        operation_id = self.args["operation_id"]
+        input_property_order = self.args["input_property_order"]
+        output_properties = self.args["output_properties"]
+
+        outputs = _do_converge(input_data, input_property_order,
+                output_properties)
+
+        _store_outputs(outputs, net, operation_id)
 
 
 class StoreOutputsAction(sn.TransitionAction):
@@ -74,55 +88,62 @@ class StoreOutputsAction(sn.TransitionAction):
         return sn.merge_token_data(tokens, "output")
 
     def execute(self, active_tokens_key, net, services):
-        job_number = self.args["job_number"]
+        operation_id = self.args["operation_id"]
         input_data = self.input_data(active_tokens_key, net)
 
-        for k, v in input_data.iteritems():
-            name = output_variable_name(job_number, k)
-            net.set_variable(name, v)
+        _store_outputs(input_data, net, operation_id)
 
 
-class GenomeActionNet(nb.EmptyNet):
-    def __init__(self, builder, name, job_number, action_type, action_id,
-            input_connections):
+class GenomeNet(nb.EmptyNet):
+    def __init__(self, builder, name, operation_id, input_connections):
 
-        self.job_number = job_number
-        self.action_type = action_type
-        self.action_id = action_id
-
-        flat_input_connections = _flatten_input_connections(input_connections)
         nb.EmptyNet.__init__(self, builder, name)
+
+        self.operation_id = operation_id
+        self.input_connections = input_connections
+        self.flat_inputs = _flatten_input_connections(input_connections)
 
         self.start_transition = self.add_transition("%s start_trans" % name)
         self.success_transition = self.add_transition("%s success_trans" % name)
         self.failure_transition = self.add_transition("%s failure_trans" % name)
 
-        self.success_place = self.add_place("%s success" % name)
         self.failure_place = self.add_place("%s failure" % name)
+        self.failure_place.arcs_out.add(self.failure_transition)
+
+
+class GenomeActionNet(GenomeNet):
+    def __init__(self, builder, name, operation_id, input_connections,
+            action_type, action_id):
+
+        GenomeNet.__init__(self, builder, name, operation_id, input_connections)
+
+        self.action_type = action_type
+        self.action_id = action_id
+
+        self.success_place = self.add_place("%s success" % name)
+        self.success_place.arcs_out.add(self.success_transition)
 
         args = {
-            "action_type": action_type,
-            "action_id": action_id,
+            "action_type": self.action_type,
+            "action_id": self.action_id,
             "with_outputs": True,
-            "job_number": job_number,
-            "input_connections": flat_input_connections,
+            "operation_id": self.operation_id,
+            "input_connections": self.flat_inputs,
         }
 
-        self.shortcut = self.add_subnet(enets.LocalCommandNet, "%s shortcut" % name,
-                action_class=GenomeShortcutAction,
-                action_args=args)
+        store_outputs_action = nb.ActionSpec(cls=StoreOutputsAction, args=args)
 
-        self.shortcut.execute_success.action_class = StoreOutputsAction
-        self.shortcut.execute_success.action_args = args
+        self.shortcut = self.add_subnet(enets.LocalCommandNet,
+                "%s shortcut" % name, action_class=GenomeShortcutAction,
+                action_args=args)
 
         self.start_transition.arcs_out.add(self.shortcut.start)
 
         self.execute = self.add_subnet(enets.LSFCommandNet, "%s execute" % name,
-                action_class=GenomeExecuteAction,
-                action_args=args)
+                action_class=GenomeExecuteAction, action_args=args)
 
-        self.execute.execute_success.action_class = StoreOutputsAction
-        self.execute.execute_success.action_args = args
+        self.shortcut.execute_success.action = store_outputs_action
+        self.execute.execute_success.action = store_outputs_action
 
         self.bridge_places(self.shortcut.success, self.success_place, "")
         self.bridge_places(self.shortcut.failure, self.execute.start, "")
@@ -130,5 +151,74 @@ class GenomeActionNet(nb.EmptyNet):
         self.bridge_places(self.execute.success, self.success_place, "")
         self.bridge_places(self.execute.failure, self.failure_place, "")
 
+
+class GenomeParallelByNet(GenomeNet):
+    def __init__(self, builder, name, operation_id, input_connections,
+            action_type, action_id, parallel_by):
+
+        GenomeNet.__init__(self, builder, name, operation_id, input_connections)
+
+        self.action_type = action_type
+        self.action_id = action_id
+        self.parallel_by = parallel_by
+
+        self.success_place = self.add_place("%s success" % name)
         self.success_place.arcs_out.add(self.success_transition)
-        self.failure_place.arcs_out.add(self.failure_transition)
+
+        args = {
+            "action_type": self.action_type,
+            "action_id": self.action_id,
+            "with_outputs": True,
+            "operation_id": self.operation_id,
+            "input_connections": self.flat_inputs,
+        }
+
+        store_outputs_action = nb.ActionSpec(cls=StoreOutputsAction, args=args)
+
+        self.shortcut = self.add_subnet(enets.LocalCommandNet,
+                "%s shortcut" % name, action_class=GenomeShortcutAction,
+                action_args=args)
+
+        self.start_transition.arcs_out.add(self.shortcut.start)
+
+        self.execute = self.add_subnet(enets.LSFCommandNet, "%s execute" % name,
+                action_class=GenomeExecuteAction, action_args=args)
+
+        self.shortcut.execute_success.action = store_outputs_action
+        self.execute.execute_success.action = store_outputs_action
+
+        self.bridge_places(self.shortcut.success, self.success_place, "")
+        self.bridge_places(self.shortcut.failure, self.execute.start, "")
+
+        self.bridge_places(self.execute.success, self.success_place, "")
+        self.bridge_places(self.execute.failure, self.failure_place, "")
+
+
+
+class GenomeModelNet(GenomeNet):
+    def __init__(self, builder, name, operation_id, input_connections):
+        GenomeNet.__init__(self, builder, name, operation_id, input_connections)
+
+
+class GenomeConvergeNet(nb.EmptyNet):
+    def __init__(self, builder, name, operation_id, input_connections,
+            input_property_order, output_properties):
+
+        nb.EmptyNet.__init__(self, builder, name)
+
+        self.input_property_order = input_property_order
+        self.output_properties = output_properties
+        self.operation_id = operation_id
+
+        args = {
+            "operation_id": self.operation_id,
+            "with_outputs": True,
+            "input_property_order": self.input_property_order,
+            "output_properties": self.output_properties,
+        }
+
+        action = nb.ActionSpec(cls=GenomeConvergeAction, args=args)
+
+        self.start_transition = self.add_transition("converge",
+                action=action)
+        self.success_transition = self.start_transition

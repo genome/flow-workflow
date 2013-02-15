@@ -1,6 +1,9 @@
 from collections import defaultdict
 from flow.orchestrator.graph import transitive_reduction
-from flow_workflow.nets import GenomeActionNet, StoreOutputsAction
+from flow_workflow.nets import GenomeActionNet
+from flow_workflow.nets import GenomeConvergeNet
+from flow_workflow.nets import GenomeModelNet
+from flow_workflow.nets import StoreOutputsAction
 from lxml import etree
 import flow.petri.netbuilder as nb
 import os
@@ -10,8 +13,9 @@ MAX_FILENAME_LEN = 50
 WORKFLOW_WRAPPER = 'workflow-wrapper'
 
 class WorkflowEntity(object):
-    def __init__(self, job_number):
-        self.job_number = job_number
+    @property
+    def id(self):
+        return id(self)
 
     def net(self, builder, input_connections=None):
         raise NotImplementedError("net not implemented in %s" %
@@ -19,11 +23,9 @@ class WorkflowEntity(object):
 
 
 class WorkflowOperation(WorkflowEntity):
-    def __init__(self, job_number, log_dir, xml):
-        WorkflowEntity.__init__(self, job_number)
+    def __init__(self, log_dir, xml):
+        WorkflowEntity.__init__(self)
         self.name = xml.attrib["name"]
-
-        self.job_number = job_number
 
         type_nodes = xml.findall("operationtype")
         if len(type_nodes) != 1:
@@ -38,15 +40,15 @@ class WorkflowOperation(WorkflowEntity):
 
         self.log_dir = log_dir
         basename = re.sub("[^A-Za-z0-9_.-]", "_", self.name)[:MAX_FILENAME_LEN]
-        out_file = "%d-%s.out" % (self.job_number, basename)
-        err_file = "%d-%s.err" % (self.job_number, basename)
+        out_file = "%d-%s.out" % (self.id, basename)
+        err_file = "%d-%s.err" % (self.id, basename)
         self.stdout_log_file = os.path.join(self.log_dir, out_file)
         self.stderr_log_file = os.path.join(self.log_dir, err_file)
 
 
 class CommandOperation(WorkflowOperation):
-    def __init__(self, job_number, log_dir, xml):
-        WorkflowOperation.__init__(self, job_number, log_dir, xml)
+    def __init__(self, log_dir, xml):
+        WorkflowOperation.__init__(self, log_dir, xml)
         self.perl_class = self._type_attributes['commandClass']
 
         self.parallel_by = ""
@@ -59,29 +61,29 @@ class CommandOperation(WorkflowOperation):
 
         return builder.add_subnet(GenomeActionNet,
                 name=self.name,
-                job_number=self.job_number,
+                operation_id=self.id,
                 action_type="command",
                 action_id=self.perl_class,
                 input_connections=input_connections)
 
 
 class EventOperation(WorkflowOperation):
-    def __init__(self, job_number, log_dir, xml):
-        WorkflowOperation.__init__(self, job_number, log_dir, xml)
+    def __init__(self, log_dir, xml):
+        WorkflowOperation.__init__(self, log_dir, xml)
         self.event_id = self._type_attributes['eventId']
 
     def net(self, builder, input_connections=None):
         return builder.add_subnet(GenomeActionNet,
                 name=self.name,
-                job_number=self.job_number,
+                operation_id=self.id,
                 action_type="event",
                 action_id=self.event_id,
                 input_connections=input_connections)
 
 
 class ConvergeOperation(WorkflowOperation):
-    def __init__(self, job_number, log_dir, xml):
-        WorkflowOperation.__init__(self, job_number, log_dir, xml)
+    def __init__(self, log_dir, xml):
+        WorkflowOperation.__init__(self, log_dir, xml)
 
         outputs = self._type_node.findall("outputproperty")
         if len(outputs) < 1:
@@ -99,56 +101,55 @@ class ConvergeOperation(WorkflowOperation):
         self.input_properties = [x.text for x in inputs]
 
     def net(self, builder, input_connections=None):
-        raise NotImplementedError("No support for converge node yet")
+        return builder.add_subnet(GenomeConvergeNet,
+                name=self.name,
+                operation_id=self.id,
+                input_connections=input_connections,
+                input_property_order=self.input_properties,
+                output_properties=self.output_properties)
 
 
 class InputConnector(WorkflowEntity):
-    def __init__(self, job_number):
-        WorkflowEntity.__init__(self, job_number)
+    def __init__(self):
+        WorkflowEntity.__init__(self)
         self.name = "input connector"
 
     def net(self, builder, input_connections=None):
         net = builder.add_subnet(nb.EmptyNet, self.name)
         args = {
-            "job_number": self.job_number,
+            "operation_id": self.id,
         }
+
+        action = nb.ActionSpec(
+                cls=StoreOutputsAction,
+                args=args)
         net.start_transition = net.add_transition("input connector start",
-                action_class=StoreOutputsAction,
-                action_args=args
+                action=action
                 )
 
-        net.start_place = net.add_place("start")
-
-        net.success_transition = net.add_transition("input connector success",
-                action_class=StoreOutputsAction,
-                action_args=args
-                )
-
-        net.start_transition.arcs_out.add(net.start_place)
-        net.start_place.arcs_out.add(net.success_transition)
+        net.success_transition = net.start_transition
 
         return net
 
 
 class OutputConnector(WorkflowEntity):
-    def __init__(self, job_number):
-        WorkflowEntity.__init__(self, job_number)
+    def __init__(self):
+        WorkflowEntity.__init__(self)
         self.name = "output connector"
 
     def net(self, builder, input_connections=None):
         net = builder.add_subnet(nb.EmptyNet, self.name)
         net.start_transition = net.add_transition("output connector start")
-        net.success_transition = net.add_transition("output connector success")
-        net.bridge_transitions(net.start_transition, net.success_transition, "")
+        net.success_transition = net.start_transition
         return net
 
 
 class ModelOperation(WorkflowOperation):
-    input_connector_id = 0
-    output_connector_id = 1
-    first_operation_id = 2
+    input_connector_idx = 0
+    output_connector_idx = 1
+    first_operation_idx = 2
 
-    def __init__(self, job_number, xml, log_dir=None):
+    def __init__(self, xml, log_dir=None):
         self.operation_types = {
             "Workflow::OperationType::Converge": ConvergeOperation,
             "Workflow::OperationType::Command": CommandOperation,
@@ -158,14 +159,13 @@ class ModelOperation(WorkflowOperation):
 
         log_dir = log_dir or xml.attrib.get("logDir", ".")
 
-        WorkflowOperation.__init__(self, job_number, log_dir, xml)
+        WorkflowOperation.__init__(self, log_dir, xml)
         self.xml = xml
         self.name = xml.attrib["name"]
-        self.job_number = job_number
 
         self.operations = [
-            InputConnector(job_number=self.input_connector_id),
-            OutputConnector(job_number=self.output_connector_id),
+            InputConnector(),
+            OutputConnector(),
         ]
 
         self.edges = {}
@@ -188,11 +188,10 @@ class ModelOperation(WorkflowOperation):
 
     def _parse_workflow_simple(self):
         self._add_operation(self.xml)
-        first_op = self.first_operation_id
-        self.input_connections[first_op][self.input_connector_id] = {}
-        self.add_edge(self.input_connector_id, first_op)
-        self.add_edge(first_op, self.output_connector_id)
-
+        first_op = self.first_operation_idx
+        self.input_connections[first_op][self.input_connector_idx] = {}
+        self.add_edge(self.input_connector_idx, first_op)
+        self.add_edge(first_op, self.output_connector_idx)
 
     def _parse_workflow(self):
         self._parse_operations()
@@ -202,28 +201,28 @@ class ModelOperation(WorkflowOperation):
         for operation_node in self.xml.findall("operation"):
             self._add_operation(operation_node)
 
-    def add_edge(self, src_idx, dst_idx):
-        if src_idx == dst_idx:
-            raise RuntimeError("Attempted to create self cycle with node %d" %
-                               src_idx)
+    def add_edge(self, src_op, dst_op):
+        if src_op == dst_op:
+            raise RuntimeError("Attempted to create self cycle with node %s" %
+                               src_op.name)
 
-        self.edges.setdefault(src_idx, set()).add(dst_idx)
+        self.edges.setdefault(src_op, set()).add(dst_op)
 
     def _parse_links(self):
-        op_indices = dict(((x.name, x.job_number) for x in self.operations))
+        op_map = dict(((x.name, x) for x in self.operations))
         for link in self.xml.findall("link"):
             src = link.attrib["fromOperation"]
             dst = link.attrib["toOperation"]
 
-            src_idx = op_indices[src]
-            dst_idx = op_indices[dst]
+            src_op = op_map[src]
+            dst_op = op_map[dst]
 
             src_prop = link.attrib["fromProperty"]
             dst_prop = link.attrib["toProperty"]
 
-            self.add_edge(src_idx, dst_idx)
+            self.add_edge(src_op, dst_op)
 
-            self.input_connections[dst_idx][src_idx][dst_prop] = src_prop
+            self.input_connections[dst_op][src_op][dst_prop] = src_prop
 
     def _add_operation(self, operation_node):
         optype_tags = operation_node.findall("operationtype")
@@ -242,38 +241,55 @@ class ModelOperation(WorkflowOperation):
 
         idx = len(self.operations)
         operation = self.operation_types[type_class](
-                job_number=idx,
                 xml=operation_node,
                 log_dir=self.log_dir,
                 )
         self.operations.append(operation)
 
     def net(self, builder, input_connections=None):
-        net = builder.add_subnet(nb.SuccessFailureNet, self.name)
+        net = builder.add_subnet(GenomeModelNet, self.name, self.id, input_connections)
 
-        for idx, op in enumerate(self.operations):
-            input_conns = self.input_connections.get(idx)
-            net.subnets.append(op.net(builder, input_conns))
+        ops_to_subnets = {}
 
-        net.start.arcs_out.add(net.subnets[0].start_transition)
-        net.subnets[self.output_connector_id].success_transition.arcs_out.add(
-                net.success)
+        for op in self.operations:
+            input_conns = self.input_connections.get(op.id)
+            subnet = op.net(net, input_conns)
+            ops_to_subnets[op] = subnet
 
-        net_failure = net.failure
+        net.bridge_transitions(
+            net.start_transition,
+            net.subnets[self.input_connector_idx].start_transition)
+
+        net.bridge_transitions(
+            net.subnets[self.output_connector_idx].success_transition,
+            net.success_transition)
+
+        net_failure_place = net.failure_place
 
         for idx, subnet in enumerate(net.subnets):
-            edges_out = self.edges.get(idx, [])
-            if edges_out:
-                targets = [net.subnets[i].start_transition for i in edges_out]
-                success = subnet.success_transition
-                failure = getattr(subnet, "failure_transition", None)
-                for tgt in targets:
-                    net.bridge_transitions(success, tgt, "")
-                    if failure:
-                        failure.arcs_out.add(net_failure)
+            failure = getattr(subnet, "failure_transition", None)
+            if failure:
+                failure.arcs_out.add(net_failure_place)
+
+            op = self.operations[idx]
+            edges_out = self.edges.get(op, [])
+            success = subnet.success_transition
+
+            for dst in edges_out:
+                tgt = ops_to_subnets[dst].start_transition
+                net.bridge_transitions(success, tgt, "")
 
         return net
 
 
-def convert_workflow_xml(xml_etree):
-    return ModelOperation(0, xml_etree)
+def parse_workflow_xml(xml_etree, net_builder):
+    outer_net = net_builder.add_subnet(nb.SuccessFailureNet, "workflow")
+    model = ModelOperation(xml_etree)
+    outer_net.name = model.name
+
+    inner_net = model.net(outer_net)
+    outer_net.start.arcs_out.add(inner_net.start_transition)
+    inner_net.success_transition.arcs_out.add(outer_net.success)
+    failure = getattr(inner_net, "failure_transition", None)
+    if failure:
+        failure.arcs_out.add(outer_net.failure)

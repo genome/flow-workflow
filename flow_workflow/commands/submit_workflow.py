@@ -28,12 +28,14 @@ class SubmitWorkflowCommand(CommandBase):
                 help="File to write final outputs to (json format)")
         parser.add_argument('--email', '-e',
                 help="If set, send notification emails to the given address")
+        parser.add_argument('--no-submit', '-n', default=False,
+                action='store_true',
+                help="Create, but do not submit this workflow")
 
 
     def _create_local_net(self, xml_file, builder):
         parsed_xml = etree.XML(open(xml_file).read())
-        model = wfxml.convert_workflow_xml(parsed_xml)
-        return model.net(builder)
+        return wfxml.convert_workflow_xml(parsed_xml, builder)
 
     def _create_initial_token(self, inputs_file):
         inputs = {}
@@ -49,7 +51,7 @@ class SubmitWorkflowCommand(CommandBase):
         t_failure = local_net.bridge_places(local_net.failure, p_failure)
 
     def __call__(self, parsed_arguments):
-        builder = nb.NetBuilder("workflow")
+        builder = nb.NetBuilder()
         local_net = self._create_local_net(parsed_arguments.xml, builder)
 
         if parsed_arguments.block:
@@ -58,20 +60,19 @@ class SubmitWorkflowCommand(CommandBase):
         if parsed_arguments.plot:
             graph = builder.graph(subnets=True)
             graph.draw(parsed_arguments.plot, prog="dot")
-            print "Image saved to %s" % parsed_arguments.plot
+            print("Image saved to %s" % parsed_arguments.plot)
 
         stored_net = builder.store(self.storage)
         stored_net.capture_environment()
         if parsed_arguments.email:
             stored_net.set_constant("mail_user", parsed_arguments.email)
 
-
-
         token = self._create_initial_token(parsed_arguments.inputs_file)
-        print "Net key: %s" % stored_net.key
-        print "Initial token key: %s" % token.key
-        print "Initial inputs: %r" % token.data.value
+        print("Net key: %s" % stored_net.key)
+        print("Initial token key: %s" % token.key)
+        print("Initial inputs: %r" % token.data.value)
 
-        self.broker.connect()
-        self.orchestrator.set_token(net_key=stored_net.key, place_idx=0,
-                token_key=token.key)
+        if not parsed_arguments.no_submit:
+            self.broker.connect()
+            self.orchestrator.set_token(net_key=stored_net.key, place_idx=0,
+                    token_key=token.key)

@@ -94,8 +94,10 @@ sub run_workflow {
     my $json = new JSON->allow_nonref;
     $json_fh->write($json->encode(\%params));
     $json_fh->close();
-    my $cmd = "submit-workflow $xml $json_path --block --outputs-file $outputs_path";
+    my $cmd = "flow submit-workflow --xml $xml --inputs-file $json_path " .
+        "--block --outputs-file $outputs_path -n";
     print "EXEC: $cmd\n";
+
     my $ret = system($cmd);
     if (!WIFEXITED($ret) || WEXITSTATUS($ret)) {
         confess "Workflow submission failed";
