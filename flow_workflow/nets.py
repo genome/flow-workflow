@@ -111,6 +111,10 @@ class GenomeNet(nb.EmptyNet):
         self.failure_place.arcs_out.add(self.failure_transition)
 
 
+class GenomeModelNet(GenomeNet):
+    pass
+
+
 class GenomeActionNet(GenomeNet):
     def __init__(self, builder, name, operation_id, input_connections,
             action_type, action_id):
@@ -156,47 +160,6 @@ class GenomeParallelByNet(GenomeNet):
     def __init__(self, builder, name, operation_id, input_connections,
             action_type, action_id, parallel_by):
 
-        GenomeNet.__init__(self, builder, name, operation_id, input_connections)
-
-        self.action_type = action_type
-        self.action_id = action_id
-        self.parallel_by = parallel_by
-
-        self.success_place = self.add_place("%s success" % name)
-        self.success_place.arcs_out.add(self.success_transition)
-
-        args = {
-            "action_type": self.action_type,
-            "action_id": self.action_id,
-            "with_outputs": True,
-            "operation_id": self.operation_id,
-            "input_connections": self.flat_inputs,
-        }
-
-        store_outputs_action = nb.ActionSpec(cls=StoreOutputsAction, args=args)
-
-        self.shortcut = self.add_subnet(enets.LocalCommandNet,
-                "%s shortcut" % name, action_class=GenomeShortcutAction,
-                action_args=args)
-
-        self.start_transition.arcs_out.add(self.shortcut.start)
-
-        self.execute = self.add_subnet(enets.LSFCommandNet, "%s execute" % name,
-                action_class=GenomeExecuteAction, action_args=args)
-
-        self.shortcut.execute_success.action = store_outputs_action
-        self.execute.execute_success.action = store_outputs_action
-
-        self.bridge_places(self.shortcut.success, self.success_place, "")
-        self.bridge_places(self.shortcut.failure, self.execute.start, "")
-
-        self.bridge_places(self.execute.success, self.success_place, "")
-        self.bridge_places(self.execute.failure, self.failure_place, "")
-
-
-
-class GenomeModelNet(GenomeNet):
-    def __init__(self, builder, name, operation_id, input_connections):
         GenomeNet.__init__(self, builder, name, operation_id, input_connections)
 
 

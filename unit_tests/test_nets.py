@@ -5,10 +5,12 @@ import flow.petri.netbuilder as nb
 import flow.command_runner.executors.nets as exnets
 
 
-class TestGenomeActionNet(TestCase):
+class NetTest(TestCase):
     def setUp(self):
         self.builder = nb.NetBuilder()
 
+
+class TestGenomeActionNet(NetTest):
     def test_genome_shortcut_action(self):
         input_conns = {123: {"x": "y"}}
 

@@ -42,6 +42,7 @@ def _event_op_xml(name, event_id, op_attr={}, type_attr={}):
 
     op_attr['name'] = name
     type_attr['eventId'] = event_id
+    type_attr['typeClass'] = _wf_event_class
 
     return _op_xml(op_attr, type_attr)
 
@@ -166,6 +167,18 @@ class TestXmlAdapter(TestCase):
     def setUp(self):
         self.builder = nb.NetBuilder()
 
+        self.serial_xml = E.workflow({"name": "test"},
+                _link_xml("input connector", "input", "job_1", "param"),
+                _link_xml("job_1", "result", "job_2", "param"),
+                _link_xml("job_2", "result", "job_3", "param"),
+                _link_xml("job_3", "result", "output connector", "output"),
+                E.operationtype({"typeClass": _wf_model_class},
+                        E.inputproperty("input"),
+                        E.outputproperty("output")),
+                *[_command_op_xml("job_%d" % x, "ClassX") for x in (1, 2, 3)])
+
+
+
     def test_simple(self):
         xml = E.operation({"name": "pby_test", "parallelBy": "file"},
                 E.operationtype(
@@ -187,18 +200,7 @@ class TestXmlAdapter(TestCase):
 
 
     def test_serial(self):
-        xml = E.workflow({"name": "test"},
-                _link_xml("input connector", "input", "job_1", "param"),
-                _link_xml("job_1", "result", "job_2", "param"),
-                _link_xml("job_2", "result", "job_3", "param"),
-                _link_xml("job_3", "result", "output connector", "output"),
-                E.operationtype({"typeClass": _wf_model_class},
-                        E.inputproperty("input"),
-                        E.outputproperty("output")),
-                *[_command_op_xml("job_%d" % x, "ClassX") for x in (1, 2, 3)])
-
-
-        model = wfxml.ModelOperation(xml)
+        model = wfxml.ModelOperation(self.serial_xml)
         self.assertEqual("test", model.name)
 
         self.assertEqual(5, len(model.operations))
@@ -258,8 +260,78 @@ class TestXmlAdapter(TestCase):
                     _command_op_xml("nested", "ClassX")))
 
         model = wfxml.ModelOperation(xml)
-        local_net = model.net(self.builder)
-        self.builder.graph().draw("x.ps", prog="dot")
+        net = model.net(self.builder)
+
+        self.assertIsInstance(net, wfnets.GenomeModelNet)
+        self.assertEqual(3, len(net.subnets))
+        subnet = net.subnets[model.first_operation_idx]
+        self.assertIsInstance(subnet, wfnets.GenomeModelNet)
+        self.assertEqual(3, len(subnet.subnets))
+
+        cmd = subnet.subnets[model.first_operation_idx]
+        self.assertIsInstance(cmd, wfnets.GenomeActionNet)
+
+    def test_converge(self):
+        xml = E.workflow({"name": "test converge"},
+                _link_xml("input connector", "a", "A", "a"),
+                _link_xml("input connector", "b", "B", "b"),
+                _link_xml("A", "a", "C", "a"),
+                _link_xml("B", "B", "C", "b"),
+                E.operationtype({"typeClass": _wf_model_class}),
+                _command_op_xml("A", "ClassA"),
+                _command_op_xml("B", "ClassB"),
+                _converge_op_xml("C", inputs=["a", "b"], outputs=["c", "d"]))
+
+        model = wfxml.ModelOperation(xml)
+        net = model.net(self.builder)
+        self.assertIsInstance(net, wfnets.GenomeModelNet)
+        self.assertEqual(5, len(net.subnets))
+        self.assertIsInstance(net.subnets[2], wfnets.GenomeActionNet)
+        self.assertIsInstance(net.subnets[3], wfnets.GenomeActionNet)
+        self.assertIsInstance(net.subnets[4], wfnets.GenomeConvergeNet)
+
+    def test_event(self):
+        xml = E.workflow({"name": "test event"},
+                _link_xml("input connector", "a", "A", "a"),
+                _link_xml("input connector", "b", "B", "b"),
+                _link_xml("A", "a", "C", "a"),
+                _link_xml("B", "B", "C", "b"),
+                E.operationtype({"typeClass": _wf_model_class}),
+                _event_op_xml("A", event_id="100"),
+                _event_op_xml("B", event_id="200"),
+                _event_op_xml("C", event_id="300"))
+
+        model = wfxml.ModelOperation(xml)
+        net = model.net(self.builder)
+        self.assertIsInstance(net, wfnets.GenomeModelNet)
+        self.assertEqual(5, len(net.subnets))
+
+        for subnet in net.subnets[model.first_operation_idx:]:
+            self.assertIsInstance(subnet, wfnets.GenomeActionNet)
+            self.assertEqual("event", subnet.action_type)
+
+        self.assertEqual("100", net.subnets[2].action_id)
+        self.assertEqual("200", net.subnets[3].action_id)
+        self.assertEqual("300", net.subnets[4].action_id)
+
+    def test_parse_workflow_xml(self):
+        outer_net = wfxml.parse_workflow_xml(self.serial_xml, self.builder)
+        self.assertIsInstance(outer_net.start, nb.Place)
+        self.assertIsInstance(outer_net.success, nb.Place)
+        self.assertIsInstance(outer_net.failure, nb.Place)
+        self.assertEqual(1, len(outer_net.subnets))
+
+        net = outer_net.subnets[0]
+        self.assertIsInstance(net, wfnets.GenomeModelNet)
+        self.assertEqual(5, len(net.subnets))
+        expected_names = [
+                "input connector",
+                "output connector",
+                "job_1", "job_2", "job_3"
+                ]
+
+        names = [x.name for x in net.subnets]
+        self.assertItemsEqual(expected_names, names)
 
 
 if __name__ == "__main__":

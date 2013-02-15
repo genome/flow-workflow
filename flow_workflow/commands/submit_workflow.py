@@ -33,29 +33,16 @@ class SubmitWorkflowCommand(CommandBase):
                 help="Create, but do not submit this workflow")
 
 
-    def _create_local_net(self, xml_file, builder):
-        parsed_xml = etree.XML(open(xml_file).read())
-        return wfxml.convert_workflow_xml(parsed_xml, builder)
-
     def _create_initial_token(self, inputs_file):
         inputs = {}
         if inputs_file:
             inputs = json.load(open(inputs_file))
         return sn.Token.create(self.storage, data=inputs, data_type="output")
 
-    def _add_notifications(self, local_net):
-        p_success = local_net.add_place("success notification sent")
-        p_failure = local_net.add_place("failure notification sent")
-
-        t_success = local_net.bridge_places(local_net.success, p_success)
-        t_failure = local_net.bridge_places(local_net.failure, p_failure)
-
     def __call__(self, parsed_arguments):
         builder = nb.NetBuilder()
-        local_net = self._create_local_net(parsed_arguments.xml, builder)
-
-        if parsed_arguments.block:
-            self._add_notifications(local_net)
+        parsed_xml = etree.XML(open(parsed_arguments.xml).read())
+        local_net = wfxml.parse_workflow_xml(parsed_xml, builder)
 
         if parsed_arguments.plot:
             graph = builder.graph(subnets=True)

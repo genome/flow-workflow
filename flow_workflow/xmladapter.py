@@ -1,5 +1,6 @@
 from collections import defaultdict
 from flow.orchestrator.graph import transitive_reduction
+from flow_workflow.dataflow import DataArc, DataArcs
 from flow_workflow.nets import GenomeActionNet
 from flow_workflow.nets import GenomeConvergeNet
 from flow_workflow.nets import GenomeModelNet
@@ -169,7 +170,7 @@ class ModelOperation(WorkflowOperation):
         ]
 
         self.edges = {}
-        self.input_connections = defaultdict(lambda: defaultdict(dict))
+        self.data_arcs = DataArcs()
 
         self.optype = xml.find("operationtype")
         type_class = self.optype.attrib["typeClass"]
@@ -189,7 +190,6 @@ class ModelOperation(WorkflowOperation):
     def _parse_workflow_simple(self):
         self._add_operation(self.xml)
         first_op = self.first_operation_idx
-        self.input_connections[first_op][self.input_connector_idx] = {}
         self.add_edge(self.input_connector_idx, first_op)
         self.add_edge(first_op, self.output_connector_idx)
 
@@ -222,7 +222,8 @@ class ModelOperation(WorkflowOperation):
 
             self.add_edge(src_op, dst_op)
 
-            self.input_connections[dst_op][src_op][dst_prop] = src_prop
+            arc = DataArc(src_op, src_prop, dst_op, dst_prop)
+            self.data_arcs.add(arc)
 
     def _add_operation(self, operation_node):
         optype_tags = operation_node.findall("operationtype")
@@ -246,13 +247,15 @@ class ModelOperation(WorkflowOperation):
                 )
         self.operations.append(operation)
 
-    def net(self, builder, input_connections=None):
-        net = builder.add_subnet(GenomeModelNet, self.name, self.id, input_connections)
+    def net(self, builder, data_arcs=None):
+        net = builder.add_subnet(GenomeModelNet, self.name, self.id, data_arcs)
 
         ops_to_subnets = {}
 
+        input_connections = self.data_arcs.to_input_hash()
+
         for op in self.operations:
-            input_conns = self.input_connections.get(op.id)
+            input_conns = input_connections.get(op.id)
             subnet = op.net(net, input_conns)
             ops_to_subnets[op] = subnet
 
@@ -293,3 +296,5 @@ def parse_workflow_xml(xml_etree, net_builder):
     failure = getattr(inner_net, "failure_transition", None)
     if failure:
         failure.arcs_out.add(outer_net.failure)
+
+    return outer_net
