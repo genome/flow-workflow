@@ -12,18 +12,13 @@ use strict;
 use warnings;
 
 my $json = JSON->new->allow_nonref;
+
 sub load_inputs {
     my $file = shift;
     my $inputs_str = read_file($file);
-    print "DECODING INPUTS STRING:\n\n$inputs_str\n\n";
     return {} if $inputs_str eq "";
     my $inputs = $json->decode($inputs_str);
-    print "JSON DECODED INPUTS STRING:\n\n" . Dumper($inputs) . "\n\n";
-    %$inputs = map {
-        my $val = $inputs->{$_};
-        $_ => $val eq '' ? '' : Flow::decode($val)
-    } keys %$inputs;
-    print "Loaded inputs from $file:\n`$inputs_str'\n";
+    $inputs = Flow::decode_io_hash($inputs);
     return $inputs;
 }
 
@@ -44,7 +39,7 @@ sub run_event {
     exit(1) unless $ret;
     UR::Context->commit();
 
-    my %outputs = (result => 1);
+    my %outputs = (result => Flow::encode(1));
     my $out_fh = new IO::File($outputs_file, "w");
     $out_fh->write($json->encode(\%outputs));
 }
@@ -71,12 +66,15 @@ sub run_command {
     my $ret = $cmd->$method();
     exit(1) unless $ret;
 
+
     %outputs = map {
         my $prop_name = $_->property_name;
-        my $prop_val = $cmd->$prop_name;
-        $prop_name => Flow::encode($prop_val);
+        $prop_name => $cmd->$prop_name
     } @cmd_outputs;
-    $outputs{result} = Flow::encode(1) unless exists $outputs{result};
+    $outputs{result} = 1 unless exists $outputs{result};
+
+    my $outputs = Flow::encode_io_hash(\%outputs);
+
     UR::Context->commit();
 
     my $out_fh = new IO::File($outputs_file, "w");

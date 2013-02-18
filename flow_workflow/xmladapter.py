@@ -1,12 +1,13 @@
 from collections import defaultdict
 from flow.orchestrator.graph import transitive_reduction
-from flow_workflow.dataflow import DataArc, DataArcs
 from flow_workflow.nets import GenomeActionNet
 from flow_workflow.nets import GenomeConvergeNet
 from flow_workflow.nets import GenomeModelNet
+from flow_workflow.nets import GenomeParallelByNet
 from flow_workflow.nets import StoreOutputsAction
 from lxml import etree
 import flow.petri.netbuilder as nb
+import flow.petri.safenet as sn
 import os
 import re
 
@@ -58,7 +59,14 @@ class CommandOperation(WorkflowOperation):
 
     def net(self, builder, input_connections=None):
         if self.parallel_by:
-            raise NotImplementedError("No support for parallel_by yet")
+            return builder.add_subnet(GenomeParallelByNet,
+                    name=self.name,
+                    operation_id=self.id,
+                    action_type="command",
+                    action_id=self.perl_class,
+                    input_connections=input_connections,
+                    parallel_by=self.parallel_by
+                    )
 
         return builder.add_subnet(GenomeActionNet,
                 name=self.name,
@@ -117,13 +125,9 @@ class InputConnector(WorkflowEntity):
 
     def net(self, builder, input_connections=None):
         net = builder.add_subnet(nb.EmptyNet, self.name)
-        args = {
-            "operation_id": self.id,
-        }
+        args = {"operation_id": self.id}
 
-        action = nb.ActionSpec(
-                cls=StoreOutputsAction,
-                args=args)
+        action = nb.ActionSpec(cls=StoreOutputsAction, args=args)
         net.start_transition = net.add_transition("input connector start",
                 action=action
                 )
@@ -146,9 +150,17 @@ class OutputConnector(WorkflowEntity):
 
 
 class ModelOperation(WorkflowOperation):
-    input_connector_idx = 0
-    output_connector_idx = 1
-    first_operation_idx = 2
+    _input_connector_idx = 0
+    _output_connector_idx = 1
+    _first_operation_idx = 2
+
+    @property
+    def input_connector(self):
+        return self.operations[self._input_connector_idx]
+
+    @property
+    def output_connector(self):
+        return self.operations[self._output_connector_idx]
 
     def __init__(self, xml, log_dir=None):
         self.operation_types = {
@@ -170,7 +182,8 @@ class ModelOperation(WorkflowOperation):
         ]
 
         self.edges = {}
-        self.data_arcs = DataArcs()
+        self.data_arcs = defaultdict(lambda: defaultdict(dict))
+
 
         self.optype = xml.find("operationtype")
         type_class = self.optype.attrib["typeClass"]
@@ -189,9 +202,11 @@ class ModelOperation(WorkflowOperation):
 
     def _parse_workflow_simple(self):
         self._add_operation(self.xml)
-        first_op = self.first_operation_idx
-        self.add_edge(self.input_connector_idx, first_op)
-        self.add_edge(first_op, self.output_connector_idx)
+        first_op = self.operations[self._first_operation_idx]
+
+        self.add_edge(self.input_connector, first_op)
+        self.add_edge(first_op, self.output_connector)
+        self.data_arcs[first_op.id][self.input_connector.id] = {}
 
     def _parse_workflow(self):
         self._parse_operations()
@@ -222,8 +237,8 @@ class ModelOperation(WorkflowOperation):
 
             self.add_edge(src_op, dst_op)
 
-            arc = DataArc(src_op, src_prop, dst_op, dst_prop)
-            self.data_arcs.add(arc)
+            self.data_arcs[dst_op.id][src_op.id][dst_prop] = src_prop
+
 
     def _add_operation(self, operation_node):
         optype_tags = operation_node.findall("operationtype")
@@ -252,19 +267,17 @@ class ModelOperation(WorkflowOperation):
 
         ops_to_subnets = {}
 
-        input_connections = self.data_arcs.to_input_hash()
-
         for op in self.operations:
-            input_conns = input_connections.get(op.id)
+            input_conns = self.data_arcs.get(op.id)
             subnet = op.net(net, input_conns)
             ops_to_subnets[op] = subnet
 
         net.bridge_transitions(
             net.start_transition,
-            net.subnets[self.input_connector_idx].start_transition)
+            ops_to_subnets[self.input_connector].start_transition)
 
         net.bridge_transitions(
-            net.subnets[self.output_connector_idx].success_transition,
+            ops_to_subnets[self.output_connector].success_transition,
             net.success_transition)
 
         net_failure_place = net.failure_place
@@ -291,6 +304,12 @@ def parse_workflow_xml(xml_etree, net_builder):
     outer_net.name = model.name
 
     inner_net = model.net(outer_net)
+    inner_net.start_transition.action = nb.ActionSpec(
+            cls=sn.MergeTokensAction,
+            args={"input_type": "output", "output_type": "output"},
+            )
+
+
     outer_net.start.arcs_out.add(inner_net.start_transition)
     inner_net.success_transition.arcs_out.add(outer_net.success)
     failure = getattr(inner_net, "failure_transition", None)

@@ -111,12 +111,11 @@ class TestWorkflowOperations(TestCase):
         self.assertIsInstance(action, nb.ActionSpec)
         self.assertEqual(wfnets.GenomeShortcutAction, action.cls)
 
-        flat_input_conns = wfnets._flatten_input_connections(input_conns)
         expected_args = {
                 "action_type": "command",
                 "action_id": "ClassX",
                 "with_outputs": True,
-                "input_connections": flat_input_conns,
+                "input_connections": input_conns,
         }
         self.assertDictContainsSubset(expected_args, action.args)
 
@@ -125,7 +124,6 @@ class TestWorkflowOperations(TestCase):
         action = execute_transition.action
         self.assertIsInstance(action, nb.ActionSpec)
         self.assertEqual(wfnets.GenomeExecuteAction, action.cls)
-
 
     def test_parallel_by_command(self):
         tree = _command_op_xml(name="pby", perl_class="X",
@@ -177,8 +175,6 @@ class TestXmlAdapter(TestCase):
                         E.outputproperty("output")),
                 *[_command_op_xml("job_%d" % x, "ClassX") for x in (1, 2, 3)])
 
-
-
     def test_simple(self):
         xml = E.operation({"name": "pby_test", "parallelBy": "file"},
                 E.operationtype(
@@ -190,13 +186,15 @@ class TestXmlAdapter(TestCase):
         expected_names = ["input connector", "output connector", "pby_test"]
         self.assertEqual(expected_names, [x.name for x in model.operations])
 
-        self.assertEqual(set([2]), model.edges[0])
+        self.assertEqual(set([model.operations[2]]), model.edges[model.operations[0]])
         self.assertNotIn(1, model.edges)
-        self.assertEqual(set([1]), model.edges[2])
+        self.assertEqual(set([model.operations[1]]), model.edges[model.operations[2]])
 
         self.assertNotIn(0, model.rev_edges)
-        self.assertEqual(set([2]), model.rev_edges[1])
-        self.assertEqual(set([0]), model.rev_edges[2])
+        self.assertEqual(set([model.operations[2]]), model.rev_edges[model.operations[1]])
+        self.assertEqual(set([model.operations[0]]), model.rev_edges[model.operations[2]])
+
+        net = model.net(self.builder)
 
 
     def test_serial(self):
@@ -264,11 +262,11 @@ class TestXmlAdapter(TestCase):
 
         self.assertIsInstance(net, wfnets.GenomeModelNet)
         self.assertEqual(3, len(net.subnets))
-        subnet = net.subnets[model.first_operation_idx]
+        subnet = net.subnets[model._first_operation_idx]
         self.assertIsInstance(subnet, wfnets.GenomeModelNet)
         self.assertEqual(3, len(subnet.subnets))
 
-        cmd = subnet.subnets[model.first_operation_idx]
+        cmd = subnet.subnets[model._first_operation_idx]
         self.assertIsInstance(cmd, wfnets.GenomeActionNet)
 
     def test_converge(self):
@@ -306,7 +304,7 @@ class TestXmlAdapter(TestCase):
         self.assertIsInstance(net, wfnets.GenomeModelNet)
         self.assertEqual(5, len(net.subnets))
 
-        for subnet in net.subnets[model.first_operation_idx:]:
+        for subnet in net.subnets[model._first_operation_idx:]:
             self.assertIsInstance(subnet, wfnets.GenomeActionNet)
             self.assertEqual("event", subnet.action_type)
 
@@ -332,6 +330,16 @@ class TestXmlAdapter(TestCase):
 
         names = [x.name for x in net.subnets]
         self.assertItemsEqual(expected_names, names)
+
+    def test_parallel_by_model(self):
+        xml = E.workflow({"name": "test parallel by"},
+                _link_xml("input connector", "file", "operation", "file"),
+                _link_xml("operation", "result", "output connector", "result"),
+                E.operationtype({"typeClass": _wf_model_class}),
+                _command_op_xml(name="operation", perl_class="X",
+                        op_attr={"parallelBy": "input_file"}))
+
+        net = wfxml.parse_workflow_xml(xml, self.builder)
 
 
 if __name__ == "__main__":

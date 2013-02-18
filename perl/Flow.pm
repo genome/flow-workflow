@@ -9,6 +9,7 @@ use Workflow;
 use File::Temp qw/tempdir/;
 use Data::Dumper;
 use MIME::Base64;
+
 use strict;
 use warnings;
 
@@ -69,6 +70,28 @@ sub decode {
     }
 }
 
+sub encode_io_hash {
+    my $io = shift;
+    return {
+        map {
+            my $val = $io->{$_};
+            $_ => $val eq '' ? '' : Flow::encode($val)
+        } keys %$io
+    };
+
+}
+
+sub decode_io_hash {
+    my $io = shift;
+    return {
+        map {
+            my $val = $io->{$_};
+            $_ => $val eq '' ? '' : Flow::decode($val);
+        } keys %$io
+    };
+}
+
+
 sub run_workflow {
     my $workflow = shift;
     my $xml = $workflow;
@@ -83,8 +106,9 @@ sub run_workflow {
     }
 
     my %params = @_;
-    %params = map {$_ => encode($params{$_})} keys %params;
-    print Dumper(\%params);
+    print "WORKFLOW PARAMS:" . Dumper(\%params);
+
+    my $params = encode_io_hash(\%params);
 
     my $json_path = join("/", $tmpdir, "inputs.json");
     my $outputs_path = join("/", $tmpdir, "outputs.json");
@@ -92,10 +116,10 @@ sub run_workflow {
 
     print "Saved xml to $xml\n";
     my $json = new JSON->allow_nonref;
-    $json_fh->write($json->encode(\%params));
+    $json_fh->write($json->encode($params));
     $json_fh->close();
     my $cmd = "flow submit-workflow --xml $xml --inputs-file $json_path " .
-        "--block --outputs-file $outputs_path -n";
+        "--block --outputs-file $outputs_path -e " . 'tabbott@genome.wustl.edu';
     print "EXEC: $cmd\n";
 
     my $ret = system($cmd);
