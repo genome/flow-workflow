@@ -14,6 +14,7 @@ setup(
             'nose',
         ],
         install_requires = [
+            'hiredis',
             'redis',
             'lxml',
         ],
