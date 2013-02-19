@@ -6,6 +6,8 @@ import flow_workflow.xmladapter as wfxml
 from lxml import etree
 import json
 import os
+import sys
+import uuid
 
 class SubmitWorkflowCommand(CommandBase):
     def __init__(self, broker=None, storage=None, orchestrator=None):
@@ -51,8 +53,12 @@ class SubmitWorkflowCommand(CommandBase):
 
         stored_net = builder.store(self.storage)
         stored_net.capture_environment()
+
         if parsed_arguments.email:
             stored_net.set_constant("mail_user", parsed_arguments.email)
+
+        if parsed_arguments.block:
+            queue_name = self.add_done_place_observers(stored_net)
 
         token = self._create_initial_token(parsed_arguments.inputs_file)
         print("Net key: %s" % stored_net.key)
@@ -63,3 +69,29 @@ class SubmitWorkflowCommand(CommandBase):
             self.broker.connect()
             self.orchestrator.set_token(net_key=stored_net.key, place_idx=0,
                     token_key=token.key)
+
+            if parsed_arguments.block:
+                self.broker.create_temporary_queue(queue_name)
+                message = self.broker.raw_get(queue_name)
+                sys.stderr.write(
+                        'Submitted flow completed with result: %s\n' % message)
+                if message != 'success':
+                    os._exit(1)
+
+            self.broker.disconnect()
+
+    def add_done_place_observers(self, stored_net):
+        queue_name = generate_queue_name()
+
+        success_place = stored_net.place(1)
+        failure_place = stored_net.place(2)
+
+        success_place.add_observer(exchange='', routing_key=queue_name,
+                body='success')
+        failure_place.add_observer(exchange='', routing_key=queue_name,
+                body='failure')
+
+        return queue_name
+
+def generate_queue_name():
+    return 'submit_flow_block_%s' % uuid.uuid4().hex
