@@ -240,7 +240,8 @@ class GenomeModelNet(GenomeNet):
 
 class GenomeActionNet(GenomeNet):
     def __init__(self, builder, name, operation_id, input_connections,
-            action_type, action_id, parallel_by_spec=None):
+            action_type, action_id, parallel_by_spec=None,
+            stdout=None, stderr=None):
 
         GenomeNet.__init__(self, builder, name, operation_id, input_connections)
 
@@ -256,6 +257,8 @@ class GenomeActionNet(GenomeNet):
             "with_outputs": True,
             "operation_id": self.operation_id,
             "input_connections": self.input_connections,
+            "stdout": stdout,
+            "stderr": stderr,
         }
 
         if parallel_by_spec:
@@ -285,7 +288,8 @@ class GenomeActionNet(GenomeNet):
 
 class GenomeParallelByNet(nb.EmptyNet):
     def __init__(self, builder, name, operation_id, input_connections,
-            action_type, action_id, parallel_by):
+            action_type, action_id, parallel_by,
+            stdout=None, stderr=None):
 
         nb.EmptyNet.__init__(self, builder, name)
 
@@ -301,7 +305,9 @@ class GenomeParallelByNet(nb.EmptyNet):
             "with_outputs": True,
             "operation_id": self.operation_id,
             "input_connections": self.input_connections,
-            "parallel_by": parallel_by
+            "parallel_by": parallel_by,
+            "stdout": stdout,
+            "stderr": stderr,
         }
 
         self.running = self.add_place("running")
@@ -327,7 +333,8 @@ class GenomeParallelByNet(nb.EmptyNet):
 
 class GenomeConvergeNet(nb.EmptyNet):
     def __init__(self, builder, name, operation_id, input_connections,
-            input_property_order, output_properties):
+            input_property_order, output_properties,
+            stdout=None, stderr=None):
 
         nb.EmptyNet.__init__(self, builder, name)
 
@@ -342,6 +349,8 @@ class GenomeConvergeNet(nb.EmptyNet):
             "input_property_order": self.input_property_order,
             "output_properties": self.output_properties,
             "input_connections": self.input_connections,
+            "stdout": stdout,
+            "stderr": stderr,
         }
 
         action = nb.ActionSpec(cls=GenomeConvergeAction, args=args)

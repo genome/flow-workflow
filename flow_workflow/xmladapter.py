@@ -65,7 +65,9 @@ class CommandOperation(WorkflowOperation):
                     action_type="command",
                     action_id=self.perl_class,
                     input_connections=input_connections,
-                    parallel_by=self.parallel_by
+                    parallel_by=self.parallel_by,
+                    stdout=self.stdout_log_file,
+                    stderr=self.stderr_log_file
                     )
 
         return builder.add_subnet(GenomeActionNet,
@@ -73,7 +75,10 @@ class CommandOperation(WorkflowOperation):
                 operation_id=self.id,
                 action_type="command",
                 action_id=self.perl_class,
-                input_connections=input_connections)
+                input_connections=input_connections,
+                stdout=self.stdout_log_file,
+                stderr=self.stderr_log_file
+                )
 
 
 class EventOperation(WorkflowOperation):
@@ -87,7 +92,10 @@ class EventOperation(WorkflowOperation):
                 operation_id=self.id,
                 action_type="event",
                 action_id=self.event_id,
-                input_connections=input_connections)
+                input_connections=input_connections,
+                stdout=self.stdout_log_file,
+                stderr=self.stderr_log_file
+                )
 
 
 class ConvergeOperation(WorkflowOperation):
@@ -115,7 +123,10 @@ class ConvergeOperation(WorkflowOperation):
                 operation_id=self.id,
                 input_connections=input_connections,
                 input_property_order=self.input_properties,
-                output_properties=self.output_properties)
+                output_properties=self.output_properties,
+                stdout=self.stdout_log_file,
+                stderr=self.stderr_log_file
+                )
 
 
 class InputConnector(WorkflowEntity):
