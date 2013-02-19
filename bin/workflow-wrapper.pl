@@ -80,22 +80,6 @@ sub run_command {
     $out_fh->write($json->encode($outputs));
 }
 
-sub converge {
-    if ($#_ < 2) {
-        print STDERR "Usage: $0 converge <output-name> <inputs.json> <outputs.json> <input properties...>\n";
-        exit 1;
-    }
-
-    my ($output_name, $inputs_file, $outputs_file, @input_properties) = @_;
-    my $inputs = load_inputs($inputs_file);
-    my $output_value = Flow::encode([
-        map { ref($inputs->{$_}) eq 'ARRAY' ? @{$inputs->{$_}} : $inputs->{$_} } @input_properties
-    ]);
-    my %outputs = ($output_name => $output_value);
-    my $out_fh = new IO::File($outputs_file, "w");
-    $out_fh->write($json->encode(\%outputs));
-}
-
 if (@ARGV == 0) {
     print STDERR "Usage: $0 <action> <args>\n";
     exit(1);
@@ -105,7 +89,6 @@ my $action = shift @ARGV;
 SWITCH: for ($action) {
     $_ eq "command" && do { run_command(@ARGV); last SWITCH; };
     $_ eq "event" && do { run_event(@ARGV); last SWITCH; };
-    $_ eq "converge" && do { converge(@ARGV); last SWITCH; };
     die "Unknown argument $_";
     exit 1;
 }
