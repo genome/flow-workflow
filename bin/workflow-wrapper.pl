@@ -77,7 +77,7 @@ sub run_command {
     UR::Context->commit();
 
     my $out_fh = new IO::File($outputs_file, "w");
-    $out_fh->write($json->encode(\%outputs));
+    $out_fh->write($json->encode($outputs));
 }
 
 sub converge {
