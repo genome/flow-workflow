@@ -119,7 +119,7 @@ sub run_workflow {
     $json_fh->write($json->encode($params));
     $json_fh->close();
     my $cmd = "flow submit-workflow --xml $xml --inputs-file $json_path " .
-        "--block --outputs-file $outputs_path -e " . 'tabbott@genome.wustl.edu';
+        "--block --outputs-file $outputs_path";
     print "EXEC: $cmd\n";
 
     my $ret = system($cmd);

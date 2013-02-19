@@ -155,10 +155,6 @@ class BuildParallelByAction(InputsMixin, sn.TransitionAction):
 
         stored_net = builder.store(self.connection)
         stored_net.copy_constants_from(net)
-        try:
-            stored_net.set_constant("mail_user", "tabbott@genome.wustl.edu")
-        except:
-            pass
 
         orchestrator = services["orchestrator"]
         token = sn.Token.create(self.connection, data=inputs, data_type="output")
