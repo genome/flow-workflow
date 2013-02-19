@@ -189,10 +189,12 @@ class GenomeConvergeAction(InputsMixin, sn.TransitionAction):
 
     output_token_type = "output"
 
-    def execute(self, input_data, net, services):
+    def execute(self, active_tokens_key, net, services):
         operation_id = self.args["operation_id"]
         input_property_order = self.args["input_property_order"]
         output_properties = self.args["output_properties"]
+
+        input_data = self.input_data(active_tokens_key, net)
 
         outputs = _do_converge(input_data, input_property_order,
                 output_properties)
@@ -332,12 +334,14 @@ class GenomeConvergeNet(nb.EmptyNet):
         self.input_property_order = input_property_order
         self.output_properties = output_properties
         self.operation_id = operation_id
+        self.input_connections = input_connections
 
         args = {
             "operation_id": self.operation_id,
             "with_outputs": True,
             "input_property_order": self.input_property_order,
             "output_properties": self.output_properties,
+            "input_connections": self.input_connections,
         }
 
         action = nb.ActionSpec(cls=GenomeConvergeAction, args=args)
