@@ -238,7 +238,7 @@ class StoreInputsAsOutputsAction(InputsMixin, sn.TransitionAction):
         operation_id = self.args["operation_id"]
         input_data = self.input_data(active_tokens_key, net)
 
-        print "StoreInputsAsOutputsAction on net %s, op %d, inputs: %r" % (
+        LOG.debug("StoreInputsAsOutputsAction on net %s, op %d, inputs: %r",
                 net.key, int(operation_id), input_data)
 
         _store_outputs(input_data, net, operation_id)
