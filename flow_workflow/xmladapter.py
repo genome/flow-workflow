@@ -4,6 +4,7 @@ from flow_workflow.nets import GenomeActionNet
 from flow_workflow.nets import GenomeConvergeNet
 from flow_workflow.nets import GenomeModelNet
 from flow_workflow.nets import GenomeParallelByNet
+from flow_workflow.nets import StoreInputsAsOutputsAction
 from flow_workflow.nets import StoreOutputsAction
 from lxml import etree
 import flow.petri.netbuilder as nb
@@ -149,14 +150,22 @@ class InputConnector(WorkflowEntity):
 
 
 class OutputConnector(WorkflowEntity):
-    def __init__(self):
+    def __init__(self, workflow_id):
         WorkflowEntity.__init__(self)
         self.name = "output connector"
+        self.workflow_id = workflow_id
 
     def net(self, builder, input_connections=None):
         net = builder.add_subnet(nb.EmptyNet, self.name)
-        net.start_transition = net.add_transition("output connector start")
+
+        args = {"operation_id": self.workflow_id,
+                "input_connections": input_connections}
+        action = nb.ActionSpec(cls=StoreInputsAsOutputsAction, args=args)
+
+        net.start_transition = net.add_transition("output connector start",
+                action=action)
         net.success_transition = net.start_transition
+
         return net
 
 
@@ -189,7 +198,7 @@ class ModelOperation(WorkflowOperation):
 
         self.operations = [
             InputConnector(),
-            OutputConnector(),
+            OutputConnector(workflow_id=self.id),
         ]
 
         self.edges = {}
@@ -326,5 +335,7 @@ def parse_workflow_xml(xml_etree, net_builder):
     failure = getattr(inner_net, "failure_transition", None)
     if failure:
         failure.arcs_out.add(outer_net.failure)
+
+    net_builder.variables["workflow_id"] = model.id
 
     return outer_net

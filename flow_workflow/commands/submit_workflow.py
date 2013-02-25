@@ -2,6 +2,7 @@ from flow.commands.base import CommandBase
 import flow.petri.netbuilder as nb
 import flow.petri.safenet as sn
 import flow_workflow.xmladapter as wfxml
+from flow_workflow import nets
 
 from lxml import etree
 import json
@@ -76,7 +77,12 @@ class SubmitWorkflowCommand(CommandBase):
                 sys.stderr.write(
                         'Submitted flow completed with result: %s\n' % message)
                 if message != 'success':
-                    os._exit(1)
+                    self.broker.disconnect()
+                    os.exit(1)
+
+                if parsed_arguments.outputs_file:
+                    outputs = nets.get_workflow_outputs(stored_net)
+                    json.dump(outputs, open(parsed_arguments.outputs_file, 'w'))
 
             self.broker.disconnect()
 

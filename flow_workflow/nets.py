@@ -14,6 +14,19 @@ GENOME_WRAPPER = "workflow-wrapper"
 ParallelBySpec = namedtuple("ParallelBySpec", "property index")
 OperationSpec = namedtuple("OperationSpec", "type id")
 
+
+def get_workflow_outputs(net):
+    workflow_id = net.variable('workflow_id')
+    output_names = _operation_outputs(net, workflow_id)
+
+    result = {}
+    for on in output_names:
+        munged_name = _output_variable_name(workflow_id, on)
+        result[on] = net.variable(munged_name)
+
+    return result
+
+
 def _output_variable_name(operation_id, output_name):
     return "_wf_outp_%d_%s" % (int(operation_id), output_name)
 
@@ -214,6 +227,19 @@ class StoreOutputsAction(sn.TransitionAction):
     def execute(self, active_tokens_key, net, services):
         operation_id = self.args["operation_id"]
         input_data = self.input_data(active_tokens_key, net)
+
+        _store_outputs(input_data, net, operation_id)
+
+
+class StoreInputsAsOutputsAction(InputsMixin, sn.TransitionAction):
+    required_arguments = ["operation_id", "input_connections"]
+
+    def execute(self, active_tokens_key, net, services):
+        operation_id = self.args["operation_id"]
+        input_data = self.input_data(active_tokens_key, net)
+
+        print "StoreInputsAsOutputsAction on net %s, op %d, inputs: %r" % (
+                net.key, int(operation_id), input_data)
 
         _store_outputs(input_data, net, operation_id)
 

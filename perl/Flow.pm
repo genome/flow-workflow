@@ -127,15 +127,13 @@ sub run_workflow {
         confess "Workflow submission failed";
     }
     if (-s $outputs_path) {
+        print "run_workflow got some outputs:\n";
         my $outputs_str = read_file($outputs_path);
         my $outputs = $json->decode($outputs_str);
-        %$outputs = map {
-            my $val = $outputs->{$_};
-            $_ => $val eq '' ? '' : Flow::decode($val)
-        } keys %$outputs;
-        return $outputs;
+        return decode_io_hash($outputs);
     }
     else {
+        print "run_workflow got no outputs :(\n";
         return 1;
     }
 }
