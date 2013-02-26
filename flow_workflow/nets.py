@@ -76,7 +76,7 @@ class InputsMixin(object):
         return inputs
 
     def input_data(self, active_tokens_key, net):
-        inputs = self._fetch_inputs(net, self.args["input_connections"])
+        inputs = self._fetch_inputs(net, self.args.get("input_connections"))
         parallel_by = self.args.get("parallel_by")
         parallel_by_idx = self.args.get("parallel_by_idx")
         if parallel_by and parallel_by_idx is not None:
