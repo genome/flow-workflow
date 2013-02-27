@@ -20,9 +20,10 @@ def get_workflow_outputs(net):
     output_names = _operation_outputs(net, workflow_id)
 
     result = {}
-    for on in output_names:
-        munged_name = _output_variable_name(workflow_id, on)
-        result[on] = net.variable(munged_name)
+    if output_names:
+        for name in output_names:
+            munged_name = _output_variable_name(workflow_id, name)
+            result[name] = net.variable(munged_name)
 
     return result
 
