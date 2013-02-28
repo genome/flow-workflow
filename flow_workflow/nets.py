@@ -88,7 +88,8 @@ class InputsMixin(object):
 
 class BuildParallelByAction(InputsMixin, sn.TransitionAction):
     required_arguments = ["action_type", "action_id", "parallel_by",
-            "input_connections", "operation_id"]
+            "input_connections", "operation_id", "success_place",
+            "failure_place"]
 
     def execute(self, active_tokens_key, net, services):
         action_type = self.args["action_type"]
@@ -151,11 +152,11 @@ class BuildParallelByAction(InputsMixin, sn.TransitionAction):
             subnet.failure_transition.arcs_out.add(pby_net.failing_place)
 
         success_args = {"remote_net_key": net.key,
-                "remote_place_id": self.place_refs[0],
+                "remote_place_id": self.args["success_place"],
                 "data_type": "output"}
 
         failure_args = {"remote_net_key": net.key,
-                "remote_place_id": self.place_refs[1],
+                "remote_place_id": self.args["failure_place"],
                 "data_type": "output"}
 
         pby_net.success_transition.action = nb.ActionSpec(
@@ -325,6 +326,10 @@ class GenomeParallelByNet(nb.EmptyNet):
         self.operation_id = operation_id
         self.input_connections = input_connections
 
+        self.running = self.add_place("running")
+        self.on_success = self.add_place("on_success")
+        self.on_failure = self.add_place("on_failure")
+
         args = {
             "action_type": self.action_type,
             "action_id": self.action_id,
@@ -334,15 +339,11 @@ class GenomeParallelByNet(nb.EmptyNet):
             "parallel_by": parallel_by,
             "stdout": stdout,
             "stderr": stderr,
+            "success_place": self.on_success.index,
+            "failure_place": self.on_failure.index,
         }
 
-        self.running = self.add_place("running")
-        self.on_success = self.add_place("on_success")
-        self.on_failure = self.add_place("on_failure")
-        place_refs = [self.on_success.index, self.on_failure.index]
-
-        action = nb.ActionSpec(cls=BuildParallelByAction, args=args,
-                place_refs=place_refs)
+        action = nb.ActionSpec(cls=BuildParallelByAction, args=args)
         self.start_transition = self.add_transition("start_transition",
                 action=action)
 
