@@ -78,7 +78,7 @@ class SubmitWorkflowCommand(CommandBase):
                         'Submitted flow completed with result: %s\n' % message)
                 if message != 'success':
                     self.broker.disconnect()
-                    os.exit(1)
+                    sys.exit(1)
 
                 if parsed_arguments.outputs_file:
                     outputs = nets.get_workflow_outputs(stored_net)
