@@ -27,6 +27,9 @@ class SubmitWorkflowCommand(CommandBase):
                 help="If set, block until the workflow is complete")
         parser.add_argument('--inputs-file', '-i',
                 help="File containing initial inputs (json format)")
+        parser.add_argument('--resource-file', '-r',
+                help='File mapping operation names to resource requests '
+                '(json format)')
         parser.add_argument('--outputs-file', '-o',
                 help="File to write final outputs to (json format)")
         parser.add_argument('--email', '-e',
@@ -45,7 +48,8 @@ class SubmitWorkflowCommand(CommandBase):
     def __call__(self, parsed_arguments):
         builder = nb.NetBuilder()
         parsed_xml = etree.XML(open(parsed_arguments.xml).read())
-        local_net = wfxml.parse_workflow_xml(parsed_xml, builder)
+        resources = json.load(open(parsed_arguments.resource_file))
+        local_net = wfxml.parse_workflow_xml(parsed_xml, resources, builder)
 
         if parsed_arguments.plot:
             graph = builder.graph(subnets=True)
@@ -62,6 +66,7 @@ class SubmitWorkflowCommand(CommandBase):
             queue_name = self.add_done_place_observers(stored_net)
 
         token = self._create_initial_token(parsed_arguments.inputs_file)
+        print("Resources: %r" % resources)
         print("Net key: %s" % stored_net.key)
         print("Initial token key: %s" % token.key)
         print("Initial inputs: %r" % token.data.value)

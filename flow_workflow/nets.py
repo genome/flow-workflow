@@ -247,12 +247,13 @@ class StoreInputsAsOutputsAction(InputsMixin, sn.TransitionAction):
 
 
 class GenomeNet(nb.EmptyNet):
-    def __init__(self, builder, name, operation_id, input_connections):
+    def __init__(self, builder, name, operation_id, input_connections, resources):
 
         nb.EmptyNet.__init__(self, builder, name)
 
         self.operation_id = operation_id
         self.input_connections = input_connections
+        self.resources = resources
 
         self.start_transition = self.add_transition("%s start_trans" % name)
         self.success_transition = self.add_transition("%s success_trans" % name)
@@ -269,9 +270,9 @@ class GenomeModelNet(GenomeNet):
 class GenomeActionNet(GenomeNet):
     def __init__(self, builder, name, operation_id, input_connections,
             action_type, action_id, parallel_by_spec=None,
-            stdout=None, stderr=None):
+            stdout=None, stderr=None, resources=None):
 
-        GenomeNet.__init__(self, builder, name, operation_id, input_connections)
+        GenomeNet.__init__(self, builder, name, operation_id, input_connections, resources)
 
         self.action_type = action_type
         self.action_id = action_id
@@ -287,6 +288,7 @@ class GenomeActionNet(GenomeNet):
             "input_connections": self.input_connections,
             "stdout": stdout,
             "stderr": stderr,
+            "resources": self.resources,
         }
 
         if parallel_by_spec:
@@ -317,7 +319,7 @@ class GenomeActionNet(GenomeNet):
 class GenomeParallelByNet(nb.EmptyNet):
     def __init__(self, builder, name, operation_id, input_connections,
             action_type, action_id, parallel_by,
-            stdout=None, stderr=None):
+            stdout=None, stderr=None, resources=None):
 
         nb.EmptyNet.__init__(self, builder, name)
 
@@ -326,6 +328,7 @@ class GenomeParallelByNet(nb.EmptyNet):
         self.action_id = action_id
         self.operation_id = operation_id
         self.input_connections = input_connections
+        self.resources = resources
 
         self.running = self.add_place("running")
         self.on_success = self.add_place("on_success")
@@ -342,6 +345,7 @@ class GenomeParallelByNet(nb.EmptyNet):
             "stderr": stderr,
             "success_place": self.on_success.index,
             "failure_place": self.on_failure.index,
+            "resources": self.resources,
         }
 
         action = nb.ActionSpec(cls=BuildParallelByAction, args=args)

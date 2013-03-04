@@ -26,8 +26,10 @@ class WorkflowEntity(object):
 
 
 class WorkflowOperation(WorkflowEntity):
-    def __init__(self, log_dir, xml):
+    def __init__(self, xml, log_dir):
         WorkflowEntity.__init__(self)
+
+        self.xml = xml
         self.name = xml.attrib["name"]
 
         type_nodes = xml.findall("operationtype")
@@ -50,9 +52,10 @@ class WorkflowOperation(WorkflowEntity):
 
 
 class CommandOperation(WorkflowOperation):
-    def __init__(self, log_dir, xml):
-        WorkflowOperation.__init__(self, log_dir, xml)
+    def __init__(self, xml, log_dir, resources):
+        WorkflowOperation.__init__(self, xml, log_dir)
         self.perl_class = self._type_attributes['commandClass']
+        self.resources = resources.get(self.name, {})
 
         self.parallel_by = ""
         if "parallelBy" in self._operation_attributes:
@@ -68,7 +71,8 @@ class CommandOperation(WorkflowOperation):
                     input_connections=input_connections,
                     parallel_by=self.parallel_by,
                     stdout=self.stdout_log_file,
-                    stderr=self.stderr_log_file
+                    stderr=self.stderr_log_file,
+                    resources=self.resources
                     )
 
         return builder.add_subnet(GenomeActionNet,
@@ -78,14 +82,16 @@ class CommandOperation(WorkflowOperation):
                 action_id=self.perl_class,
                 input_connections=input_connections,
                 stdout=self.stdout_log_file,
-                stderr=self.stderr_log_file
+                stderr=self.stderr_log_file,
+                resources=self.resources
                 )
 
 
 class EventOperation(WorkflowOperation):
-    def __init__(self, log_dir, xml):
-        WorkflowOperation.__init__(self, log_dir, xml)
+    def __init__(self, xml, log_dir, resources):
+        WorkflowOperation.__init__(self, xml, log_dir)
         self.event_id = self._type_attributes['eventId']
+        self.resources = resources.get(self.name, {})
 
     def net(self, builder, input_connections=None):
         return builder.add_subnet(GenomeActionNet,
@@ -95,13 +101,14 @@ class EventOperation(WorkflowOperation):
                 action_id=self.event_id,
                 input_connections=input_connections,
                 stdout=self.stdout_log_file,
-                stderr=self.stderr_log_file
+                stderr=self.stderr_log_file,
+                resources=self.resources
                 )
 
 
 class ConvergeOperation(WorkflowOperation):
-    def __init__(self, log_dir, xml):
-        WorkflowOperation.__init__(self, log_dir, xml)
+    def __init__(self, xml, log_dir, resources):
+        WorkflowOperation.__init__(self, xml, log_dir)
 
         outputs = self._type_node.findall("outputproperty")
         if len(outputs) < 1:
@@ -182,7 +189,9 @@ class ModelOperation(WorkflowOperation):
     def output_connector(self):
         return self.operations[self._output_connector_idx]
 
-    def __init__(self, xml, log_dir=None):
+    def __init__(self, xml, log_dir, resources):
+        self.resources = resources
+
         self.operation_types = {
             "Workflow::OperationType::Converge": ConvergeOperation,
             "Workflow::OperationType::Command": CommandOperation,
@@ -192,8 +201,7 @@ class ModelOperation(WorkflowOperation):
 
         log_dir = log_dir or xml.attrib.get("logDir", ".")
 
-        WorkflowOperation.__init__(self, log_dir, xml)
-        self.xml = xml
+        WorkflowOperation.__init__(self, xml, log_dir)
         self.name = xml.attrib["name"]
 
         self.operations = [
@@ -279,11 +287,13 @@ class ModelOperation(WorkflowOperation):
         operation = self.operation_types[type_class](
                 xml=operation_node,
                 log_dir=self.log_dir,
+                resources=self.resources
                 )
         self.operations.append(operation)
 
     def net(self, builder, data_arcs=None):
-        net = builder.add_subnet(GenomeModelNet, self.name, self.id, data_arcs)
+        net = builder.add_subnet(GenomeModelNet, self.name, self.id, data_arcs,
+                self.resources)
 
         ops_to_subnets = {}
 
@@ -318,9 +328,9 @@ class ModelOperation(WorkflowOperation):
         return net
 
 
-def parse_workflow_xml(xml_etree, net_builder):
+def parse_workflow_xml(xml_etree, resources, net_builder):
     outer_net = net_builder.add_subnet(nb.SuccessFailureNet, "workflow")
-    model = ModelOperation(xml_etree)
+    model = ModelOperation(xml_etree, log_dir=None, resources=resources)
     outer_net.name = model.name
 
     inner_net = model.net(outer_net)

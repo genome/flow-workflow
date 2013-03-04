@@ -65,11 +65,12 @@ class TestWorkflowEntity(TestCase):
 class TestWorkflowOperations(TestCase):
     def setUp(self):
         self.builder = nb.NetBuilder()
+        self.resources = {}
 
     def test_no_operationtype_tag(self):
         tree = E.operation({"name": "badguy"})
         self.assertRaises(ValueError,
-                wfxml.WorkflowOperation, log_dir="/tmp", xml=tree)
+                wfxml.WorkflowOperation, xml=tree, log_dir="/tmp")
 
     def test_multiple_operationtype_tags(self):
         type_attr = {"commandClass": "A", "typeClass": _wf_command_class}
@@ -78,13 +79,15 @@ class TestWorkflowOperations(TestCase):
                 E.operationtype(type_attr)
         )
         self.assertRaises(ValueError,
-                wfxml.WorkflowOperation, log_dir="/tmp", xml=tree)
+                wfxml.WorkflowOperation, xml=tree, log_dir="/tmp")
 
     def test_command(self):
         tree = _command_op_xml(name="op nums 1/2", perl_class="ClassX",
                 op_attr={"a": "b"}, type_attr={"x": "y"})
 
-        op = wfxml.CommandOperation(log_dir="/tmp", xml=tree)
+        op = wfxml.CommandOperation(xml=tree, log_dir="/tmp",
+                resources=self.resources)
+
         self.assertEqual("op nums 1/2", op.name)
         self.assertEqual("b", op._operation_attributes["a"])
         self.assertEqual("y", op._type_attributes["x"])
@@ -127,26 +130,32 @@ class TestWorkflowOperations(TestCase):
 
     def test_parallel_by_command(self):
         tree = _command_op_xml(name="pby", perl_class="X",
-            op_attr={"parallelBy": "input_file"})
+                op_attr={"parallelBy": "input_file"})
 
-        op = wfxml.CommandOperation(log_dir="/tmp", xml=tree)
+        op = wfxml.CommandOperation(xml=tree, log_dir="/tmp",
+                resources=self.resources)
+
         self.assertEqual("input_file", op.parallel_by)
 
     def test_event(self):
         tree = _event_op_xml(name="evt", event_id="123")
 
-        op = wfxml.EventOperation(log_dir="/tmp", xml=tree)
+        op = wfxml.EventOperation(xml=tree, log_dir="/tmp",
+                resources=self.resources)
         self.assertEqual("evt", op.name)
         self.assertEqual("123", op.event_id)
 
     def test_converge_exceptions(self):
         tree = _converge_op_xml(name="merge", inputs=[], outputs=["x"])
         self.assertRaises(ValueError,
-                wfxml.ConvergeOperation, log_dir="/tmp", xml=tree)
+                wfxml.ConvergeOperation, xml=tree, log_dir="/tmp",
+                resources=self.resources)
 
         tree = _converge_op_xml(name="merge", inputs=["x"], outputs=[])
         self.assertRaises(ValueError,
-                wfxml.ConvergeOperation, log_dir="/tmp", xml=tree)
+                wfxml.ConvergeOperation, xml=tree, log_dir="/tmp",
+                resources=self.resources)
+
 
     def test_converge(self):
         inputs = ["a", "b", "c"]
@@ -155,7 +164,9 @@ class TestWorkflowOperations(TestCase):
         tree = _converge_op_xml(name="merge", inputs=inputs,
                 outputs=outputs)
 
-        op = wfxml.ConvergeOperation(log_dir="/tmp", xml=tree)
+        op = wfxml.ConvergeOperation(xml=tree, log_dir="/tmp",
+                resources=self.resources)
+
         self.assertEqual("merge", op.name)
         self.assertEqual(inputs, op.input_properties)
         self.assertEqual(outputs, op.output_properties)
@@ -164,6 +175,7 @@ class TestWorkflowOperations(TestCase):
 class TestXmlAdapter(TestCase):
     def setUp(self):
         self.builder = nb.NetBuilder()
+        self.resources = {}
 
         self.serial_xml = E.workflow({"name": "test"},
                 _link_xml("input connector", "input", "job_1", "param"),
@@ -180,25 +192,32 @@ class TestXmlAdapter(TestCase):
                 E.operationtype(
                     {"typeClass": _wf_command_class, "commandClass": "X"}))
 
-        model = wfxml.ModelOperation(xml)
+        model = wfxml.ModelOperation(xml, log_dir="/tmp",
+                resources=self.resources)
+
         self.assertEqual("pby_test", model.name)
         self.assertEqual(3, len(model.operations))
         expected_names = ["input connector", "output connector", "pby_test"]
         self.assertEqual(expected_names, [x.name for x in model.operations])
 
-        self.assertEqual(set([model.operations[2]]), model.edges[model.operations[0]])
+        self.assertEqual(set([model.operations[2]]),
+                model.edges[model.operations[0]])
         self.assertNotIn(1, model.edges)
-        self.assertEqual(set([model.operations[1]]), model.edges[model.operations[2]])
+        self.assertEqual(set([model.operations[1]]),
+                model.edges[model.operations[2]])
 
         self.assertNotIn(0, model.rev_edges)
-        self.assertEqual(set([model.operations[2]]), model.rev_edges[model.operations[1]])
-        self.assertEqual(set([model.operations[0]]), model.rev_edges[model.operations[2]])
+        self.assertEqual(set([model.operations[2]]),
+                model.rev_edges[model.operations[1]])
+        self.assertEqual(set([model.operations[0]]),
+                model.rev_edges[model.operations[2]])
 
         net = model.net(self.builder)
 
 
     def test_serial(self):
-        model = wfxml.ModelOperation(self.serial_xml)
+        model = wfxml.ModelOperation(self.serial_xml, log_dir="/tmp",
+                resources=self.resources)
         self.assertEqual("test", model.name)
 
         self.assertEqual(5, len(model.operations))
@@ -234,19 +253,22 @@ class TestXmlAdapter(TestCase):
                 E.operationtype({"typeClass": _wf_model_class})
                 )
 
-        self.assertRaises(RuntimeError, wfxml.ModelOperation, xml)
+        self.assertRaises(RuntimeError, wfxml.ModelOperation, xml=xml,
+                log_dir="/tmp", resources=self.resources)
 
     def test_missing_optype(self):
         xml = E.workflow({"name": "test"}, E.operation({"name": "bad"}),
                 E.operationtype({"typeClass": _wf_model_class}))
-        self.assertRaises(ValueError, wfxml.ModelOperation, xml)
+        self.assertRaises(ValueError, wfxml.ModelOperation, xml,
+                log_dir="/tmp", resources=self.resources)
 
     def test_unknown_optype(self):
         xml = E.workflow({"name": "test"},
                 E.operationtype({"typeClass": _wf_model_class}),
                 E.operation({"name": "bad"},
                     E.operationtype({"typeClass": "unknown"})))
-        self.assertRaises(ValueError, wfxml.ModelOperation, xml)
+        self.assertRaises(ValueError, wfxml.ModelOperation, xml,
+                log_dir="/tmp", resources=self.resources)
 
     def test_nested_models(self):
         xml = E.workflow({"name": "test"},
@@ -257,7 +279,9 @@ class TestXmlAdapter(TestCase):
                     E.operationtype({"typeClass": _wf_model_class}),
                     _command_op_xml("nested", "ClassX")))
 
-        model = wfxml.ModelOperation(xml)
+        model = wfxml.ModelOperation(xml, log_dir="/tmp",
+                resources=self.resources)
+
         net = model.net(self.builder)
 
         self.assertIsInstance(net, wfnets.GenomeModelNet)
@@ -280,7 +304,9 @@ class TestXmlAdapter(TestCase):
                 _command_op_xml("B", "ClassB"),
                 _converge_op_xml("C", inputs=["a", "b"], outputs=["c", "d"]))
 
-        model = wfxml.ModelOperation(xml)
+        model = wfxml.ModelOperation(xml, log_dir="/tmp",
+                resources=self.resources)
+
         net = model.net(self.builder)
         self.assertIsInstance(net, wfnets.GenomeModelNet)
         self.assertEqual(5, len(net.subnets))
@@ -299,7 +325,9 @@ class TestXmlAdapter(TestCase):
                 _event_op_xml("B", event_id="200"),
                 _event_op_xml("C", event_id="300"))
 
-        model = wfxml.ModelOperation(xml)
+        model = wfxml.ModelOperation(xml, log_dir="/tmp",
+                resources=self.resources)
+
         net = model.net(self.builder)
         self.assertIsInstance(net, wfnets.GenomeModelNet)
         self.assertEqual(5, len(net.subnets))
@@ -313,7 +341,9 @@ class TestXmlAdapter(TestCase):
         self.assertEqual("300", net.subnets[4].action_id)
 
     def test_parse_workflow_xml(self):
-        outer_net = wfxml.parse_workflow_xml(self.serial_xml, self.builder)
+        outer_net = wfxml.parse_workflow_xml(self.serial_xml, self.resources,
+                self.builder)
+
         self.assertIsInstance(outer_net.start, nb.Place)
         self.assertIsInstance(outer_net.success, nb.Place)
         self.assertIsInstance(outer_net.failure, nb.Place)
@@ -339,7 +369,7 @@ class TestXmlAdapter(TestCase):
                 _command_op_xml(name="operation", perl_class="X",
                         op_attr={"parallelBy": "input_file"}))
 
-        net = wfxml.parse_workflow_xml(xml, self.builder)
+        net = wfxml.parse_workflow_xml(xml, self.resources, self.builder)
 
 
 if __name__ == "__main__":
