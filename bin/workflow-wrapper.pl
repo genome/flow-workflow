@@ -54,6 +54,8 @@ sub run_command {
         die "Invalid method '$method' for command: $method";
     }
 
+    eval "use $pkg";
+
     my @cmd_inputs = $pkg->__meta__->properties(is_input => 1);
     my @cmd_outputs = $pkg->__meta__->properties(is_output => 1);
     my %outputs;
