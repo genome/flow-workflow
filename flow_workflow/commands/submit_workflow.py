@@ -27,7 +27,7 @@ class SubmitWorkflowCommand(CommandBase):
                 help="If set, block until the workflow is complete")
         parser.add_argument('--inputs-file', '-i',
                 help="File containing initial inputs (json format)")
-        parser.add_argument('--resource-file', '-r',
+        parser.add_argument('--resource-file', '-r', default=None,
                 help='File mapping operation names to resource requests '
                 '(json format)')
         parser.add_argument('--outputs-file', '-o',
@@ -48,7 +48,10 @@ class SubmitWorkflowCommand(CommandBase):
     def __call__(self, parsed_arguments):
         builder = nb.NetBuilder()
         parsed_xml = etree.XML(open(parsed_arguments.xml).read())
-        resources = json.load(open(parsed_arguments.resource_file))
+        if parsed_arguments.resource_file:
+            resources = json.load(open(parsed_arguments.resource_file))
+        else:
+            resources = {}
         local_net = wfxml.parse_workflow_xml(parsed_xml, resources, builder)
 
         if parsed_arguments.plot:
