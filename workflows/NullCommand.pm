@@ -30,6 +30,11 @@ class NullCommand {
             is => "Text",
         },
     ],
+    has => [
+        lsf_resource => {
+            default_value => "-M 20000 -n 4 -R 'select[mem >= 20]' -q short",
+        },
+    ]
 };
 
 sub execute {
