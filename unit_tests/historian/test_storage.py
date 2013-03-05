@@ -6,13 +6,16 @@ from flow_workflow.historian.storage import WorkflowHistorianStorage, EMPTY_FROZ
 class TestHistorianStorage(WorkflowHistorianStorage):
     def __init__(self):
         self._ids = defaultdict(lambda:0)
+        self.owner = 'WORKFLOW'
         self._connection = None
 
     def _connect(self):
         conn = sqlite3.connect(":memory:")
         cur = conn.cursor()
+        cur.execute("ATTACH DATABASE ':memory:' as WORKFLOW")
         cur.execute(CREATE_INSTANCE_TABLE)
         cur.execute(CREATE_EXECUTION_TABLE)
+        cur.execute(CREATE_WORKFLOW_HISTORIAN_TABLE)
         conn.commit()
         return conn
 
@@ -21,7 +24,7 @@ class TestHistorianStorage(WorkflowHistorianStorage):
         return self._ids[table_name]
 
 CREATE_INSTANCE_TABLE = """
-CREATE TABLE WORKFLOW_INSTANCE (
+CREATE WORKFLOW.TABLE WORKFLOW_INSTANCE (
     WORKFLOW_INSTANCE_ID integer primary key not null,
     PARENT_INSTANCE_ID integer,
     PEER_INSTANCE_ID integer,
@@ -36,7 +39,7 @@ CREATE TABLE WORKFLOW_INSTANCE (
 )
 """
 CREATE_EXECUTION_TABLE = """
-CREATE TABLE WORKFLOW_INSTANCE_EXECUTION (
+CREATE TABLE WORKFLOW.WORKFLOW_INSTANCE_EXECUTION (
     WORKFLOW_EXECUTION_ID integer primary key not null,
     WORKFLOW_INSTANCE_ID integer,
     STATUS varchar not null,
@@ -54,6 +57,14 @@ CREATE TABLE WORKFLOW_INSTANCE_EXECUTION (
     MAX_PROCESSES integer,
     MAX_THREADS integer,
     USER_NAME varchar
+)
+"""
+CREATE_WORKFLOW_HISTORIAN_TABLE = """
+CREATE TABLE WORKFLOW.WORKFLOW_HISTORIAN (
+    NET_KEY varchar not null,
+    OPERATION_ID integer not null,
+    WORKFLOW_INSTANCE_ID integer,
+    PRIMARY KEY (NET_KEY, OPERATION_ID)
 )
 """
 
