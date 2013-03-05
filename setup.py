@@ -6,14 +6,11 @@ submit-workflow = flow_workflow.commands.submit_workflow:SubmitWorkflowCommand
 workflow_historian_service = flow.commands.service:ServiceCommand
 
 [flow.factories]
-workflow_historian_create_operation_handler = flow_workflow.historian.handler:CreateOperationMessageHandler
-workflow_historian_update_operation_handler = flow_workflow.historian.handler:UpdateOperationMessageHandler
+workflow_historian_message_handler = flow_workflow.historian.handler:WorkflowHistorianMessageHandler
 workflow_historian_service_interface = flow_workflow.historian.client:WorkflowHistorianClient
 
 [flow.protocol.message_classes]
-workflow_historian_create_operation_message = flow_workflow.historian.messages:CreateOperationMessage
-workflow_historian_update_operation_message = flow_workflow.historian.messages:UpdateOperationMessage
-
+workflow_historian_message = flow_workflow.historian.messages:UpdateMessage
 '''
 
 setup(

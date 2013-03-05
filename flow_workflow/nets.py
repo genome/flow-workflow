@@ -86,6 +86,16 @@ class InputsMixin(object):
 
         return inputs
 
+class WorkflowHistorianUpdateAction(sn.TransitionAction):
+    required_args = ['children_info']
+
+    def execute(self, active_tokens_key, net, services):
+        historian = services['workflow_historian']
+        net_key = net.key
+        for child_info in self.args['children_info']:
+            historian.update(net_key=net_key, operation_id=child_info['id'],
+                    name=child_info['name'], status='new')
+
 
 class BuildParallelByAction(InputsMixin, sn.TransitionAction):
     required_arguments = ["action_type", "action_id", "parallel_by",
@@ -265,7 +275,6 @@ class GenomeNet(nb.EmptyNet):
 
 class GenomeModelNet(GenomeNet):
     pass
-
 
 class GenomeActionNet(GenomeNet):
     def __init__(self, builder, name, operation_id, input_connections,

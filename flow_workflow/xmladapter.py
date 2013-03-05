@@ -6,6 +6,7 @@ from flow_workflow.nets import GenomeModelNet
 from flow_workflow.nets import GenomeParallelByNet
 from flow_workflow.nets import StoreInputsAsOutputsAction
 from flow_workflow.nets import StoreOutputsAction
+from flow_workflow.nets import WorkflowHistorianUpdateAction
 from lxml import etree
 import flow.petri.netbuilder as nb
 import flow.petri.safenet as sn
@@ -23,6 +24,10 @@ class WorkflowEntity(object):
     def net(self, builder, input_connections=None):
         raise NotImplementedError("net not implemented in %s" %
                                   self.__class__.__name__)
+
+    @property
+    def children(self):
+        return [];
 
 
 class WorkflowOperation(WorkflowEntity):
@@ -182,6 +187,14 @@ class ModelOperation(WorkflowOperation):
     _first_operation_idx = 2
 
     @property
+    def children(self):
+        result = []
+        for op in self.operations:
+            result.append(op)
+            result.extend(op.children)
+        return result
+
+    @property
     def input_connector(self):
         return self.operations[self._input_connector_idx]
 
@@ -339,8 +352,14 @@ def parse_workflow_xml(xml_etree, resources, net_builder):
             args={"input_type": "output", "output_type": "output"},
             )
 
+    children_info = [{'id':x.id, 'name':x.name} for x in model.children]
+    action_spec = nb.ActionSpec(cls=WorkflowHistorianUpdateAction,
+            args={'children_info':children_info})
 
-    outer_net.start.arcs_out.add(inner_net.start_transition)
+    t = outer_net.add_transition('WorkflowHistorianUpdate', action=action_spec)
+
+    outer_net.start.arcs_out.add(t)
+    outer_net.bridge_transitions(t, inner_net.start_transition)
     inner_net.success_transition.arcs_out.add(outer_net.success)
     failure = getattr(inner_net, "failure_transition", None)
     if failure:
