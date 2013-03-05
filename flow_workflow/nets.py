@@ -94,7 +94,7 @@ class WorkflowHistorianUpdateAction(sn.TransitionAction):
         net_key = net.key
         for child_info in self.args['children_info']:
             historian.update(net_key=net_key, operation_id=child_info['id'],
-                    name=child_info['name'], status='new')
+                    name=child_info['name'], status=child_info['status'])
 
 
 class BuildParallelByAction(InputsMixin, sn.TransitionAction):
@@ -277,52 +277,69 @@ class GenomeModelNet(GenomeNet):
     pass
 
 class GenomeActionNet(GenomeNet):
+
+    def _update_action(self, status):
+        info = {"id": self.operation_id, "name": self.name, "status": status}
+        args = {"children_info": [info]}
+
+        return nb.ActionSpec(WorkflowHistorianUpdateAction, args=args)
+
     def __init__(self, builder, name, operation_id, input_connections,
             action_type, action_id, parallel_by_spec=None,
             stdout=None, stderr=None, resources=None):
 
-        GenomeNet.__init__(self, builder, name, operation_id, input_connections, resources)
+        GenomeNet.__init__(self, builder, name, operation_id, input_connections,
+                resources)
 
         self.action_type = action_type
         self.action_id = action_id
 
-        self.success_place = self.add_place("%s success" % name)
-        self.success_place.arcs_out.add(self.success_transition)
-
-        args = {
-            "action_type": self.action_type,
-            "action_id": self.action_id,
-            "with_outputs": True,
-            "operation_id": self.operation_id,
-            "input_connections": self.input_connections,
-            "stdout": stdout,
-            "stderr": stderr,
-            "resources": self.resources,
-        }
+        args = {"action_type": self.action_type, # command or event
+                "action_id": self.action_id,     # command class or event id
+                "with_outputs": True,
+                "operation_id": self.operation_id,
+                "input_connections": self.input_connections,
+                "stdout": stdout,
+                "stderr": stderr,
+                "resources": self.resources,
+                }
 
         if parallel_by_spec:
             args["parallel_by"] = parallel_by_spec.property
             args["parallel_by_idx"] = parallel_by_spec.index
 
-        store_outputs_action = nb.ActionSpec(cls=StoreOutputsAction, args=args)
+        store_outputs_action = nb.ActionSpec(cls=StoreOutputsAction,
+                args={"operation_id": operation_id})
 
-        self.shortcut = self.add_subnet(enets.LocalCommandNet,
-                "%s shortcut" % name, action_class=GenomeShortcutAction,
-                action_args=args)
+        self.shortcut = self.add_subnet(
+                enets.LocalCommandNet, "%s shortcut" % name,
+                action_class=GenomeShortcutAction, action_args=args,
+                begin_execute_action=None,
+                success_action=store_outputs_action,
+                failure_action=None)
+
+        self.execute = self.add_subnet(
+                enets.LSFCommandNet, "%s execute" % name,
+                action_class=GenomeExecuteAction, action_args=args,
+                dispatch_success_action=self._update_action("dispatched"),
+                dispatch_failure_action=self._update_action("failed"),
+                begin_execute_action=self._update_action("running"),
+                success_action=store_outputs_action,
+                failure_action=None)
 
         self.start_transition.arcs_out.add(self.shortcut.start)
 
-        self.execute = self.add_subnet(enets.LSFCommandNet, "%s execute" % name,
-                action_class=GenomeExecuteAction, action_args=args)
+        self.success_place = self.add_place("%s success" % name)
+        self.success_place.arcs_out.add(self.success_transition)
 
-        self.shortcut.execute_success.action = store_outputs_action
-        self.execute.execute_success.action = store_outputs_action
+        self.bridge_places(self.shortcut.success, self.success_place, name="",
+                action=self._update_action("success"))
+        self.bridge_places(self.shortcut.failure, self.execute.start, name="")
 
-        self.bridge_places(self.shortcut.success, self.success_place, "")
-        self.bridge_places(self.shortcut.failure, self.execute.start, "")
-
-        self.bridge_places(self.execute.success, self.success_place, "")
-        self.bridge_places(self.execute.failure, self.failure_place, "")
+        self.bridge_places(self.execute.success, self.success_place, name="",
+                action=self._update_action("success"))
+        self.bridge_places(self.execute.failure, self.failure_place, name="",
+                action=self._update_action("failure"))
 
 
 class GenomeParallelByNet(nb.EmptyNet):

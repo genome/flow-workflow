@@ -352,7 +352,9 @@ def parse_workflow_xml(xml_etree, resources, net_builder):
             args={"input_type": "output", "output_type": "output"},
             )
 
-    children_info = [{'id':x.id, 'name':x.name} for x in model.children]
+    children_info = [{'id':x.id, 'name':x.name, 'status': 'new'}
+            for x in model.children]
+
     action_spec = nb.ActionSpec(cls=WorkflowHistorianUpdateAction,
             args={'children_info':children_info})
 
