@@ -18,7 +18,6 @@ class WorkflowHistorianServiceInterface(object):
             parent_key=None,
             peer_key=None,
             parallel_index=None,
-            xml=None,
             is_subflow=False,
             start_time=None,
             end_time=None,

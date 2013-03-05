@@ -12,7 +12,6 @@ class UpdateMessage(Message):
             'parent_key': basestring,
             'peer_key': basestring,
             'parallel_index': int,
-            'xml': basestring,
             'is_subflow': bool,
             'start_time': basestring,
             'end_time': basestring,
