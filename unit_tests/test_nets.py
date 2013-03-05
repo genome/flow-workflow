@@ -110,9 +110,9 @@ class TestBuildParallelByAction(NetTest):
         net = MagicMock()
         net.key = "netkey!"
 
-        services = {"orchestrator": Mock()}
+        service_interfaces = {"orchestrator": Mock()}
         wtf = wfnets.BuildParallelByAction.execute(obj,
-                active_tokens_key=None, net=net, services=services)
+                active_tokens_key=None, net=net, service_interfaces=service_interfaces)
 
 if __name__ == "__main__":
     main()

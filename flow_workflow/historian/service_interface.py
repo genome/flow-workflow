@@ -3,7 +3,7 @@ from flow_workflow.historian.messages import UpdateMessage
 
 LOG = logging.getLogger(__name__)
 
-class WorkflowHistorianClient(object):
+class WorkflowHistorianServiceInterface(object):
     def __init__(self,
             broker=None,
             exchange=None,

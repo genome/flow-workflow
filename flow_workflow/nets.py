@@ -89,8 +89,8 @@ class InputsMixin(object):
 class WorkflowHistorianUpdateAction(sn.TransitionAction):
     required_args = ['children_info']
 
-    def execute(self, active_tokens_key, net, services):
-        historian = services['workflow_historian']
+    def execute(self, active_tokens_key, net, service_interfaces):
+        historian = service_interfaces['workflow_historian']
         net_key = net.key
         for child_info in self.args['children_info']:
             historian.update(net_key=net_key, operation_id=child_info['id'],
@@ -102,7 +102,7 @@ class BuildParallelByAction(InputsMixin, sn.TransitionAction):
             "input_connections", "operation_id", "success_place",
             "failure_place"]
 
-    def execute(self, active_tokens_key, net, services):
+    def execute(self, active_tokens_key, net, service_interfaces):
         action_type = self.args["action_type"]
         action_id = self.args["action_id"]
         parallel_by = self.args["parallel_by"]
@@ -181,7 +181,7 @@ class BuildParallelByAction(InputsMixin, sn.TransitionAction):
         stored_net = builder.store(self.connection)
         stored_net.copy_constants_from(net)
 
-        orchestrator = services["orchestrator"]
+        orchestrator = service_interfaces["orchestrator"]
         token = sn.Token.create(self.connection, data=inputs, data_type="output")
         orchestrator.set_token(stored_net.key, pby_net.start_place.index, token.key)
 
@@ -214,7 +214,7 @@ class GenomeConvergeAction(InputsMixin, sn.TransitionAction):
 
     output_token_type = "output"
 
-    def execute(self, active_tokens_key, net, services):
+    def execute(self, active_tokens_key, net, service_interfaces):
         operation_id = self.args["operation_id"]
         input_property_order = self.args["input_property_order"]
         output_properties = self.args["output_properties"]
@@ -236,7 +236,7 @@ class StoreOutputsAction(sn.TransitionAction):
         merged = sn.merge_token_data(tokens, "output")
         return merged
 
-    def execute(self, active_tokens_key, net, services):
+    def execute(self, active_tokens_key, net, service_interfaces):
         operation_id = self.args["operation_id"]
         input_data = self.input_data(active_tokens_key, net)
 
@@ -246,7 +246,7 @@ class StoreOutputsAction(sn.TransitionAction):
 class StoreInputsAsOutputsAction(InputsMixin, sn.TransitionAction):
     required_arguments = ["operation_id", "input_connections"]
 
-    def execute(self, active_tokens_key, net, services):
+    def execute(self, active_tokens_key, net, service_interfaces):
         operation_id = self.args["operation_id"]
         input_data = self.input_data(active_tokens_key, net)
 
