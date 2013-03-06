@@ -1,29 +1,27 @@
-import cx_Oracle
+from sqlalchemy import create_engine
 import logging
+from sqlalchemy.exc import IntegrityError
 
 LOG = logging.getLogger(__name__)
 EMPTY_FROZEN_HASH = "".join([chr(x) for x in [5,7,3,0,0,0,0]])
 
 class WorkflowHistorianStorage(object):
-    def __init__(self, user, password, dsn, owner):
-        self.dsn = dsn
-        self.user = user
-        self.password = password
+    def __init__(self, connection_string, owner):
+        self.connection_string = connection_string
         self.owner = owner
-        self._connection = None
+        self.engine = create_engine(connection_string)
 
-    def _next_id(self, conn, table_name):
-        cur = conn.cursor()
+    def _next_id(self, table_name):
         s = "SELECT %s.%s_seq.nextval FROM DUAL" % (self.owner, table_name)
         LOG.debug("EXECUTING: %s", s)
-        cur.execute(s)
-        return cur.fetchone()[0]
+        self.engine.execute(s)
+        return self.engine.fetchone()[0]
 
-    def next_instance_id(self, conn):
-        return self._next_id(conn, 'workflow_instance')
+    def next_instance_id(self):
+        return self._next_id('workflow_instance')
 
-    def next_execution_id(self, conn):
-        return self._next_id(conn, 'workflow_execution')
+    def next_execution_id(self):
+        return self._next_id('workflow_execution')
 
     def update(self, net_key, operation_id,
             name=None,
@@ -38,20 +36,42 @@ class WorkflowHistorianStorage(object):
             stderr=None,
             exit_code=None):
 
-        # TODO 
-        cur = self.connection.cursor()
-        pass
+        instance_id = self.next_instance_id()
+        e = self.engine
+        try:
+            e.execute("""
+                    INSERT INTO %s.workflow_historian (net_key,
+                        operation_id, workflow_instance_id) VALUES
+                        (:net_key, :operation_id, :workflow_instance_id)""" %
+                    self.owner,
+                    net_key=net_key,
+                    operation_id=operation_id,
+                    workflow_instance_id=instance_id)
+        except IntegrityError:
+            e.execute("""SELECT %s.workflow_instance_id FROM
+                    %s.workflow_historian WHERE net_key=:net_key AND
+                    operation_id=:operation_id""" % self.owner,
+                    net_key=net_key,
+                    operation_id=operation_id)
+            instance_id = e.fetchone()[0]
+            # update instance
+            # update instance_execution
+        else:
+            # insert into instance
+            insert = {'workflow_instance_id': instance_id}
+            if name is not None:
+                insert['name'] = name
+            execute_insert(insert,
+                    table_name="%s.workflow_instance" % self.owner,
+                    engine=e)
+            # insert into instance_execution
 
-    @property
-    def connection(self):
-        if self._connection is None:
-            self._connection = self._connect()
-        return self._connection
+def execute_insert(idict, table_name=None, engine=None):
+    names = ",".join(idict.keys())
+    place_holders = ",".join([":%s" % x for x in idict.keys()])
+    cmd = "INSERT INTO %s (%s) VALUES (%s)" % (table_name, names, place_holders)
 
-    def _connect(self):
-        LOG.debug("Connecting to %s as user: %s",
-                self.dsn, self.user)
-        conn = cx_Oracle.connect(self.user, self.password, self.dsn)
-        conn.autocommit = False
-        return conn
+    LOG.debug("EXECUTING: %s", cmd)
+    engine.execute(cmd, **idict)
+
 

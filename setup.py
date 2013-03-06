@@ -22,6 +22,7 @@ setup(
             'nose',
         ],
         install_requires = [
+            'sqlalchemy',
             'hiredis',
             'redis',
             'lxml',

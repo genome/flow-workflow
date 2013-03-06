@@ -4,27 +4,23 @@ from collections import defaultdict
 from flow_workflow.historian.storage import WorkflowHistorianStorage, EMPTY_FROZEN_HASH
 
 class TestHistorianStorage(WorkflowHistorianStorage):
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        WorkflowHistorianStorage.__init__(self, *args, **kwargs)
         self._ids = defaultdict(lambda:0)
-        self.owner = 'WORKFLOW'
-        self._connection = None
 
-    def _connect(self):
-        conn = sqlite3.connect(":memory:")
-        cur = conn.cursor()
-        cur.execute("ATTACH DATABASE ':memory:' as WORKFLOW")
-        cur.execute(CREATE_INSTANCE_TABLE)
-        cur.execute(CREATE_EXECUTION_TABLE)
-        cur.execute(CREATE_WORKFLOW_HISTORIAN_TABLE)
-        conn.commit()
-        return conn
+    def create_tables(self):
+        with self.engine.begin() as conn:
+            conn.execute("ATTACH DATABASE ':memory:' as WORKFLOW")
+            conn.execute(CREATE_INSTANCE_TABLE)
+            conn.execute(CREATE_EXECUTION_TABLE)
+            conn.execute(CREATE_WORKFLOW_HISTORIAN_TABLE)
 
-    def _next_id(self, conn, table_name):
+    def _next_id(self, table_name):
         self._ids[table_name] += 1
         return self._ids[table_name]
 
 CREATE_INSTANCE_TABLE = """
-CREATE WORKFLOW.TABLE WORKFLOW_INSTANCE (
+CREATE TABLE WORKFLOW.WORKFLOW_INSTANCE (
     WORKFLOW_INSTANCE_ID integer primary key not null,
     PARENT_INSTANCE_ID integer,
     PEER_INSTANCE_ID integer,
@@ -68,21 +64,30 @@ CREATE TABLE WORKFLOW.WORKFLOW_HISTORIAN (
 )
 """
 
+
+
 class TestStorage(unittest.TestCase):
     def setUp(self):
-        self.s = TestHistorianStorage()
-
-    def tearDown(self):
-        self.s.connection.close()
+        self.s = TestHistorianStorage("sqlite:///:memory:", "WORKFLOW")
+        self.s.create_tables()
 
     def test_test_class(self):
-        conn = self.s.connection
-        self.assertEqual(1, self.s.next_execution_id(conn))
-        self.assertEqual(2, self.s.next_execution_id(conn))
+        self.assertEqual(1, self.s.next_execution_id())
+        self.assertEqual(2, self.s.next_execution_id())
 
-        self.assertEqual(1, self.s.next_instance_id(conn))
-        self.assertEqual(2, self.s.next_instance_id(conn))
+        self.assertEqual(1, self.s.next_instance_id())
+        self.assertEqual(2, self.s.next_instance_id())
 
-        self.assertEqual(3, self.s.next_instance_id(conn))
-        self.assertEqual(3, self.s.next_execution_id(conn))
+        self.assertEqual(3, self.s.next_instance_id())
+        self.assertEqual(3, self.s.next_execution_id())
+
+    def test_single_insert(self):
+        engine = self.s.engine
+
+        self.s.update("test", 1234, name='test_name')
+        result = engine.execute("SELECT workflow_instance_id, name FROM workflow.workflow_instance")
+        rows = result.fetchall()
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]['NAME'], 'test_name')
+
 
