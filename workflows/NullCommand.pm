@@ -32,7 +32,7 @@ class NullCommand {
     ],
     has => [
         lsf_resource => {
-            default_value => "-M 20000 -n 4 -R 'select[mem >= 20]' -q short",
+            default_value => "-M 20000 -n 4 -c 10 -R 'select[mem >= 20] rusage[mem=20:gtmp=5]' -q short",
         },
     ]
 };

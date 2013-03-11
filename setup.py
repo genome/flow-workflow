@@ -8,6 +8,7 @@ workflow_historian_service = flow.commands.service:ServiceCommand
 [flow.factories]
 workflow_historian_message_handler = flow_workflow.historian.handler:WorkflowHistorianMessageHandler
 workflow_historian_service_interface = flow_workflow.historian.service_interface:WorkflowHistorianServiceInterface
+workflow_historian_storage = flow_workflow.historian.storage:WorkflowHistorianStorage
 
 [flow.protocol.message_classes]
 workflow_historian_message = flow_workflow.historian.messages:UpdateMessage
@@ -22,6 +23,7 @@ setup(
             'nose',
         ],
         install_requires = [
+            'cx_Oracle',
             'sqlalchemy',
             'hiredis',
             'redis',

@@ -16,6 +16,7 @@ import re
 MAX_FILENAME_LEN = 50
 WORKFLOW_WRAPPER = 'workflow-wrapper'
 
+
 class WorkflowEntity(object):
     @property
     def id(self):
@@ -60,7 +61,10 @@ class CommandOperation(WorkflowOperation):
     def __init__(self, xml, log_dir, resources):
         WorkflowOperation.__init__(self, xml, log_dir)
         self.perl_class = self._type_attributes['commandClass']
-        self.resources = resources.get(self.name, {})
+
+        resource = resources.get(self.name, {})
+        self.resources = resource.get("resource")
+        self.queue = resource.get("queue")
 
         self.parallel_by = ""
         if "parallelBy" in self._operation_attributes:
@@ -77,6 +81,7 @@ class CommandOperation(WorkflowOperation):
                     parallel_by=self.parallel_by,
                     stdout=self.stdout_log_file,
                     stderr=self.stderr_log_file,
+                    queue=self.queue,
                     resources=self.resources
                     )
 
@@ -88,6 +93,7 @@ class CommandOperation(WorkflowOperation):
                 input_connections=input_connections,
                 stdout=self.stdout_log_file,
                 stderr=self.stderr_log_file,
+                queue=self.queue,
                 resources=self.resources
                 )
 
@@ -96,7 +102,10 @@ class EventOperation(WorkflowOperation):
     def __init__(self, xml, log_dir, resources):
         WorkflowOperation.__init__(self, xml, log_dir)
         self.event_id = self._type_attributes['eventId']
-        self.resources = resources.get(self.name, {})
+
+        resource = resources.get(self.name, {})
+        self.resources = resource.get("resource")
+        self.queue = resource.get("queue")
 
     def net(self, builder, input_connections=None):
         return builder.add_subnet(GenomeActionNet,
@@ -107,6 +116,7 @@ class EventOperation(WorkflowOperation):
                 input_connections=input_connections,
                 stdout=self.stdout_log_file,
                 stderr=self.stderr_log_file,
+                queue=self.queue,
                 resources=self.resources
                 )
 
@@ -305,8 +315,7 @@ class ModelOperation(WorkflowOperation):
         self.operations.append(operation)
 
     def net(self, builder, data_arcs=None):
-        net = builder.add_subnet(GenomeModelNet, self.name, self.id, data_arcs,
-                self.resources)
+        net = builder.add_subnet(GenomeModelNet, self.name, self.id, data_arcs)
 
         ops_to_subnets = {}
 

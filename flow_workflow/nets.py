@@ -258,12 +258,14 @@ class StoreInputsAsOutputsAction(InputsMixin, sn.TransitionAction):
 
 
 class GenomeNet(nb.EmptyNet):
-    def __init__(self, builder, name, operation_id, input_connections, resources):
+    def __init__(self, builder, name, operation_id, input_connections, queue=None,
+            resources=None):
 
         nb.EmptyNet.__init__(self, builder, name)
 
         self.operation_id = operation_id
         self.input_connections = input_connections
+        self.queue = queue
         self.resources = resources
 
         self.start_transition = self.add_transition("%s start_trans" % name)
@@ -280,17 +282,17 @@ class GenomeModelNet(GenomeNet):
 class GenomeActionNet(GenomeNet):
 
     def _update_action(self, status):
-        info = {"id": self.operation_id, "status": status}
+        info = {"id": self.operation_id, "status": status, "name": self.name}
         args = {"children_info": [info]}
 
         return nb.ActionSpec(WorkflowHistorianUpdateAction, args=args)
 
     def __init__(self, builder, name, operation_id, input_connections,
             action_type, action_id, parallel_by_spec=None,
-            stdout=None, stderr=None, resources=None):
+            stdout=None, stderr=None, queue=None, resources=None):
 
         GenomeNet.__init__(self, builder, name, operation_id, input_connections,
-                resources)
+                queue, resources)
 
         self.action_type = action_type
         self.action_id = action_id
@@ -303,6 +305,7 @@ class GenomeActionNet(GenomeNet):
                 "stdout": stdout,
                 "stderr": stderr,
                 "resources": self.resources,
+                "queue": self.queue
                 }
 
         if parallel_by_spec:
@@ -345,8 +348,8 @@ class GenomeActionNet(GenomeNet):
 
 class GenomeParallelByNet(nb.EmptyNet):
     def __init__(self, builder, name, operation_id, input_connections,
-            action_type, action_id, parallel_by,
-            stdout=None, stderr=None, resources=None):
+            action_type, action_id, parallel_by, stdout=None, stderr=None,
+            queue=None, resources=None):
 
         nb.EmptyNet.__init__(self, builder, name)
 
@@ -355,6 +358,7 @@ class GenomeParallelByNet(nb.EmptyNet):
         self.action_id = action_id
         self.operation_id = operation_id
         self.input_connections = input_connections
+        self.queue = queue
         self.resources = resources
 
         self.running = self.add_place("running")
@@ -372,7 +376,7 @@ class GenomeParallelByNet(nb.EmptyNet):
             "stderr": stderr,
             "success_place": self.on_success.index,
             "failure_place": self.on_failure.index,
-            "resources": self.resources,
+            "resources": self.resources
         }
 
         action = nb.ActionSpec(cls=BuildParallelByAction, args=args)

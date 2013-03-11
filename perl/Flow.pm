@@ -91,13 +91,33 @@ sub decode_io_hash {
     };
 }
 
+sub translate_workflow_resource {
+    my %r = @_;
+
+    my %f = (
+        limit => {},
+        reserve => {},
+        require => {},
+    );
+
+    $f{require}{min_proc} = $r{minProc} if exists $r{minProc};
+    $f{require}{max_proc} = $r{maxProc} if exists $r{maxProc};
+
+    if (exists $r{tmpSpace}) {
+        $f{require}{temp_space} = $r{tmpSpace};
+        $f{reserve}{temp_space} = $r{tmpSpace} if exists $r{useGtmp};
+    }
+    $f{reserve}{memory} = $r{memRequest} if exists $r{memRequest};
+    $f{limit}{max_virtual_memory} = $r{memLimit} * 1024 if exists $r{memLimit};
+
+    $f{limit}{cpu_time} = $r{timeLimit} if exists $r{timeLimit};
+
+    return \%f;
+}
+
 sub run_workflow {
     my ($wf_string, $inputs, $resource_reqs) = @_;
     my $result;
-
-    my %params = @_;
-
-    print "Running workflow from string\n";
 
     my $cleanup = !exists $ENV{FLOW_WORKFLOW_NO_CLEANUP};
     my $tmpdir = tempdir(CLEANUP => $cleanup);
