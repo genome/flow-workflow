@@ -93,8 +93,9 @@ class WorkflowHistorianUpdateAction(sn.TransitionAction):
         historian = service_interfaces['workflow_historian']
         net_key = net.key
         for child_info in self.args['children_info']:
-            historian.update(net_key=net_key, operation_id=child_info['id'],
-                    name=child_info['name'], status=child_info['status'])
+            operation_id = child_info['id']
+            del child_info['id']
+            historian.update(net_key=net_key, operation_id=operation_id, **child_info)
 
 
 class BuildParallelByAction(InputsMixin, sn.TransitionAction):
@@ -279,7 +280,7 @@ class GenomeModelNet(GenomeNet):
 class GenomeActionNet(GenomeNet):
 
     def _update_action(self, status):
-        info = {"id": self.operation_id, "name": self.name, "status": status}
+        info = {"id": self.operation_id, "status": status}
         args = {"children_info": [info]}
 
         return nb.ActionSpec(WorkflowHistorianUpdateAction, args=args)
@@ -339,7 +340,7 @@ class GenomeActionNet(GenomeNet):
         self.bridge_places(self.execute.success, self.success_place, name="",
                 action=self._update_action("success"))
         self.bridge_places(self.execute.failure, self.failure_place, name="",
-                action=self._update_action("failure"))
+                action=self._update_action("failed"))
 
 
 class GenomeParallelByNet(nb.EmptyNet):
