@@ -94,7 +94,11 @@ class WorkflowHistorianStorage(object):
             stderr              = None,
             exit_code           = None,
             conn                = None,
-            trans               = None):
+            trans               = None,
+            recursion_level     = 0):
+
+        if recursion_level > 1:
+            raise RuntimeError("update should never recurse more than once!");
 
         if status is not None:
             try:
@@ -110,7 +114,6 @@ class WorkflowHistorianStorage(object):
             trans = conn.begin()
             created_transaction = True
 
-        instance_id = self.next_instance_id(conn)
         try:
             execute_and_log(conn,
                     INSERT_INTO_WORKFLOW_HISTORIAN % self.owner,
@@ -174,12 +177,14 @@ class WorkflowHistorianStorage(object):
             raise
         else:
             try:
+
                 # insert NULL into plan
                 plan_id = self.next_plan_id(conn)
                 _perform_insert(conn, {'WORKFLOW_PLAN_ID':plan_id},
                         table_name='%s.workflow_plan' % self.owner)
 
                 # insert into instance
+                instance_id = self.next_instance_id(conn)
                 execution_id = self.next_execution_id(conn)
                 insert_instance_dict = {
                         'WORKFLOW_INSTANCE_ID': instance_id,
@@ -334,7 +339,7 @@ class WorkflowHistorianStorage(object):
             instance_id = rows[0][0]
             return instance_id
         return self.update(net_key, operation_id, 'pending',
-                conn=conn, trans=trans)
+                conn=conn, trans=trans, recursion_level=self.recursion_level+1)
 
     def _get_execution_id(self, conn, trans, net_key=None, operation_id=None,
             instance_id=None):
