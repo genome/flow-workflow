@@ -8,8 +8,13 @@ LOG = logging.getLogger(__name__)
 EMPTY_FROZEN_HASH = "".join([chr(x) for x in [5,7,3,0,0,0,0]])
 
 INSERT_INTO_WORKFLOW_HISTORIAN = """
-INSERT INTO %s.workflow_historian (net_key, operation_id, workflow_instance_id)
-VALUES (:net_key, :operation_id, :workflow_instance_id)
+INSERT INTO %s.workflow_historian (net_key, operation_id)
+VALUES (:net_key, :operation_id)
+"""
+
+UPDATE_WORKFLOW_HISTORIAN = """
+UPDATE %s.workflow_historian SET workflow_instance_id = :workflow_instance_id
+WHERE net_key= :net_key AND operation_id= :operation_id
 """
 
 SELECT_INSTANCE_ID = """
@@ -118,14 +123,13 @@ class WorkflowHistorianStorage(object):
             execute_and_log(conn,
                     INSERT_INTO_WORKFLOW_HISTORIAN % self.owner,
                     net_key=net_key,
-                    operation_id=operation_id,
-                    workflow_instance_id=instance_id)
+                    operation_id=operation_id)
         except IntegrityError:
             LOG.debug("Failed to insert (net_key=%s, operation_id=%s) into "
                     "workflow_historian table, attempting update instead." %
                     (net_key, operation_id))
             try:
-                instance_id = self._get_instance_id(conn, trans, net_key,
+                instance_id = self._get_instance_id(conn, trans, recursion_level, net_key,
                         operation_id)
                 instance_row, execution_row = self._get_rows(conn, trans,
                         instance_id)
@@ -134,7 +138,7 @@ class WorkflowHistorianStorage(object):
                         execution_row['STATUS'], status)
 
                 update_instance_dict = self._get_update_instance_dict(conn,
-                        trans, name,
+                        trans, recursion_level, name,
                         instance_row        = instance_row,
                         should_overwrite    = should_overwrite,
                         parent_net_key      = parent_net_key,
@@ -183,8 +187,15 @@ class WorkflowHistorianStorage(object):
                 _perform_insert(conn, {'WORKFLOW_PLAN_ID':plan_id},
                         table_name='%s.workflow_plan' % self.owner)
 
-                # insert into instance
+                # update workflow_historian table
                 instance_id = self.next_instance_id(conn)
+                execute_and_log(conn,
+                        UPDATE_WORKFLOW_HISTORIAN % self.owner,
+                        net_key=net_key,
+                        operation_id=operation_id,
+                        workflow_instance_id=instance_id)
+
+                # insert into instance
                 execution_id = self.next_execution_id(conn)
                 insert_instance_dict = {
                         'WORKFLOW_INSTANCE_ID': instance_id,
@@ -195,7 +206,7 @@ class WorkflowHistorianStorage(object):
                 }
 
                 insert_instance_dict.update(self._get_update_instance_dict(conn,
-                        trans, name,
+                        trans, recursion_level, name,
                         should_overwrite    = True,
                         parent_net_key      = parent_net_key,
                         parent_operation_id = parent_operation_id,
@@ -259,7 +270,7 @@ class WorkflowHistorianStorage(object):
         execution_row = r2.fetchone()
         return instance_row, execution_row
 
-    def _get_update_instance_dict(self, conn, trans, name,
+    def _get_update_instance_dict(self, conn, trans, recursion_level, name,
             instance_row        = None,
             should_overwrite    = False,
             parent_net_key      = None,
@@ -274,14 +285,14 @@ class WorkflowHistorianStorage(object):
         if parent_net_key is not None:
             if is_subflow:
                 r['PARENT_EXECUTION_ID'] = self._get_execution_id(conn,
-                        trans, parent_net_key, parent_operation_id)
+                        trans, recursion_level, parent_net_key, parent_operation_id)
             else:
                 r['PARENT_INSTANCE_ID'] = self._get_instance_id(conn,
-                        trans, parent_net_key, parent_operation_id)
+                        trans, recursion_level, parent_net_key, parent_operation_id)
 
         if peer_net_key is not None:
             r['PEER_INSTANCE_ID'] = self._get_instance_id(conn, trans,
-                    peer_net_key, peer_operation_id)
+                    recursion_level, peer_net_key, peer_operation_id)
 
         if parallel_index is not None:
             r['PARALLEL_INDEX'] = parallel_index
@@ -329,7 +340,7 @@ class WorkflowHistorianStorage(object):
         return self._generate_update_dict(r, row=execution_row,
                 should_overwrite=should_overwrite)
 
-    def _get_instance_id(self, conn, trans, net_key, operation_id):
+    def _get_instance_id(self, conn, trans, recursion_level, net_key, operation_id):
         r = execute_and_log(conn,
                 SELECT_INSTANCE_ID % self.owner,
                 net_key=net_key,
@@ -339,12 +350,12 @@ class WorkflowHistorianStorage(object):
             instance_id = rows[0][0]
             return instance_id
         return self.update(net_key, operation_id, 'pending',
-                conn=conn, trans=trans, recursion_level=self.recursion_level+1)
+                conn=conn, trans=trans, recursion_level=recursion_level+1)
 
-    def _get_execution_id(self, conn, trans, net_key=None, operation_id=None,
+    def _get_execution_id(self, conn, trans, recursion_level, net_key=None, operation_id=None,
             instance_id=None):
         if instance_id is None:
-            instance_id = self._get_instance_id(conn, trans, net_key,
+            instance_id = self._get_instance_id(conn, trans, recursion_level, net_key,
                     operation_id)
 
         result = execute_and_log(conn,
