@@ -148,7 +148,6 @@ class WorkflowHistorianStorage(object):
                 insert_instance_dict = {
                         'WORKFLOW_INSTANCE_ID': instance_id,
                         'WORKFLOW_PLAN_ID': plan_id,
-                        'CURRENT_EXECUTION_ID': execution_id,
                         'INPUT_STORED': EMPTY_FROZEN_HASH,
                         'OUTPUT_STORED': EMPTY_FROZEN_HASH,
                 }
@@ -179,6 +178,10 @@ class WorkflowHistorianStorage(object):
                 _perform_insert(transaction, insert_execution_dict,
                         table_name="%s.workflow_instance_execution" %
                                 self.owner)
+
+                self._update_instance(transaction,
+                        {'CURRENT_EXECUTION_ID': execution_id},
+                        instance_id)
 
                 if recursion_level == 0:
                     transaction.commit()
