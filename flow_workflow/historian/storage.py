@@ -14,7 +14,7 @@ VALUES (:net_key, :operation_id)
 
 UPDATE_WORKFLOW_HISTORIAN = """
 UPDATE %s.workflow_historian SET workflow_instance_id = :workflow_instance_id
-WHERE net_key= :net_key AND operation_id= :operation_id
+WHERE net_key=:net_key AND operation_id=:operation_id
 """
 
 SELECT_INSTANCE_ID = """
@@ -56,55 +56,23 @@ STATUSES = [
         'done',
 ]
 
-def execute_and_log(engine, stmnt, **kwargs):
-    full_stmnt = stmnt
-    for name, value in kwargs.items():
-        full_stmnt = re.sub(r':' + name, str(value), full_stmnt)
-    LOG.debug("EXECUTING: %s", full_stmnt)
-    return engine.execute(stmnt, **kwargs)
-
 class WorkflowHistorianStorage(object):
     def __init__(self, connection_string, owner):
         self.connection_string = connection_string
         self.owner = owner
         self.engine = create_engine(connection_string)
 
-    def _next_id(self, engine, table_name):
-        stmnt = "SELECT %s.%s_seq.nextval FROM DUAL" % (self.owner, table_name)
-        result = execute_and_log(engine, stmnt)
-        return result.fetchone()[0]
+    def update(self, net_key, operation_id, name, **kwargs):
+        transaction = kwargs.pop('transaction', None)
+        recursion_level = kwargs.pop('recursion_level', 0)
 
-    def next_instance_id(self, engine):
-        return self._next_id(engine, 'workflow_instance')
-
-    def next_execution_id(self, engine):
-        return self._next_id(engine, 'workflow_execution')
-
-    def next_plan_id(self, engine):
-        return self._next_id(engine, 'workflow_plan')
-
-    def update(self, net_key, operation_id, name,
-            parent_net_key      = None,
-            parent_operation_id = None,
-            is_subflow          = False,
-            peer_net_key        = None,
-            peer_operation_id   = None,
-            parallel_index      = None,
-            status              = None,
-            user_name           = None,
-            dispatch_id         = None,
-            start_time          = None,
-            end_time            = None,
-            stdout              = None,
-            stderr              = None,
-            exit_code           = None,
-            conn                = None,
-            trans               = None,
-            recursion_level     = 0):
+        hdict = kwargs
+        hdict['name'] = name
 
         if recursion_level > 1:
             raise RuntimeError("update should never recurse more than once!");
 
+        status = kwargs.get('status', None)
         if status is not None:
             try:
                 STATUSES.index(status)
@@ -112,15 +80,11 @@ class WorkflowHistorianStorage(object):
                 raise ValueError("Status must be one of %s, not '%s'" %
                         (STATUSES, status))
 
-        # only the update call that created this transaction should commit
-        created_transaction = False
-        if conn is None:
-            conn = self.engine.connect()
-            trans = conn.begin()
-            created_transaction = True
+        if transaction is None:
+            transaction = SimpleTransaction(self.engine)
 
         try:
-            execute_and_log(conn,
+            execute_and_log(transaction,
                     INSERT_INTO_WORKFLOW_HISTORIAN % self.owner,
                     net_key=net_key,
                     operation_id=operation_id)
@@ -129,74 +93,58 @@ class WorkflowHistorianStorage(object):
                     "workflow_historian table, attempting update instead." %
                     (net_key, operation_id))
             try:
-                instance_id = self._get_instance_id(conn, trans, recursion_level, net_key,
-                        operation_id)
-                instance_row, execution_row = self._get_rows(conn, trans,
+                instance_id = self._get_instance_id(transaction,
+                        recursion_level, net_key, operation_id)
+                instance_row, execution_row = self._get_rows(transaction,
                         instance_id)
                 execution_id = instance_row['CURRENT_EXECUTION_ID']
                 should_overwrite = self._should_overwrite(
                         execution_row['STATUS'], status)
 
-                update_instance_dict = self._get_update_instance_dict(conn,
-                        trans, recursion_level, name,
-                        instance_row        = instance_row,
-                        should_overwrite    = should_overwrite,
-                        parent_net_key      = parent_net_key,
-                        parent_operation_id = parent_operation_id,
-                        is_subflow          = is_subflow,
-                        peer_net_key        = peer_net_key,
-                        peer_operation_id   = peer_operation_id,
-                        parallel_index      = parallel_index)
+                update_instance_dict = self._get_update_instance_dict(
+                        transaction      = transaction,
+                        recursion_level  = recursion_level,
+                        hdict            = hdict,
+                        instance_row     = instance_row,
+                        should_overwrite = should_overwrite)
 
-                # update instance
-                _perform_update(conn, update_instance_dict,
-                        "%s.workflow_instance" % self.owner,
-                        "workflow_instance_id", instance_id)
+                self._update_instance(transaction, update_instance_dict,
+                        instance_id)
 
-                update_execution_dict = self._get_update_execution_dict(conn,
-                        trans,
+                update_execution_dict = self._get_update_execution_dict(
+                        transaction      = transaction,
+                        hdict            = hdict,
                         execution_row    = execution_row,
-                        should_overwrite = should_overwrite,
-                        status           = status,
-                        dispatch_id      = dispatch_id,
-                        user_name        = user_name,
-                        start_time       = start_time,
-                        end_time         = end_time,
-                        stdout           = stdout,
-                        stderr           = stderr,
-                        exit_code        = exit_code)
+                        should_overwrite = should_overwrite)
 
-                # update instance_execution
-                _perform_update(conn, update_execution_dict,
-                        "%s.workflow_instance_execution" % self.owner,
-                        "workflow_execution_id", execution_id)
+                self._update_execution(transaction, update_execution_dict,
+                        execution_id)
 
-                if created_transaction:
-                    trans.commit()
+                if recursion_level == 0:
+                    transaction.commit()
             except:
-                trans.rollback()
+                transaction.rollback()
                 raise
         except:
-            trans.rollback()
+            transaction.rollback()
             raise
         else:
             try:
-
                 # insert NULL into plan
-                plan_id = self.next_plan_id(conn)
-                _perform_insert(conn, {'WORKFLOW_PLAN_ID':plan_id},
+                plan_id = self.next_plan_id(transaction)
+                _perform_insert(transaction, {'WORKFLOW_PLAN_ID':plan_id},
                         table_name='%s.workflow_plan' % self.owner)
 
                 # update workflow_historian table
-                instance_id = self.next_instance_id(conn)
-                execute_and_log(conn,
+                instance_id = self.next_instance_id(transaction)
+                execute_and_log(transaction,
                         UPDATE_WORKFLOW_HISTORIAN % self.owner,
                         net_key=net_key,
                         operation_id=operation_id,
                         workflow_instance_id=instance_id)
 
                 # insert into instance
-                execution_id = self.next_execution_id(conn)
+                execution_id = self.next_execution_id(transaction)
                 insert_instance_dict = {
                         'WORKFLOW_INSTANCE_ID': instance_id,
                         'WORKFLOW_PLAN_ID': plan_id,
@@ -205,45 +153,65 @@ class WorkflowHistorianStorage(object):
                         'OUTPUT_STORED': EMPTY_FROZEN_HASH,
                 }
 
-                insert_instance_dict.update(self._get_update_instance_dict(conn,
-                        trans, recursion_level, name,
-                        should_overwrite    = True,
-                        parent_net_key      = parent_net_key,
-                        parent_operation_id = parent_operation_id,
-                        is_subflow          = is_subflow,
-                        peer_net_key        = peer_net_key,
-                        peer_operation_id   = peer_operation_id,
-                        parallel_index      = parallel_index))
+                insert_instance_dict.update(self._get_update_instance_dict(
+                        transaction      = transaction,
+                        recursion_level  = recursion_level,
+                        hdict            = hdict,
+                        instance_row     = None,
+                        should_overwrite = True))
 
-                # update instance
-                _perform_insert(conn, insert_instance_dict,
+                _perform_insert(transaction, insert_instance_dict,
                         table_name="%s.workflow_instance" % self.owner)
 
+                # insert into execution
                 if status is None:
                     status = 'new'
+                hdict['status'] = status
 
-                insert_execution_dict = self._get_update_execution_dict(conn,
-                        trans,
-                        should_overwrite = True,
-                        status           = status,
-                        dispatch_id      = dispatch_id,
-                        start_time       = start_time,
-                        end_time         = end_time,
-                        stdout           = stdout,
-                        stderr           = stderr,
-                        exit_code        = exit_code)
-                insert_execution_dict['WORKFLOW_INSTANCE_ID'] = instance_id
+                insert_execution_dict = self._get_update_execution_dict(
+                        transaction      = transaction,
+                        hdict            = hdict,
+                        execution_row    = None,
+                        should_overwrite = True)
                 insert_execution_dict['WORKFLOW_EXECUTION_ID'] = execution_id
+                insert_execution_dict['WORKFLOW_INSTANCE_ID'] = instance_id
 
-                _perform_insert(conn, insert_execution_dict,
-                        table_name="%s.workflow_instance_execution" % self.owner)
+                _perform_insert(transaction, insert_execution_dict,
+                        table_name="%s.workflow_instance_execution" %
+                                self.owner)
 
-                if created_transaction:
-                    trans.commit()
+                if recursion_level == 0:
+                    transaction.commit()
             except:
-                trans.rollback()
+                transaction.rollback()
                 raise
         return instance_id
+
+    def _update_instance(self, transaction, update_dict, instance_id):
+        return _perform_update(transaction, update_dict,
+                table_name = "%s.workflow_instance" % self.owner,
+                id_field   = "workflow_instance_id",
+                update_id  = instance_id)
+
+    def _update_execution(self, transaction, update_dict, execution_id):
+        return _perform_update(transaction, update_dict,
+                table_name="%s.workflow_instance_execution" % self.owner,
+                id_field="workflow_execution_id",
+                update_id=execution_id)
+
+    def _next_id(self, transaction, table_name):
+        stmnt = "SELECT %s.%s_seq.nextval FROM DUAL" % (self.owner, table_name)
+        result = execute_and_log(transaction, stmnt)
+        return result.fetchone()[0]
+
+    def next_instance_id(self, transaction):
+        return self._next_id(transaction, 'workflow_instance')
+
+    def next_execution_id(self, transaction):
+        return self._next_id(transaction, 'workflow_execution')
+
+    def next_plan_id(self, transaction):
+        return self._next_id(transaction, 'workflow_plan')
 
     def _should_overwrite(self, prev_status, new_status):
         if new_status is None:
@@ -258,50 +226,71 @@ class WorkflowHistorianStorage(object):
 
         return new_index >= prev_index
 
-
-    def _get_rows(self, conn, trans, instance_id):
-        r1 = conn.execute(SELECT_INSTANCE % self.owner,
+    def _get_rows(self, transaction, instance_id):
+        """
+        Return the row in the WORKFLOW_INSTANCE table and the
+        WORKFLOW_INSTANCE_EXECUTION table
+        """
+        r1 = transaction.execute(SELECT_INSTANCE % self.owner,
                 workflow_instance_id=instance_id)
         instance_row = r1.fetchone()
 
         execution_id = instance_row['CURRENT_EXECUTION_ID']
-        r2 = conn.execute(SELECT_EXECUTION % self.owner,
+        r2 = transaction.execute(SELECT_EXECUTION % self.owner,
                 workflow_execution_id = execution_id)
         execution_row = r2.fetchone()
         return instance_row, execution_row
 
-    def _get_update_instance_dict(self, conn, trans, recursion_level, name,
-            instance_row        = None,
-            should_overwrite    = False,
-            parent_net_key      = None,
-            parent_operation_id = None,
-            is_subflow          = False,
-            peer_net_key        = None,
-            peer_operation_id   = None,
-            parallel_index      = None):
+    def _get_update_instance_dict(self, transaction, recursion_level, hdict,
+            instance_row, should_overwrite):
 
-        r = {'NAME': name}
+        putative_dict = {'NAME': hdict['name']}
 
+        parent_net_key = hdict.get('parent_net_key', None)
+        parent_operation_id = hdict.get('parent_operation_id', None)
         if parent_net_key is not None:
-            if is_subflow:
-                r['PARENT_EXECUTION_ID'] = self._get_execution_id(conn,
-                        trans, recursion_level, parent_net_key, parent_operation_id)
+            if hdict.get('is_subflow', None):
+                putative_dict['PARENT_EXECUTION_ID'] = self._get_execution_id(
+                        transaction, recursion_level, parent_net_key,
+                        parent_operation_id)
             else:
-                r['PARENT_INSTANCE_ID'] = self._get_instance_id(conn,
-                        trans, recursion_level, parent_net_key, parent_operation_id)
+                putative_dict['PARENT_INSTANCE_ID'] = self._get_instance_id(
+                        transaction, recursion_level, parent_net_key,
+                        parent_operation_id)
 
+        peer_net_key = hdict.get('peer_net_key', None)
+        peer_operation_id = hdict.get('peer_operation_id', None)
         if peer_net_key is not None:
-            r['PEER_INSTANCE_ID'] = self._get_instance_id(conn, trans,
-                    recursion_level, peer_net_key, peer_operation_id)
+            putative_dict['PEER_INSTANCE_ID'] = self._get_instance_id(
+                    transaction, recursion_level, peer_net_key,
+                    peer_operation_id)
 
+        parallel_index = hdict.get('parallel_index', None)
         if parallel_index is not None:
-            r['PARALLEL_INDEX'] = parallel_index
+            putative_dict['PARALLEL_INDEX'] = parallel_index
 
-        return self._generate_update_dict(r, row=instance_row,
+        return self._generate_update_dict(putative_dict, row=instance_row,
                 should_overwrite=should_overwrite)
 
-    def _generate_update_dict(self, putative_dict, row=None,
-            should_overwrite=False):
+    def _get_update_execution_dict(self, transaction, hdict, execution_row,
+            should_overwrite):
+        putative_dict = {}
+        status = hdict.get('status', None)
+        putative_dict['IS_RUNNING'] = status in ['running', 'scheduled']
+        putative_dict['IS_DONE'] = status == 'done'
+        putative_dict['STATUS'] = status
+
+        for var_name in ['DISPATCH_ID', 'START_TIME', 'END_TIME', 'STDOUT',
+                'STDERR', 'EXIT_CODE']:
+            if hdict.get(var_name.lower(), None) is not None:
+                putative_dict[var_name] = hdict[var_name.lower()]
+
+        return self._generate_update_dict(putative_dict, row=execution_row,
+                should_overwrite=should_overwrite)
+
+    def _generate_update_dict(self, putative_dict,
+            row              = None,
+            should_overwrite = False):
         if row is None:
             row = defaultdict(lambda: None)
 
@@ -314,73 +303,78 @@ class WorkflowHistorianStorage(object):
                     update_dict[column_name] = value
         return update_dict
 
-
-    def _get_update_execution_dict(self, conn, trans,
-            execution_row    = None,
-            should_overwrite = False,
-            status           = None,
-            dispatch_id      = None,
-            user_name        = None,
-            start_time       = None,
-            end_time         = None,
-            stdout           = None,
-            stderr           = None,
-            exit_code        = None):
-
-        r = {}
-        r['IS_RUNNING'] = status in ['running', 'scheduled']
-        r['IS_DONE'] = status == 'done'
-        r['STATUS'] = status
-
-        for var_name in ['START_TIME', 'END_TIME', 'STDOUT',
-                'STDERR', 'EXIT_CODE']:
-            if locals()[var_name.lower()] is not None:
-                r[var_name] = locals()[var_name.lower()]
-
-        return self._generate_update_dict(r, row=execution_row,
-                should_overwrite=should_overwrite)
-
-    def _get_instance_id(self, conn, trans, recursion_level, net_key, operation_id):
-        r = execute_and_log(conn,
-                SELECT_INSTANCE_ID % self.owner,
-                net_key=net_key,
-                operation_id=operation_id)
-        rows = r.fetchall()
+    def _get_instance_id(self, transaction, recursion_level, net_key,
+            operation_id):
+        result = execute_and_log(transaction, SELECT_INSTANCE_ID % self.owner,
+                net_key=net_key, operation_id=operation_id)
+        rows = result.fetchall()
         if rows:
             instance_id = rows[0][0]
-            return instance_id
+            if instance_id is not None:
+                return instance_id
         return self.update(net_key, operation_id, 'pending',
-                conn=conn, trans=trans, recursion_level=recursion_level+1)
+                transaction=transaction, recursion_level=recursion_level+1)
 
-    def _get_execution_id(self, conn, trans, recursion_level, net_key=None, operation_id=None,
-            instance_id=None):
+    def _get_execution_id(self, transaction, recursion_level,
+            net_key      = None,
+            operation_id = None,
+            instance_id  = None):
         if instance_id is None:
-            instance_id = self._get_instance_id(conn, trans, recursion_level, net_key,
-                    operation_id)
+            instance_id = self._get_instance_id(transaction,
+                    recursion_level = recursion_level,
+                    net_key         = net_key,
+                    operation_id    = operation_id)
 
-        result = execute_and_log(conn,
-                SELECT_EXECUTION_ID % self.owner,
+        result = execute_and_log(transaction, SELECT_EXECUTION_ID % self.owner,
                 workflow_instance_id=instance_id)
         execution_id = result.fetchone()[0]
         return execution_id
 
 
-def _perform_insert(engine, idict, table_name):
+class SimpleTransaction(object):
+    def __init__(self, engine):
+        self.engine = engine
+        self.begin_transaction()
+
+    def begin_transaction(self):
+        self.conn = self.engine.connect()
+        self.trans = self.conn.begin()
+
+    def execute(self, *args, **kwargs):
+        return self.conn.execute(*args, **kwargs)
+
+    def commit(self, *args, **kwargs):
+        return self.trans.commit(*args, **kwargs)
+
+    def rollback(self, *args, **kwargs):
+        return self.trans.rollback(*args, **kwargs)
+
+
+def execute_and_log(transaction, stmnt, **kwargs):
+    full_stmnt = stmnt
+    for name, value in kwargs.items():
+        full_stmnt = re.sub(r':' + name, str(value), full_stmnt)
+    LOG.debug("EXECUTING: %s", full_stmnt)
+    return transaction.execute(stmnt, **kwargs)
+
+
+def _perform_insert(transaction, idict, table_name):
     if not idict:
         return None
     names = ", ".join(idict.keys())
     place_holders = ", ".join([":%s" % x for x in idict.keys()])
     cmd = "INSERT INTO %s (%s) VALUES (%s)" % (table_name, names, place_holders)
 
-    execute_and_log(engine, cmd, **idict)
+    execute_and_log(transaction, cmd, **idict)
 
-def _perform_update(engine, udict, table_name, id_field, update_id):
+
+def _perform_update(transaction, udict, table_name, id_field, update_id):
     if not udict:
         return None
     set_portion = ", ".join(["%s=:%s" % (x,x) for x in udict.keys()])
     cmd = UPDATE % (table_name, set_portion, id_field, id_field)
     udict[id_field] = update_id
 
-    execute_and_log(engine, cmd, **udict)
+    execute_and_log(transaction, cmd, **udict)
 
 
