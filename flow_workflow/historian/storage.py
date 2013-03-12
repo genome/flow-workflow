@@ -62,12 +62,11 @@ class WorkflowHistorianStorage(object):
         self.owner = owner
         self.engine = create_engine(connection_string, case_sensitive=False)
 
-    def update(self, net_key, operation_id, name, **kwargs):
+    def update(self, net_key, operation_id, name, plan_id, **kwargs):
         transaction = kwargs.pop('transaction', None)
         recursion_level = kwargs.pop('recursion_level', 0)
 
         hdict = kwargs
-        hdict['name'] = name
 
         if recursion_level > 1:
             raise RuntimeError("update should never recurse more than once!");
@@ -94,7 +93,7 @@ class WorkflowHistorianStorage(object):
                     (net_key, operation_id))
             try:
                 instance_id = self._get_instance_id(transaction,
-                        recursion_level, net_key, operation_id)
+                        recursion_level, net_key, operation_id, plan_id)
                 instance_row, execution_row = self._get_rows(transaction,
                         instance_id)
 
@@ -107,6 +106,7 @@ class WorkflowHistorianStorage(object):
                         transaction      = transaction,
                         recursion_level  = recursion_level,
                         hdict            = hdict,
+                        plan_id          = plan_id,
                         instance_row     = instance_row,
                         should_overwrite = should_overwrite)
 
@@ -132,11 +132,6 @@ class WorkflowHistorianStorage(object):
             raise
         else:
             try:
-                # insert NULL into plan
-                plan_id = self.next_plan_id(transaction)
-                _perform_insert(transaction, {'WORKFLOW_PLAN_ID':plan_id},
-                        table_name='%s.workflow_plan' % self.owner)
-
                 # update workflow_historian table
                 instance_id = self.next_instance_id(transaction)
                 execute_and_log(transaction,
@@ -148,6 +143,7 @@ class WorkflowHistorianStorage(object):
                 # insert into instance
                 execution_id = self.next_execution_id(transaction)
                 insert_instance_dict = {
+                        'NAME': name,
                         'WORKFLOW_INSTANCE_ID': instance_id,
                         'WORKFLOW_PLAN_ID': plan_id,
                 }
@@ -156,6 +152,7 @@ class WorkflowHistorianStorage(object):
                         transaction      = transaction,
                         recursion_level  = recursion_level,
                         hdict            = hdict,
+                        plan_id          = plan_id,
                         instance_row     = None,
                         should_overwrite = True))
 
@@ -213,9 +210,6 @@ class WorkflowHistorianStorage(object):
     def next_execution_id(self, transaction):
         return self._next_id(transaction, 'workflow_execution')
 
-    def next_plan_id(self, transaction):
-        return self._next_id(transaction, 'workflow_plan')
-
     def _should_overwrite(self, prev_status, new_status):
         if new_status is None:
             return False
@@ -245,29 +239,31 @@ class WorkflowHistorianStorage(object):
         execution_row = r2.fetchone()
         return instance_row, execution_row
 
-    def _get_update_instance_dict(self, transaction, recursion_level, hdict,
+    def _get_update_instance_dict(self, transaction, recursion_level, hdict, plan_id,
             instance_row, should_overwrite):
 
-        putative_dict = {'name': hdict['name']}
+        putative_dict = {}
 
         parent_net_key = hdict.get('parent_net_key', None)
         parent_operation_id = hdict.get('parent_operation_id', None)
         if parent_net_key is not None:
             if hdict.get('is_subflow', None):
                 putative_dict['PARENT_EXECUTION_ID'] = self._get_execution_id(
-                        transaction, recursion_level, parent_net_key,
-                        parent_operation_id)
+                        transaction, recursion_level,
+                        net_key      = parent_net_key,
+                        operation_id = parent_operation_id,
+                        plan_id             = plan_id)
             else:
                 putative_dict['PARENT_INSTANCE_ID'] = self._get_instance_id(
                         transaction, recursion_level, parent_net_key,
-                        parent_operation_id)
+                        parent_operation_id, plan_id)
 
         peer_net_key = hdict.get('peer_net_key', None)
         peer_operation_id = hdict.get('peer_operation_id', None)
         if peer_net_key is not None:
             putative_dict['PEER_INSTANCE_ID'] = self._get_instance_id(
                     transaction, recursion_level, peer_net_key,
-                    peer_operation_id)
+                    peer_operation_id, plan_id)
 
         parallel_index = hdict.get('parallel_index', None)
         if parallel_index is not None:
@@ -308,7 +304,7 @@ class WorkflowHistorianStorage(object):
         return update_dict
 
     def _get_instance_id(self, transaction, recursion_level, net_key,
-            operation_id):
+            operation_id, plan_id):
         result = execute_and_log(transaction, SELECT_INSTANCE_ID % self.owner,
                 net_key=net_key, operation_id=operation_id)
         rows = result.fetchall()
@@ -316,10 +312,10 @@ class WorkflowHistorianStorage(object):
             instance_id = rows[0][0]
             if instance_id is not None:
                 return instance_id
-        return self.update(net_key, operation_id, 'pending',
+        return self.update(net_key, operation_id, 'pending', plan_id,
                 transaction=transaction, recursion_level=recursion_level+1)
 
-    def _get_execution_id(self, transaction, recursion_level,
+    def _get_execution_id(self, transaction, recursion_level, plan_id,
             net_key      = None,
             operation_id = None,
             instance_id  = None):
@@ -327,7 +323,8 @@ class WorkflowHistorianStorage(object):
             instance_id = self._get_instance_id(transaction,
                     recursion_level = recursion_level,
                     net_key         = net_key,
-                    operation_id    = operation_id)
+                    operation_id    = operation_id,
+                    plan_id         = plan_id)
 
         result = execute_and_log(transaction, SELECT_EXECUTION_ID % self.owner,
                 workflow_instance_id=instance_id)

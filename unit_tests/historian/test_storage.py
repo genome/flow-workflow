@@ -106,13 +106,10 @@ class TestStorage(unittest.TestCase):
     def test_single_insert(self):
         engine = self.s.engine
 
-        self.s.update("test", 1234, name='test_name', status='scheduled')
+        self.s.update("test", 1234, name='test_name', plan_id=1, status='scheduled')
 
         self._test_database_contents(engine, 'workflow_historian',
                 net_key='test', operation_id=1234, workflow_instance_id=1)
-
-        self._test_database_contents(engine, 'workflow_plan',
-                workflow_plan_id=1)
 
         self._test_database_contents(engine, 'workflow_instance',
                 name='test_name')
@@ -135,11 +132,11 @@ ON workflow_instance_execution.workflow_instance_id=
 
     def _test_is_done_is_running(self, status, is_done, is_running,
             second_status=None):
-        self.s.update('test', 1234, name='test_name', status=status)
+        self.s.update('test', 1234, name='test_name', plan_id=1, status=status)
 
         expected_status = status
         if second_status is not None:
-            self.s.update('test', 1234, name='test_name', status=second_status)
+            self.s.update('test', 1234, name='test_name', plan_id=1, status=second_status)
             expected_status = second_status
 
         self._test_database_contents(self.s.engine, 'workflow_instance_execution',
@@ -173,8 +170,8 @@ ON workflow_instance_execution.workflow_instance_id=
     def test_update(self):
         engine = self.s.engine
 
-        self.s.update("test", 1234, name='test_name', status='new')
-        self.s.update("test", 1234, name='test_name', status='done')
+        self.s.update("test", 1234, name='test_name', plan_id=1, status='new')
+        self.s.update("test", 1234, name='test_name', plan_id=1, status='done')
 
         self._test_database_contents(engine, 'workflow_instance',
                 workflow_instance_id=1, name='test_name')
@@ -185,7 +182,7 @@ ON workflow_instance_execution.workflow_instance_id=
     def test_non_overwriting_status_update(self):
         engine = self.s.engine
 
-        self.s.update("test", 1234, name='test_name', status='done',
+        self.s.update("test", 1234, name='test_name', plan_id=1, status='done',
                 stdout='1', parallel_index=9)
 
         self._test_database_contents(engine, 'workflow_instance',
@@ -195,7 +192,7 @@ ON workflow_instance_execution.workflow_instance_id=
 
         # only updates stderr since others were not NULL and
         # running < done in STATUSES list.
-        self.s.update("test", 1234, name='test_name', status='running',
+        self.s.update("test", 1234, name='test_name', plan_id=1, status='running',
                 parallel_index=0, stdout='X', stderr='2')
 
         self._test_database_contents(engine, 'workflow_instance',
@@ -206,7 +203,7 @@ ON workflow_instance_execution.workflow_instance_id=
     def test_default_insertion_values(self):
         engine = self.s.engine
 
-        self.s.update("test", 1234, name='test_name')
+        self.s.update("test", 1234, name='test_name', plan_id=1)
 
         self._test_database_contents(engine, 'workflow_instance',
                 current_execution_id=1, workflow_plan_id=1)
@@ -216,7 +213,7 @@ ON workflow_instance_execution.workflow_instance_id=
     def test_overwriting_status_update(self):
         engine = self.s.engine
 
-        self.s.update("test", 1234, name='test_name', status='new',
+        self.s.update("test", 1234, name='test_name', plan_id=1, status='new',
                 stdout='1', parallel_index=9)
 
         self._test_database_contents(engine, 'workflow_instance',
@@ -225,7 +222,7 @@ ON workflow_instance_execution.workflow_instance_id=
                 status='new', stdout='1')
 
         # updates all values since running > new in STATUSES list.
-        self.s.update("test", 1234, name='test_name', status='running',
+        self.s.update("test", 1234, name='test_name', plan_id=1, status='running',
                 parallel_index=0, stdout='X', stderr='2')
 
         self._test_database_contents(engine, 'workflow_instance',
@@ -236,8 +233,8 @@ ON workflow_instance_execution.workflow_instance_id=
     def test_double_insert(self):
         engine = self.s.engine
 
-        self.s.update("test", 1234, name='test_name', status='new')
-        self.s.update("test", 5678, name='test_name', status='running')
+        self.s.update("test", 1234, name='test_name', plan_id=1, status='new')
+        self.s.update("test", 5678, name='test_name', plan_id=1, status='running')
 
         rows = [
                 {'status':'new'},
@@ -249,7 +246,7 @@ ON workflow_instance_execution.workflow_instance_id=
     def test_recursive_update_non_subflow(self):
         engine = self.s.engine
 
-        self.s.update("test", 1234, name='test_name', status='running',
+        self.s.update("test", 1234, name='test_name', plan_id=1, status='running',
                 parent_net_key='test', parent_operation_id=4567,
                 is_subflow=False)
 
@@ -270,7 +267,7 @@ ON workflow_instance_execution.workflow_instance_id=
     def test_recursive_update_subflow(self):
         engine = self.s.engine
 
-        self.s.update("test", 1234, name='test_name', status='running',
+        self.s.update("test", 1234, name='test_name', plan_id=1, status='running',
                 parent_net_key='test', parent_operation_id=4567,
                 is_subflow=True)
 
@@ -291,7 +288,7 @@ ON workflow_instance_execution.workflow_instance_id=
     def test_recursive_update_peer(self):
         engine = self.s.engine
 
-        self.s.update("test", 1234, name='test_name', status='running',
+        self.s.update("test", 1234, name='test_name', plan_id=1, status='running',
                 peer_net_key='test', peer_operation_id=4567)
 
         rows = [
@@ -311,9 +308,9 @@ ON workflow_instance_execution.workflow_instance_id=
     def test_non_recursive_update_peer(self):
         engine = self.s.engine
 
-        self.s.update("test", 1234, name='peer-guy',
+        self.s.update("test", 1234, name='peer-guy', plan_id=1,
                 peer_net_key='test', peer_operation_id=1234)
-        self.s.update("test", 5678, name='another-peer-guy',
+        self.s.update("test", 5678, name='another-peer-guy', plan_id=1,
                 peer_net_key='test', peer_operation_id=1234)
 
         rows = [
