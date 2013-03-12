@@ -1,8 +1,7 @@
 import unittest
 import sqlite3
 from collections import defaultdict
-from flow_workflow.historian.storage import WorkflowHistorianStorage, \
-EMPTY_FROZEN_HASH
+from flow_workflow.historian.storage import WorkflowHistorianStorage
 
 class TestHistorianStorage(WorkflowHistorianStorage):
     def __init__(self, *args, **kwargs):
@@ -210,7 +209,6 @@ ON workflow_instance_execution.workflow_instance_id=
         self.s.update("test", 1234, name='test_name')
 
         self._test_database_contents(engine, 'workflow_instance',
-                input_stored=EMPTY_FROZEN_HASH, output_stored=EMPTY_FROZEN_HASH,
                 current_execution_id=1, workflow_plan_id=1)
         self._test_database_contents(engine, 'workflow_instance_execution',
                 status='new')

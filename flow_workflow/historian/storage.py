@@ -6,7 +6,6 @@ from struct import pack
 import re
 
 LOG = logging.getLogger(__name__)
-EMPTY_FROZEN_HASH = "".join([chr(x) for x in [5,7,3,0,0,0,0]])
 
 INSERT_INTO_WORKFLOW_HISTORIAN = """
 INSERT INTO %s.workflow_historian (net_key, operation_id)
@@ -99,10 +98,10 @@ class WorkflowHistorianStorage(object):
                 instance_row, execution_row = self._get_rows(transaction,
                         instance_id)
 
-                execution_id = instance_row['current_execution_id']
+                execution_id = instance_row['CURRENT_EXECUTION_ID']
 
                 should_overwrite = self._should_overwrite(
-                        execution_row['status'], status)
+                        execution_row['STATUS'], status)
 
                 update_instance_dict = self._get_update_instance_dict(
                         transaction      = transaction,
@@ -151,8 +150,6 @@ class WorkflowHistorianStorage(object):
                 insert_instance_dict = {
                         'WORKFLOW_INSTANCE_ID': instance_id,
                         'WORKFLOW_PLAN_ID': plan_id,
-                        'INPUT_STORED': EMPTY_FROZEN_HASH,
-                        'OUTPUT_STORED': EMPTY_FROZEN_HASH,
                 }
 
                 insert_instance_dict.update(self._get_update_instance_dict(
@@ -241,7 +238,7 @@ class WorkflowHistorianStorage(object):
                 workflow_instance_id=instance_id)
         instance_row = r1.fetchone()
 
-        execution_id = instance_row['current_execution_id']
+        execution_id = instance_row['CURRENT_EXECUTION_ID']
 
         r2 = transaction.execute(SELECT_EXECUTION % self.owner,
                 workflow_execution_id = execution_id)
