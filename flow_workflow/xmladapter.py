@@ -375,7 +375,8 @@ def parse_workflow_xml(xml_etree, resources, net_builder, plan_id):
     model_info = [{'id': model.id, 'name': model.name, 'status': 'new'}]
 
     children = model.children
-    children_info = [{'id': x.id, 'name': x.name, 'status': 'new'}
+    children_info = [{'id': x.id, 'name': x.name, 'status': 'new',
+            'parent_operation_id': x.parent.id}
             for x in children]
 
     historian_info = model_info + children_info
