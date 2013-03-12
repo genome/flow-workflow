@@ -351,7 +351,7 @@ class TestXmlAdapter(TestCase):
 
     def test_parse_workflow_xml(self):
         outer_net = wfxml.parse_workflow_xml(self.serial_xml, self.resources,
-                self.builder)
+                self.builder, plan_id=1234)
 
         self.assertIsInstance(outer_net.start, nb.Place)
         self.assertIsInstance(outer_net.success, nb.Place)
@@ -378,7 +378,8 @@ class TestXmlAdapter(TestCase):
                 _command_op_xml(name="operation", perl_class="X",
                         op_attr={"parallelBy": "input_file"}))
 
-        net = wfxml.parse_workflow_xml(xml, self.resources, self.builder)
+        net = wfxml.parse_workflow_xml(xml, self.resources, self.builder,
+                plan_id=123)
 
 
 if __name__ == "__main__":

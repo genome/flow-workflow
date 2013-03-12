@@ -37,6 +37,8 @@ class SubmitWorkflowCommand(CommandBase):
         parser.add_argument('--no-submit', '-n', default=False,
                 action='store_true',
                 help="Create, but do not submit this workflow")
+        parser.add_argument('--plan-id', '-P', type=int,
+                help="The workflow plan id")
 
 
     def _create_initial_token(self, inputs_file):
@@ -52,7 +54,9 @@ class SubmitWorkflowCommand(CommandBase):
             resources = json.load(open(parsed_arguments.resource_file))
         else:
             resources = {}
-        local_net = wfxml.parse_workflow_xml(parsed_xml, resources, builder)
+
+        local_net = wfxml.parse_workflow_xml(parsed_xml, resources, builder,
+                parsed_arguments.plan_id)
 
         if parsed_arguments.plot:
             graph = builder.graph(subnets=True)

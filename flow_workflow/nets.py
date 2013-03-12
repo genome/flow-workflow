@@ -95,6 +95,9 @@ class WorkflowHistorianUpdateAction(sn.TransitionAction):
         for child_info in self.args['children_info']:
             operation_id = child_info['id']
             del child_info['id']
+
+            child_info['plan_id'] = net.variable("workflow_plan_id")
+
             if 'parent_operation_id' in child_info:
                 parent_net_key = child_info.get("parent_net_key")
                 if parent_net_key is None:

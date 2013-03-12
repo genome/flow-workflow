@@ -116,7 +116,7 @@ sub translate_workflow_resource {
 }
 
 sub run_workflow {
-    my ($wf_string, $inputs, $resource_reqs) = @_;
+    my ($wf_string, $inputs, $resource_reqs, $plan_id) = @_;
     my $result;
 
     my $cleanup = !exists $ENV{FLOW_WORKFLOW_NO_CLEANUP};
@@ -135,7 +135,7 @@ sub run_workflow {
 
     my $cmd = "flow submit-workflow --xml $wf_path " .
         "--inputs-file $inp_path --outputs-file $out_path " .
-        "--resource-file $res_path --block";
+        "--resource-file $res_path --plan-id $plan_id --block";
 
     print "EXEC: $cmd\n";
 

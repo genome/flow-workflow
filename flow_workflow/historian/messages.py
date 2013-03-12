@@ -5,10 +5,10 @@ class UpdateMessage(Message):
             'net_key': basestring,
             'operation_id': int,
             'name': basestring,
+            'plan_id': int,
      }
 
     optional_fields = {
-            'xml': basestring,
             'parent_net_key': basestring,
             'parent_operation_id': int,
             'peer_net_key': basestring,

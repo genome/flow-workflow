@@ -361,7 +361,7 @@ class ModelOperation(WorkflowOperation):
         return net
 
 
-def parse_workflow_xml(xml_etree, resources, net_builder):
+def parse_workflow_xml(xml_etree, resources, net_builder, plan_id):
     outer_net = net_builder.add_subnet(nb.SuccessFailureNet, "workflow")
     model = ModelOperation(xml_etree, log_dir=None, resources=resources)
     outer_net.name = model.name
@@ -372,8 +372,8 @@ def parse_workflow_xml(xml_etree, resources, net_builder):
             args={"input_type": "output", "output_type": "output"},
             )
 
-    model_info = [{'id': model.id, 'name': model.name, 'status': 'new',
-            'xml': etree.tostring(xml_etree)}]
+    model_info = [{'id': model.id, 'name': model.name, 'status': 'new'}]
+
     children = model.children
     children_info = [{'id': x.id, 'name': x.name, 'status': 'new'}
             for x in children]
@@ -393,5 +393,6 @@ def parse_workflow_xml(xml_etree, resources, net_builder):
         failure.arcs_out.add(outer_net.failure)
 
     net_builder.variables["workflow_id"] = model.id
+    net_builder.variables["workflow_plan_id"] = plan_id
 
     return outer_net
