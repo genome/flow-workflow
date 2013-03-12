@@ -95,13 +95,21 @@ class WorkflowHistorianUpdateAction(sn.TransitionAction):
         for child_info in self.args['children_info']:
             operation_id = child_info['id']
             del child_info['id']
-            historian.update(net_key=net_key, operation_id=operation_id, **child_info)
+            if 'parent_operation_id' in child_info:
+                parent_net_key = child_info.get("parent_net_key")
+                if parent_net_key is None:
+                    child_info['parent_net_key'] = net.key
+
+            LOG.info("Historian update: %r", child_info)
+
+            historian.update(net_key=net_key, operation_id=operation_id,
+                    **child_info)
 
 
 class BuildParallelByAction(InputsMixin, sn.TransitionAction):
     required_arguments = ["action_type", "action_id", "parallel_by",
             "input_connections", "operation_id", "success_place",
-            "failure_place"]
+            "failure_place", "parent_operation_id"]
 
     def execute(self, active_tokens_key, net, service_interfaces):
         action_type = self.args["action_type"]
@@ -143,6 +151,7 @@ class BuildParallelByAction(InputsMixin, sn.TransitionAction):
             subnet = pby_net.add_subnet(GenomeActionNet,
                     name=name,
                     operation_id=op_id,
+                    parent_operation_id=self.args["parent_operation_id"],
                     input_connections=input_conns,
                     action_type=action_type,
                     action_id=action_id,
@@ -258,8 +267,8 @@ class StoreInputsAsOutputsAction(InputsMixin, sn.TransitionAction):
 
 
 class GenomeNet(nb.EmptyNet):
-    def __init__(self, builder, name, operation_id, input_connections, queue=None,
-            resources=None):
+    def __init__(self, builder, name, operation_id, parent_operation_id,
+            input_connections, queue=None, resources=None):
 
         nb.EmptyNet.__init__(self, builder, name)
 
@@ -267,6 +276,7 @@ class GenomeNet(nb.EmptyNet):
         self.input_connections = input_connections
         self.queue = queue
         self.resources = resources
+        self.parent_operation_id = parent_operation_id
 
         self.start_transition = self.add_transition("%s start_trans" % name)
         self.success_transition = self.add_transition("%s success_trans" % name)
@@ -279,20 +289,23 @@ class GenomeNet(nb.EmptyNet):
 class GenomeModelNet(GenomeNet):
     pass
 
+
 class GenomeActionNet(GenomeNet):
 
     def _update_action(self, status):
-        info = {"id": self.operation_id, "status": status, "name": self.name}
+        info = {"id": self.operation_id, "status": status, "name": self.name,
+                "parent_net_key": None,
+                "parent_operation_id": self.parent_operation_id}
         args = {"children_info": [info]}
 
         return nb.ActionSpec(WorkflowHistorianUpdateAction, args=args)
 
-    def __init__(self, builder, name, operation_id, input_connections,
-            action_type, action_id, parallel_by_spec=None,
+    def __init__(self, builder, name, operation_id, parent_operation_id,
+            input_connections, action_type, action_id, parallel_by_spec=None,
             stdout=None, stderr=None, queue=None, resources=None):
 
-        GenomeNet.__init__(self, builder, name, operation_id, input_connections,
-                queue, resources)
+        GenomeNet.__init__(self, builder, name, operation_id, parent_operation_id,
+                input_connections, queue, resources)
 
         self.action_type = action_type
         self.action_id = action_id
@@ -325,7 +338,7 @@ class GenomeActionNet(GenomeNet):
         self.execute = self.add_subnet(
                 enets.LSFCommandNet, "%s execute" % name,
                 action_class=GenomeExecuteAction, action_args=args,
-                dispatch_success_action=self._update_action("dispatched"),
+                dispatch_success_action=self._update_action("scheduled"),
                 dispatch_failure_action=self._update_action("failed"),
                 begin_execute_action=self._update_action("running"),
                 success_action=store_outputs_action,
@@ -337,19 +350,19 @@ class GenomeActionNet(GenomeNet):
         self.success_place.arcs_out.add(self.success_transition)
 
         self.bridge_places(self.shortcut.success, self.success_place, name="",
-                action=self._update_action("success"))
+                action=self._update_action("done"))
         self.bridge_places(self.shortcut.failure, self.execute.start, name="")
 
         self.bridge_places(self.execute.success, self.success_place, name="",
-                action=self._update_action("success"))
+                action=self._update_action("done"))
         self.bridge_places(self.execute.failure, self.failure_place, name="",
                 action=self._update_action("failed"))
 
 
 class GenomeParallelByNet(nb.EmptyNet):
-    def __init__(self, builder, name, operation_id, input_connections,
-            action_type, action_id, parallel_by, stdout=None, stderr=None,
-            queue=None, resources=None):
+    def __init__(self, builder, name, operation_id, parent_operation_id,
+            input_connections, action_type, action_id, parallel_by, stdout=None,
+            stderr=None, queue=None, resources=None):
 
         nb.EmptyNet.__init__(self, builder, name)
 
@@ -372,6 +385,7 @@ class GenomeParallelByNet(nb.EmptyNet):
             "operation_id": self.operation_id,
             "input_connections": self.input_connections,
             "parallel_by": parallel_by,
+            "parent_operation_id": parent_operation_id,
             "stdout": stdout,
             "stderr": stderr,
             "success_place": self.on_success.index,
@@ -395,8 +409,8 @@ class GenomeParallelByNet(nb.EmptyNet):
 
 
 class GenomeConvergeNet(nb.EmptyNet):
-    def __init__(self, builder, name, operation_id, input_connections,
-            input_property_order, output_properties,
+    def __init__(self, builder, name, operation_id, parent_operation_id,
+            input_connections, input_property_order, output_properties,
             stdout=None, stderr=None):
 
         nb.EmptyNet.__init__(self, builder, name)

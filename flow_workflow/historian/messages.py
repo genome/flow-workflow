@@ -8,7 +8,8 @@ class UpdateMessage(Message):
      }
 
     optional_fields = {
-            'parent_key': basestring,
+            'xml': basestring,
+            'parent_net_key': basestring,
             'parent_operation_id': int,
             'peer_net_key': basestring,
             'peer_operation_id': int,

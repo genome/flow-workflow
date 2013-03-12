@@ -22,18 +22,22 @@ class WorkflowEntity(object):
     def id(self):
         return id(self)
 
+    def __init__(self, parent=None):
+        self.parent = parent
+        self.parent_id = self.parent.id if parent else None
+
     def net(self, builder, input_connections=None):
         raise NotImplementedError("net not implemented in %s" %
                                   self.__class__.__name__)
 
     @property
     def children(self):
-        return [];
+        return []
 
 
 class WorkflowOperation(WorkflowEntity):
-    def __init__(self, xml, log_dir):
-        WorkflowEntity.__init__(self)
+    def __init__(self, xml, log_dir, parent):
+        WorkflowEntity.__init__(self, parent)
 
         self.xml = xml
         self.name = xml.attrib["name"]
@@ -58,8 +62,8 @@ class WorkflowOperation(WorkflowEntity):
 
 
 class CommandOperation(WorkflowOperation):
-    def __init__(self, xml, log_dir, resources):
-        WorkflowOperation.__init__(self, xml, log_dir)
+    def __init__(self, xml, log_dir, resources, parent):
+        WorkflowOperation.__init__(self, xml, log_dir, parent)
         self.perl_class = self._type_attributes['commandClass']
 
         resource = resources.get(self.name, {})
@@ -71,10 +75,12 @@ class CommandOperation(WorkflowOperation):
             self.parallel_by = self._operation_attributes["parallelBy"]
 
     def net(self, builder, input_connections=None):
+
         if self.parallel_by:
             return builder.add_subnet(GenomeParallelByNet,
                     name=self.name,
                     operation_id=self.id,
+                    parent_operation_id=self.parent_id,
                     action_type="command",
                     action_id=self.perl_class,
                     input_connections=input_connections,
@@ -88,6 +94,7 @@ class CommandOperation(WorkflowOperation):
         return builder.add_subnet(GenomeActionNet,
                 name=self.name,
                 operation_id=self.id,
+                parent_operation_id=self.parent_id,
                 action_type="command",
                 action_id=self.perl_class,
                 input_connections=input_connections,
@@ -99,8 +106,8 @@ class CommandOperation(WorkflowOperation):
 
 
 class EventOperation(WorkflowOperation):
-    def __init__(self, xml, log_dir, resources):
-        WorkflowOperation.__init__(self, xml, log_dir)
+    def __init__(self, xml, log_dir, resources, parent):
+        WorkflowOperation.__init__(self, xml, log_dir, parent)
         self.event_id = self._type_attributes['eventId']
 
         resource = resources.get(self.name, {})
@@ -111,6 +118,7 @@ class EventOperation(WorkflowOperation):
         return builder.add_subnet(GenomeActionNet,
                 name=self.name,
                 operation_id=self.id,
+                parent_operation_id=self.parent_id,
                 action_type="event",
                 action_id=self.event_id,
                 input_connections=input_connections,
@@ -122,8 +130,8 @@ class EventOperation(WorkflowOperation):
 
 
 class ConvergeOperation(WorkflowOperation):
-    def __init__(self, xml, log_dir, resources):
-        WorkflowOperation.__init__(self, xml, log_dir)
+    def __init__(self, xml, log_dir, resources, parent):
+        WorkflowOperation.__init__(self, xml, log_dir, parent)
 
         outputs = self._type_node.findall("outputproperty")
         if len(outputs) < 1:
@@ -144,6 +152,7 @@ class ConvergeOperation(WorkflowOperation):
         return builder.add_subnet(GenomeConvergeNet,
                 name=self.name,
                 operation_id=self.id,
+                parent_operation_id=self.parent_id,
                 input_connections=input_connections,
                 input_property_order=self.input_properties,
                 output_properties=self.output_properties,
@@ -153,8 +162,8 @@ class ConvergeOperation(WorkflowOperation):
 
 
 class InputConnector(WorkflowEntity):
-    def __init__(self):
-        WorkflowEntity.__init__(self)
+    def __init__(self, parent):
+        WorkflowEntity.__init__(self, parent)
         self.name = "input connector"
 
     def net(self, builder, input_connections=None):
@@ -172,8 +181,8 @@ class InputConnector(WorkflowEntity):
 
 
 class OutputConnector(WorkflowEntity):
-    def __init__(self, workflow_id):
-        WorkflowEntity.__init__(self)
+    def __init__(self, workflow_id, parent):
+        WorkflowEntity.__init__(self, parent)
         self.name = "output connector"
         self.workflow_id = workflow_id
 
@@ -212,7 +221,7 @@ class ModelOperation(WorkflowOperation):
     def output_connector(self):
         return self.operations[self._output_connector_idx]
 
-    def __init__(self, xml, log_dir, resources):
+    def __init__(self, xml, log_dir, resources, parent=None):
         self.resources = resources
 
         self.operation_types = {
@@ -224,12 +233,12 @@ class ModelOperation(WorkflowOperation):
 
         log_dir = log_dir or xml.attrib.get("logDir", ".")
 
-        WorkflowOperation.__init__(self, xml, log_dir)
+        WorkflowOperation.__init__(self, xml, log_dir, parent=parent)
         self.name = xml.attrib["name"]
 
         self.operations = [
-            InputConnector(),
-            OutputConnector(workflow_id=self.id),
+            InputConnector(parent=self),
+            OutputConnector(workflow_id=self.id, parent=self),
         ]
 
         self.edges = {}
@@ -310,12 +319,14 @@ class ModelOperation(WorkflowOperation):
         operation = self.operation_types[type_class](
                 xml=operation_node,
                 log_dir=self.log_dir,
-                resources=self.resources
+                resources=self.resources,
+                parent=self
                 )
         self.operations.append(operation)
 
     def net(self, builder, data_arcs=None):
-        net = builder.add_subnet(GenomeModelNet, self.name, self.id, data_arcs)
+        net = builder.add_subnet(GenomeModelNet, self.name, self.id,
+                self.parent_id, data_arcs)
 
         ops_to_subnets = {}
 
@@ -361,10 +372,16 @@ def parse_workflow_xml(xml_etree, resources, net_builder):
             args={"input_type": "output", "output_type": "output"},
             )
 
-    children_info = [{'id':x.id, 'name':x.name, 'status': 'new'}
-            for x in model.children]
+    model_info = [{'id': model.id, 'name': model.name, 'status': 'new',
+            'xml': etree.tostring(xml_etree)}]
+    children = model.children
+    children_info = [{'id': x.id, 'name': x.name, 'status': 'new'}
+            for x in children]
+
+    historian_info = model_info + children_info
+
     action_spec = nb.ActionSpec(cls=WorkflowHistorianUpdateAction,
-            args={'children_info':children_info})
+            args={'children_info': historian_info})
 
     t = outer_net.add_transition('WorkflowHistorianUpdate', action=action_spec)
 

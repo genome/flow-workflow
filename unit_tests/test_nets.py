@@ -85,6 +85,7 @@ class TestGenomeActionNet(NetTest):
         net = wfnets.GenomeActionNet(self.builder,
                 name="test",
                 operation_id=6,
+                parent_operation_id=None,
                 input_connections=input_conns,
                 action_type="command",
                 action_id="ClassX")
@@ -104,7 +105,8 @@ class TestBuildParallelByAction(NetTest):
         obj.connection = Mock()
 
         obj.args = {"action_type": "command", "action_id": "ClassX",
-                "parallel_by": "file", "success_place": 1, "failure_place": 2}
+                "parallel_by": "file", "success_place": 1, "failure_place": 2,
+                "parent_operation_id": None}
         obj.input_data = Mock(return_value=inputs)
 
         net = MagicMock()

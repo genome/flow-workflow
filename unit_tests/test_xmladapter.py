@@ -70,7 +70,7 @@ class TestWorkflowOperations(TestCase):
     def test_no_operationtype_tag(self):
         tree = E.operation({"name": "badguy"})
         self.assertRaises(ValueError,
-                wfxml.WorkflowOperation, xml=tree, log_dir="/tmp")
+                wfxml.WorkflowOperation, xml=tree, log_dir="/tmp", parent=None)
 
     def test_multiple_operationtype_tags(self):
         type_attr = {"commandClass": "A", "typeClass": _wf_command_class}
@@ -79,14 +79,14 @@ class TestWorkflowOperations(TestCase):
                 E.operationtype(type_attr)
         )
         self.assertRaises(ValueError,
-                wfxml.WorkflowOperation, xml=tree, log_dir="/tmp")
+                wfxml.WorkflowOperation, xml=tree, log_dir="/tmp", parent=None)
 
     def test_command(self):
         tree = _command_op_xml(name="op nums 1/2", perl_class="ClassX",
                 op_attr={"a": "b"}, type_attr={"x": "y"})
 
         op = wfxml.CommandOperation(xml=tree, log_dir="/tmp",
-                resources=self.resources)
+                parent=None, resources=self.resources)
 
         self.assertEqual("op nums 1/2", op.name)
         self.assertEqual("b", op._operation_attributes["a"])
@@ -133,6 +133,7 @@ class TestWorkflowOperations(TestCase):
                 op_attr={"parallelBy": "input_file"})
 
         op = wfxml.CommandOperation(xml=tree, log_dir="/tmp",
+                parent=None,
                 resources=self.resources)
 
         self.assertEqual("input_file", op.parallel_by)
@@ -141,6 +142,7 @@ class TestWorkflowOperations(TestCase):
         tree = _event_op_xml(name="evt", event_id="123")
 
         op = wfxml.EventOperation(xml=tree, log_dir="/tmp",
+                parent=None,
                 resources=self.resources)
         self.assertEqual("evt", op.name)
         self.assertEqual("123", op.event_id)
@@ -149,11 +151,13 @@ class TestWorkflowOperations(TestCase):
         tree = _converge_op_xml(name="merge", inputs=[], outputs=["x"])
         self.assertRaises(ValueError,
                 wfxml.ConvergeOperation, xml=tree, log_dir="/tmp",
+                parent=None,
                 resources=self.resources)
 
         tree = _converge_op_xml(name="merge", inputs=["x"], outputs=[])
         self.assertRaises(ValueError,
                 wfxml.ConvergeOperation, xml=tree, log_dir="/tmp",
+                parent=None,
                 resources=self.resources)
 
 
@@ -165,6 +169,7 @@ class TestWorkflowOperations(TestCase):
                 outputs=outputs)
 
         op = wfxml.ConvergeOperation(xml=tree, log_dir="/tmp",
+                parent=None,
                 resources=self.resources)
 
         self.assertEqual("merge", op.name)
@@ -193,6 +198,7 @@ class TestXmlAdapter(TestCase):
                     {"typeClass": _wf_command_class, "commandClass": "X"}))
 
         model = wfxml.ModelOperation(xml, log_dir="/tmp",
+                parent=None,
                 resources=self.resources)
 
         self.assertEqual("pby_test", model.name)
@@ -217,6 +223,7 @@ class TestXmlAdapter(TestCase):
 
     def test_serial(self):
         model = wfxml.ModelOperation(self.serial_xml, log_dir="/tmp",
+                parent=None,
                 resources=self.resources)
         self.assertEqual("test", model.name)
 
@@ -254,13 +261,15 @@ class TestXmlAdapter(TestCase):
                 )
 
         self.assertRaises(RuntimeError, wfxml.ModelOperation, xml=xml,
-                log_dir="/tmp", resources=self.resources)
+                log_dir="/tmp", resources=self.resources,
+                parent=None)
 
     def test_missing_optype(self):
         xml = E.workflow({"name": "test"}, E.operation({"name": "bad"}),
                 E.operationtype({"typeClass": _wf_model_class}))
         self.assertRaises(ValueError, wfxml.ModelOperation, xml,
-                log_dir="/tmp", resources=self.resources)
+                log_dir="/tmp", resources=self.resources,
+                parent=None)
 
     def test_unknown_optype(self):
         xml = E.workflow({"name": "test"},

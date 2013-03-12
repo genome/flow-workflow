@@ -2,6 +2,7 @@ from sqlalchemy import create_engine
 import logging
 from sqlalchemy.exc import IntegrityError
 from collections import defaultdict
+from struct import pack
 import re
 
 LOG = logging.getLogger(__name__)
@@ -60,7 +61,7 @@ class WorkflowHistorianStorage(object):
     def __init__(self, connection_string, owner):
         self.connection_string = connection_string
         self.owner = owner
-        self.engine = create_engine(connection_string)
+        self.engine = create_engine(connection_string, case_sensitive=False)
 
     def update(self, net_key, operation_id, name, **kwargs):
         transaction = kwargs.pop('transaction', None)
@@ -97,9 +98,11 @@ class WorkflowHistorianStorage(object):
                         recursion_level, net_key, operation_id)
                 instance_row, execution_row = self._get_rows(transaction,
                         instance_id)
-                execution_id = instance_row['CURRENT_EXECUTION_ID']
+
+                execution_id = instance_row['current_execution_id']
+
                 should_overwrite = self._should_overwrite(
-                        execution_row['STATUS'], status)
+                        execution_row['status'], status)
 
                 update_instance_dict = self._get_update_instance_dict(
                         transaction      = transaction,
@@ -238,7 +241,8 @@ class WorkflowHistorianStorage(object):
                 workflow_instance_id=instance_id)
         instance_row = r1.fetchone()
 
-        execution_id = instance_row['CURRENT_EXECUTION_ID']
+        execution_id = instance_row['current_execution_id']
+
         r2 = transaction.execute(SELECT_EXECUTION % self.owner,
                 workflow_execution_id = execution_id)
         execution_row = r2.fetchone()
@@ -247,7 +251,7 @@ class WorkflowHistorianStorage(object):
     def _get_update_instance_dict(self, transaction, recursion_level, hdict,
             instance_row, should_overwrite):
 
-        putative_dict = {'NAME': hdict['name']}
+        putative_dict = {'name': hdict['name']}
 
         parent_net_key = hdict.get('parent_net_key', None)
         parent_operation_id = hdict.get('parent_operation_id', None)
@@ -279,12 +283,12 @@ class WorkflowHistorianStorage(object):
             should_overwrite):
         putative_dict = {}
         status = hdict.get('status', None)
-        putative_dict['IS_RUNNING'] = status in ['running', 'scheduled']
-        putative_dict['IS_DONE'] = status == 'done'
-        putative_dict['STATUS'] = status
+        putative_dict['is_running'] = status in ['running', 'scheduled']
+        putative_dict['is_done'] = status == 'done'
+        putative_dict['status'] = status
 
-        for var_name in ['DISPATCH_ID', 'START_TIME', 'END_TIME', 'STDOUT',
-                'STDERR', 'EXIT_CODE']:
+        for var_name in ['dispatch_id', 'start_time', 'end_time', 'stdout',
+                'stderr', 'exit_code']:
             if hdict.get(var_name.lower(), None) is not None:
                 putative_dict[var_name] = hdict[var_name.lower()]
 
@@ -347,10 +351,14 @@ class SimpleTransaction(object):
         return self.conn.execute(*args, **kwargs)
 
     def commit(self, *args, **kwargs):
-        return self.trans.commit(*args, **kwargs)
+        rv = self.trans.commit(*args, **kwargs)
+        self.conn.close()
+        return rv
 
     def rollback(self, *args, **kwargs):
-        return self.trans.rollback(*args, **kwargs)
+        rv = self.trans.rollback(*args, **kwargs)
+        self.conn.close()
+        return rv
 
 
 def execute_and_log(transaction, stmnt, **kwargs):
