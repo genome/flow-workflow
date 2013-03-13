@@ -48,6 +48,7 @@ STATUSES = [
 ]
 
 Tables = namedtuple('Tables', ['historian', 'instance', 'execution'])
+Sequences = namedtuple('Sequences', ['instance', 'execution'])
 
 class WorkflowHistorianStorage(object):
     def __init__(self, connection_string, owner):
@@ -57,6 +58,8 @@ class WorkflowHistorianStorage(object):
         self.tables = Tables(historian='%s.workflow_historian' % owner,
                     instance='%s.workflow_instance' % owner,
                     execution='%s.workflow_instance_execution' % owner)
+        self.sequences = Sequences(instance='%s.workflow_instance_seq',
+                execution='%s.workflow_execution_seq')
 
         self.connection_string = connection_string
         self.engine = create_engine(connection_string, case_sensitive=False)
@@ -180,17 +183,17 @@ class WorkflowHistorianStorage(object):
                 id_field="workflow_execution_id",
                 update_id=execution_id)
 
-    def _next_id(self, transaction, table_name):
-        NEXT_ID = "SELECT %s_seq.nextval FROM DUAL"
-        stmnt = NEXT_ID % table_name
+    def _next_id(self, transaction, sequence_name):
+        NEXT_ID = "SELECT %s.nextval FROM DUAL"
+        stmnt = NEXT_ID % sequence_name
         result = execute_and_log(transaction, stmnt)
         return result.fetchone()[0]
 
     def next_instance_id(self, transaction):
-        return self._next_id(transaction, self.tables.instance)
+        return self._next_id(transaction, self.sequences.instance)
 
     def next_execution_id(self, transaction):
-        return self._next_id(transaction, self.tables.execution)
+        return self._next_id(transaction, self.sequences.execution)
 
     def _should_overwrite(self, prev_status, new_status):
         if new_status is None:
