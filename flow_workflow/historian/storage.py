@@ -67,6 +67,12 @@ class WorkflowHistorianStorage(object):
         recursion_level = kwargs.pop('recursion_level', 0)
 
         hdict = kwargs
+        #   Plan_id should be set when you first create the instance/execution
+        # rows, however, because we may have to auto-generate parents (to
+        # satisfy foreign key constraints) we might have made a parent with the
+        # wrong plan_id.  This will ensure that when the instance with the wrong
+        # plan id is updated, it will get the correct one put in.
+        hdict['workflow_plan_id'] = plan_id
 
         if recursion_level > 1:
             raise RuntimeError("update should never recurse more than once!");
@@ -145,7 +151,6 @@ class WorkflowHistorianStorage(object):
                 insert_instance_dict = {
                         'NAME': name,
                         'WORKFLOW_INSTANCE_ID': instance_id,
-                        'WORKFLOW_PLAN_ID': plan_id,
                 }
 
                 insert_instance_dict.update(self._get_update_instance_dict(
@@ -160,9 +165,8 @@ class WorkflowHistorianStorage(object):
                         table_name="%s.workflow_instance" % self.owner)
 
                 # insert into execution
-                if status is None:
-                    status = 'new'
-                hdict['status'] = status
+                if hdict.get('status', None) is None:
+                    hdict['status'] = 'new'
 
                 insert_execution_dict = self._get_update_execution_dict(
                         transaction      = transaction,
@@ -252,7 +256,7 @@ class WorkflowHistorianStorage(object):
                         transaction, recursion_level,
                         net_key      = parent_net_key,
                         operation_id = parent_operation_id,
-                        plan_id             = plan_id)
+                        plan_id      = plan_id)
             else:
                 putative_dict['PARENT_INSTANCE_ID'] = self._get_instance_id(
                         transaction, recursion_level, parent_net_key,
@@ -265,9 +269,9 @@ class WorkflowHistorianStorage(object):
                     transaction, recursion_level, peer_net_key,
                     peer_operation_id, plan_id)
 
-        parallel_index = hdict.get('parallel_index', None)
-        if parallel_index is not None:
-            putative_dict['PARALLEL_INDEX'] = parallel_index
+        for var_name in ['PARALLEL_INDEX', 'WORKFLOW_PLAN_ID']:
+            if hdict.get(var_name.lower(), None) is not None:
+                putative_dict[var_name] = hdict[var_name.lower()]
 
         return self._generate_update_dict(putative_dict, row=instance_row,
                 should_overwrite=should_overwrite)
@@ -276,12 +280,12 @@ class WorkflowHistorianStorage(object):
             should_overwrite):
         putative_dict = {}
         status = hdict.get('status', None)
-        putative_dict['is_running'] = status in ['running', 'scheduled']
-        putative_dict['is_done'] = status == 'done'
-        putative_dict['status'] = status
+        putative_dict['IS_RUNNING'] = status in ['running', 'scheduled']
+        putative_dict['IS_DONE'] = status == 'done'
+        putative_dict['STATUS'] = status
 
-        for var_name in ['dispatch_id', 'start_time', 'end_time', 'stdout',
-                'stderr', 'exit_code']:
+        for var_name in ['DISPATCH_ID', 'START_TIME', 'END_TIME', 'STDOUT',
+                'STDERR', 'EXIT_CODE']:
             if hdict.get(var_name.lower(), None) is not None:
                 putative_dict[var_name] = hdict[var_name.lower()]
 
