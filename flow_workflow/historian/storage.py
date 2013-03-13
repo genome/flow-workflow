@@ -58,8 +58,8 @@ class WorkflowHistorianStorage(object):
         self.tables = Tables(historian='%s.workflow_historian' % owner,
                     instance='%s.workflow_instance' % owner,
                     execution='%s.workflow_instance_execution' % owner)
-        self.sequences = Sequences(instance='%s.workflow_instance_seq',
-                execution='%s.workflow_execution_seq')
+        self.sequences = Sequences(instance='%s.workflow_instance_seq' % owner,
+                execution='%s.workflow_execution_seq' % owner)
 
         self.connection_string = connection_string
         self.engine = create_engine(connection_string, case_sensitive=False)

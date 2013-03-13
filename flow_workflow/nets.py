@@ -2,6 +2,7 @@ import flow.command_runner.executors.nets as enets
 import flow.redisom as rom
 import flow.petri.netbuilder as nb
 import flow.petri.safenet as sn
+import os
 
 from collections import namedtuple
 
@@ -89,21 +90,39 @@ class InputsMixin(object):
 class WorkflowHistorianUpdateAction(sn.TransitionAction):
     required_args = ['children_info']
 
+    def _set_parent_info(self, net, child_info):
+        parent_operation_id = child_info.get('parent_operation_id')
+        if parent_operation_id:
+            parent_net_key = child_info.get("parent_net_key")
+            if parent_net_key is None:
+                child_info['parent_net_key'] = net.key
+        else: # This is a "top level" workflow
+            parent_net_key = net.variable("workflow_parent_net_key")
+            parent_operation_id = net.variable("workflow_parent_operation_id")
+
+            if parent_net_key is not None and parent_operation_id is not None:
+                child_info['parent_net_key'] = parent_net_key
+                child_info['parent_operation_id'] = parent_operation_id
+                child_info['is_subflow'] = True
+            else:
+                LOG.info("Unable to determine parent for action %r",
+                        self.args.value)
+
     def execute(self, active_tokens_key, net, service_interfaces):
         historian = service_interfaces['workflow_historian']
         net_key = net.key
         for child_info in self.args['children_info']:
-            operation_id = child_info['id']
-            del child_info['id']
+            operation_id = child_info.pop('id')
+            if operation_id is None:
+                raise RuntimeError("Null operation id in historian update: %r" %
+                        self.args.value)
 
-            child_info['plan_id'] = net.variable("workflow_plan_id")
+            child_info['workflow_plan_id'] = net.variable("workflow_plan_id")
+            self._set_parent_info(net, child_info)
 
-            if 'parent_operation_id' in child_info:
-                parent_net_key = child_info.get("parent_net_key")
-                if parent_net_key is None:
-                    child_info['parent_net_key'] = net.key
-
-            LOG.info("Historian update: %r", child_info)
+            parent = os.environ.get("FLOW_WORKFLOW_PARENT_ID")
+            LOG.debug("Historian update: (operation=%r, parent=%s), %r",
+            operation_id, parent, child_info)
 
             historian.update(net_key=net_key, operation_id=operation_id,
                     **child_info)
@@ -199,26 +218,52 @@ class BuildParallelByAction(InputsMixin, sn.TransitionAction):
         orchestrator.set_token(stored_net.key, pby_net.start_place.index, token.key)
 
 
-class GenomeShortcutAction(InputsMixin, enets.LocalDispatchAction):
-    output_token_type = "input"
-    required_arguments = ["operation_id", "action_type",
-            "action_id"]
+class GenomeAction(InputsMixin):
+    output_token_type = 'input'
+    required_arguments = ['operation_id', 'action_type',
+            'action_id']
+
+    def _method(self):
+        raise NotImplementedError("_method not implemented in %s" %
+                self.__class__.__name__)
 
     def _command_line(self, net, input_data_key):
-        return [GENOME_WRAPPER, self.args["action_type"], "shortcut",
+        return [GENOME_WRAPPER, self.args["action_type"], self._method(),
                 self.args["action_id"]]
 
 
-class GenomeExecuteAction(InputsMixin, enets.LSFDispatchAction):
-    output_token_type = "input"
-    required_arguments = ["operation_id", "action_type",
-            "action_id"]
+class GenomeShortcutAction(GenomeAction, enets.LocalDispatchAction):
+    def _method(self):
+        return "shortcut"
 
-    action_type = rom.Property(rom.String)
+    def _executor_options(self, input_data_key, net):
+        options = enets.LocalDispatchAction._executor_options(self,
+                input_data_key, net)
 
-    def _command_line(self, net, input_data_key):
-        return [GENOME_WRAPPER, self.args["action_type"], "execute",
-                self.args["action_id"]]
+        parent_id = '%s %s' % (net.key, self.args['operation_id'])
+        environment = options.get('environment', {})
+        environment['FLOW_WORKFLOW_PARENT_ID'] = parent_id
+        options['environment'] = environment
+        LOG.info('Setting FLOW_WORKFLOW_PARENT_ID=%s', parent_id)
+
+        return options
+
+
+class GenomeExecuteAction(GenomeAction, enets.LSFDispatchAction):
+    def _method(self):
+        return "execute"
+
+    def _executor_options(self, input_data_key, net):
+        options = enets.LSFDispatchAction._executor_options(self,
+                input_data_key, net)
+
+        parent_id = '%s %s' % (net.key, self.args['operation_id'])
+        environment = options.get('environment', {})
+        environment['FLOW_WORKFLOW_PARENT_ID'] = parent_id
+        options['environment'] = environment
+        LOG.info('Setting FLOW_WORKFLOW_PARENT_ID=%s', parent_id)
+
+        return options
 
 
 class GenomeConvergeAction(InputsMixin, sn.TransitionAction):
@@ -253,6 +298,9 @@ class StoreOutputsAction(sn.TransitionAction):
         operation_id = self.args["operation_id"]
         input_data = self.input_data(active_tokens_key, net)
 
+        LOG.debug("%s storing outputs. Outputs: %r", self.name,
+                input_data)
+
         _store_outputs(input_data, net, operation_id)
 
 
@@ -269,31 +317,17 @@ class StoreInputsAsOutputsAction(InputsMixin, sn.TransitionAction):
         _store_outputs(input_data, net, operation_id)
 
 
-class GenomeNet(nb.EmptyNet):
+class GenomeEmptyNet(nb.EmptyNet):
     def __init__(self, builder, name, operation_id, parent_operation_id,
             input_connections, queue=None, resources=None):
 
         nb.EmptyNet.__init__(self, builder, name)
 
         self.operation_id = operation_id
+        self.parent_operation_id = parent_operation_id
         self.input_connections = input_connections
         self.queue = queue
         self.resources = resources
-        self.parent_operation_id = parent_operation_id
-
-        self.start_transition = self.add_transition("%s start_trans" % name)
-        self.success_transition = self.add_transition("%s success_trans" % name)
-        self.failure_transition = self.add_transition("%s failure_trans" % name)
-
-        self.failure_place = self.add_place("%s failure" % name)
-        self.failure_place.arcs_out.add(self.failure_transition)
-
-
-class GenomeModelNet(GenomeNet):
-    pass
-
-
-class GenomeActionNet(GenomeNet):
 
     def _update_action(self, status):
         info = {"id": self.operation_id, "status": status, "name": self.name,
@@ -303,6 +337,31 @@ class GenomeActionNet(GenomeNet):
 
         return nb.ActionSpec(WorkflowHistorianUpdateAction, args=args)
 
+
+class GenomeNet(GenomeEmptyNet):
+    def __init__(self, builder, name, operation_id, parent_operation_id,
+            input_connections, queue=None, resources=None):
+
+        GenomeEmptyNet.__init__(self, builder, name, operation_id,
+                parent_operation_id, input_connections, queue, resources)
+
+        self.start_transition = self.add_transition("%s start_trans" % name,
+                action=self._update_action("running"))
+        self.success_transition = self.add_transition("%s success_trans" % name,
+                action=self._update_action("done"))
+        self.failure_transition = self.add_transition("%s failure_trans" % name,
+                action=self._update_action("failed"))
+
+        self.failure_place = self.add_place("%s failure" % name)
+        self.failure_place.arcs_out.add(self.failure_transition)
+
+
+class GenomeModelNet(GenomeNet):
+    pass
+
+
+
+class GenomeActionNet(GenomeNet):
     def __init__(self, builder, name, operation_id, parent_operation_id,
             input_connections, action_type, action_id, parallel_by_spec=None,
             stdout=None, stderr=None, queue=None, resources=None):
@@ -321,7 +380,7 @@ class GenomeActionNet(GenomeNet):
                 "stdout": stdout,
                 "stderr": stderr,
                 "resources": self.resources,
-                "queue": self.queue
+                "queue": self.queue,
                 }
 
         if parallel_by_spec:
@@ -362,20 +421,17 @@ class GenomeActionNet(GenomeNet):
                 action=self._update_action("failed"))
 
 
-class GenomeParallelByNet(nb.EmptyNet):
+class GenomeParallelByNet(GenomeEmptyNet):
     def __init__(self, builder, name, operation_id, parent_operation_id,
             input_connections, action_type, action_id, parallel_by, stdout=None,
             stderr=None, queue=None, resources=None):
 
-        nb.EmptyNet.__init__(self, builder, name)
+        GenomeEmptyNet.__init__(self, builder, name, operation_id,
+                parent_operation_id, input_connections, queue, resources)
 
         self.parallel_by = parallel_by
         self.action_type = action_type
         self.action_id = action_id
-        self.operation_id = operation_id
-        self.input_connections = input_connections
-        self.queue = queue
-        self.resources = resources
 
         self.running = self.add_place("running")
         self.on_success = self.add_place("on_success")
@@ -411,17 +467,16 @@ class GenomeParallelByNet(nb.EmptyNet):
         self.on_failure.arcs_out.add(self.failure_transition)
 
 
-class GenomeConvergeNet(nb.EmptyNet):
+class GenomeConvergeNet(GenomeEmptyNet):
     def __init__(self, builder, name, operation_id, parent_operation_id,
             input_connections, input_property_order, output_properties,
             stdout=None, stderr=None):
 
-        nb.EmptyNet.__init__(self, builder, name)
+        GenomeEmptyNet.__init__(self, builder, name, operation_id,
+                parent_operation_id, input_connections, queue=None, resources=None)
 
         self.input_property_order = input_property_order
         self.output_properties = output_properties
-        self.operation_id = operation_id
-        self.input_connections = input_connections
 
         args = {
             "operation_id": self.operation_id,
@@ -437,4 +492,8 @@ class GenomeConvergeNet(nb.EmptyNet):
 
         self.start_transition = self.add_transition("converge",
                 action=action)
-        self.success_transition = self.start_transition
+
+        self.success_transition = self.add_transition("update historian",
+                action=self._update_action("done"))
+
+        self.bridge_transitions(self.start_transition, self.success_transition)

@@ -73,6 +73,12 @@ class TestInputs(TestCase):
         self.assertEqual(expected_inputs, inputs)
 
 
+class TestGenomeAction(TestCase):
+    def test_service_names(self):
+        self.assertEqual("fork", wfnets.GenomeShortcutAction.service_name)
+        self.assertEqual("lsf", wfnets.GenomeExecuteAction.service_name)
+
+
 class NetTest(TestCase):
     def setUp(self):
         self.builder = nb.NetBuilder()
