@@ -11,5 +11,5 @@ class WorkflowHistorianMessageHandler(object):
     def __call__(self, message):
         LOG.info("Updating [net_key='%s', operation_id='%s']",
                 message.net_key, message.operation_id)
-        self.storage.update(**message.to_dict())
+        self.storage.update(message.to_dict())
 

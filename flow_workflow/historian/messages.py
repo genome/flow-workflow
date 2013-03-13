@@ -5,7 +5,7 @@ class UpdateMessage(Message):
             'net_key': basestring,
             'operation_id': int,
             'name': basestring,
-            'plan_id': int,
+            'workflow_plan_id': int,
      }
 
     optional_fields = {
