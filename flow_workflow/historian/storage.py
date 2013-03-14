@@ -200,11 +200,7 @@ class WorkflowHistorianStorage(object):
             return False
 
         prev_index = STATUSES.index(prev_status)
-        try:
-            new_index = STATUSES.index(new_status)
-        except ValueError:
-            raise ValueError("Status must be one of %s, not '%s'" %
-                    (STATUSES, new_status))
+        new_index = STATUSES.index(new_status)
 
         return new_index >= prev_index
 
