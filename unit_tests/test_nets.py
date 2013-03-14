@@ -13,11 +13,11 @@ class TestableInputs(wfnets.InputsMixin):
 class TestInputs(TestCase):
     def setUp(self):
         self.variables = {
-                wfnets._output_variable_name(0, "x"): [1, 2, 3, 4],
-                wfnets._output_variable_name(0, "y"): "y",
-                wfnets._output_variable_name(1, "z"): "z",
-                wfnets._op_outputs_variable_name(0): ["x", "y"],
-                wfnets._op_outputs_variable_name(1): ["z"],
+                wfnets.output_variable_name(0, "x"): [1, 2, 3, 4],
+                wfnets.output_variable_name(0, "y"): "y",
+                wfnets.output_variable_name(1, "z"): "z",
+                wfnets.op_outputs_variable_name(0): ["x", "y"],
+                wfnets.op_outputs_variable_name(1): ["z"],
                 }
 
         self.data_arcs = {
@@ -84,11 +84,11 @@ class NetTest(TestCase):
         self.builder = nb.NetBuilder()
 
 
-class TestGenomeActionNet(NetTest):
+class TestGenomePerlActionNet(NetTest):
     def test_genome_shortcut_action(self):
         input_conns = {123: {"x": "y"}}
 
-        net = wfnets.GenomeActionNet(self.builder,
+        net = wfnets.GenomePerlActionNet(self.builder,
                 name="test",
                 operation_id=6,
                 parent_operation_id=None,

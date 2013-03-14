@@ -104,7 +104,7 @@ class TestWorkflowOperations(TestCase):
         input_conns = {0: {"x": "y"}}
 
         net = op.net(self.builder, input_connections=input_conns)
-        self.assertIsInstance(net, wfnets.GenomeActionNet)
+        self.assertIsInstance(net, wfnets.GenomePerlActionNet)
         self.assertEqual("command", net.action_type)
         self.assertEqual("ClassX", net.action_id)
 
@@ -116,12 +116,14 @@ class TestWorkflowOperations(TestCase):
 
         expected_args = {
                 "action_type": "command",
+                "method": "shortcut",
                 "action_id": "ClassX",
                 "with_outputs": True,
                 "input_connections": input_conns,
         }
         self.assertDictContainsSubset(expected_args, action.args)
 
+        expected_args["method"] = "execute"
         self.assertIsInstance(net.execute, exnets.LSFCommandNet)
         execute_transition = net.execute.dispatch
         action = execute_transition.action
@@ -300,7 +302,7 @@ class TestXmlAdapter(TestCase):
         self.assertEqual(3, len(subnet.subnets))
 
         cmd = subnet.subnets[model._first_operation_idx]
-        self.assertIsInstance(cmd, wfnets.GenomeActionNet)
+        self.assertIsInstance(cmd, wfnets.GenomePerlActionNet)
 
     def test_converge(self):
         xml = E.workflow({"name": "test converge"},
@@ -319,8 +321,8 @@ class TestXmlAdapter(TestCase):
         net = model.net(self.builder)
         self.assertIsInstance(net, wfnets.GenomeModelNet)
         self.assertEqual(5, len(net.subnets))
-        self.assertIsInstance(net.subnets[2], wfnets.GenomeActionNet)
-        self.assertIsInstance(net.subnets[3], wfnets.GenomeActionNet)
+        self.assertIsInstance(net.subnets[2], wfnets.GenomePerlActionNet)
+        self.assertIsInstance(net.subnets[3], wfnets.GenomePerlActionNet)
         self.assertIsInstance(net.subnets[4], wfnets.GenomeConvergeNet)
 
     def test_event(self):
@@ -342,7 +344,7 @@ class TestXmlAdapter(TestCase):
         self.assertEqual(5, len(net.subnets))
 
         for subnet in net.subnets[model._first_operation_idx:]:
-            self.assertIsInstance(subnet, wfnets.GenomeActionNet)
+            self.assertIsInstance(subnet, wfnets.GenomePerlActionNet)
             self.assertEqual("event", subnet.action_type)
 
         self.assertEqual("100", net.subnets[2].action_id)

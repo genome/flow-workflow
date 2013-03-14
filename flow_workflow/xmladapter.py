@@ -1,6 +1,6 @@
 from collections import defaultdict
 from flow.orchestrator.graph import transitive_reduction
-from flow_workflow.nets import GenomeActionNet
+from flow_workflow.nets import GenomePerlActionNet
 from flow_workflow.nets import GenomeConvergeNet
 from flow_workflow.nets import GenomeModelNet
 from flow_workflow.nets import GenomeParallelByNet
@@ -95,7 +95,7 @@ class CommandOperation(WorkflowOperation):
                     resources=self.resources
                     )
 
-        return builder.add_subnet(GenomeActionNet,
+        return builder.add_subnet(GenomePerlActionNet,
                 name=self.name,
                 operation_id=self.id,
                 parent_operation_id=self.parent_id,
@@ -119,7 +119,7 @@ class EventOperation(WorkflowOperation):
         self.queue = resource.get("queue")
 
     def net(self, builder, input_connections=None):
-        return builder.add_subnet(GenomeActionNet,
+        return builder.add_subnet(GenomePerlActionNet,
                 name=self.name,
                 operation_id=self.id,
                 parent_operation_id=self.parent_id,
