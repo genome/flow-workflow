@@ -45,7 +45,6 @@ class GenomeExecuteAction(GenomePerlAction, enets.LSFDispatchAction):
         return self._update_environment(net, env)
 
 
-
 class GenomeNet(GenomeEmptyNet):
     def __init__(self, builder, name, operation_id, parent_operation_id,
             input_connections, queue=None, resources=None):
@@ -54,11 +53,11 @@ class GenomeNet(GenomeEmptyNet):
                 parent_operation_id, input_connections, queue, resources)
 
         self.start_transition = self.add_transition("%s start_trans" % name,
-                action=self._update_action("running"))
+                action=self._update_action(status="running"))
         self.success_transition = self.add_transition("%s success_trans" % name,
-                action=self._update_action("done"))
+                action=self._update_action(status="done"))
         self.failure_transition = self.add_transition("%s failure_trans" % name,
-                action=self._update_action("failed"))
+                action=self._update_action(status="failed"))
 
         self.failure_place = self.add_place("%s failure" % name)
         self.failure_place.arcs_out.add(self.failure_transition)
@@ -66,7 +65,6 @@ class GenomeNet(GenomeEmptyNet):
 
 class GenomeModelNet(GenomeNet):
     pass
-
 
 
 class GenomePerlActionNet(GenomeNet):
@@ -112,16 +110,20 @@ class GenomePerlActionNet(GenomeNet):
         self.shortcut = self.add_subnet(
                 enets.LocalCommandNet, "%s shortcut" % name,
                 action_class=GenomeShortcutAction, action_args=shortcut_args,
-                begin_execute_action=None,
+                begin_execute_action=self._update_action(shortcut=True,
+                    token_data_map={"pid": "dispatch_id"},
+                    timestamps=['start_time']),
                 success_action=store_outputs_action,
                 failure_action=None)
 
         self.execute = self.add_subnet(
                 enets.LSFCommandNet, "%s execute" % name,
                 action_class=GenomeExecuteAction, action_args=execute_args,
-                dispatch_success_action=self._update_action("scheduled"),
-                dispatch_failure_action=self._update_action("failed"),
-                begin_execute_action=self._update_action("running"),
+                dispatch_success_action=self._update_action(status="scheduled",
+                        token_data_map={"pid": "dispatch_id"},
+                        timestamps=['start_time']),
+                dispatch_failure_action=self._update_action(status="failed"),
+                begin_execute_action=self._update_action(status="running"),
                 success_action=store_outputs_action,
                 failure_action=None)
 
@@ -131,10 +133,13 @@ class GenomePerlActionNet(GenomeNet):
         self.success_place.arcs_out.add(self.success_transition)
 
         self.bridge_places(self.shortcut.success, self.success_place, name="",
-                action=self._update_action("done"))
+                action=self._update_action(status="done",
+                timestamps=['end_time']))
         self.bridge_places(self.shortcut.failure, self.execute.start, name="")
 
         self.bridge_places(self.execute.success, self.success_place, name="",
-                action=self._update_action("done"))
+                action=self._update_action(status="done",
+                timestamps=['end_time']))
         self.bridge_places(self.execute.failure, self.failure_place, name="",
-                action=self._update_action("failed"))
+                action=self._update_action(status="failed",
+                timestamps=['end_time']))

@@ -56,6 +56,6 @@ class GenomeConvergeNet(GenomeEmptyNet):
                 action=action)
 
         self.success_transition = self.add_transition("update historian",
-                action=self._update_action("done"))
+                action=self._update_action(status="done"))
 
         self.bridge_transitions(self.start_transition, self.success_transition)

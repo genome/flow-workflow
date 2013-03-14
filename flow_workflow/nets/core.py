@@ -16,10 +16,15 @@ class GenomeEmptyNet(nb.EmptyNet):
         self.queue = queue
         self.resources = resources
 
-    def _update_action(self, status):
-        info = {"id": self.operation_id, "status": status, "name": self.name,
+    def _update_action(self, **kwargs):
+        status = kwargs.pop('status', None)
+        info = {"id": self.operation_id,
+                "name": self.name,
+                "status": status,
                 "parent_net_key": None,
                 "parent_operation_id": self.parent_operation_id}
+
         args = {"children_info": [info]}
+        args.update(kwargs)
 
         return nb.ActionSpec(WorkflowHistorianUpdateAction, args=args)
