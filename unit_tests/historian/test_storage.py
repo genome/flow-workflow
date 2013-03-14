@@ -265,9 +265,11 @@ class TestStorage(unittest.TestCase):
         self._test_instance(parallel_index=0)
         self._test_execution(status='running', stdout='X', stderr='2')
 
-    def test_rollback1(self):
-        self.s.UPDATE_WORKFLOW_HISTORIAN = 'SELECT * FROM foo'
-        self.assertRaises(OperationalError, self.s.update, self.update_info)
+#    def test_rollback1(self):
+#        # create mock engine
+#        mock_engine = Mock
+#        # create
+#        self.assertRaises(OperationalError, self.s.update, self.update_info)
 
     def test_bad_status(self):
         self.update_info['status'] = 'bad'
@@ -318,7 +320,7 @@ class TestStorage(unittest.TestCase):
 
     def test_recursive_update_subflow(self):
         self.update_info['status'] = 'running'
-        self.update_info['parent_net_key'] = 'test_net_key'
+        self.update_info['parent_net_key'] = 'test_net_key2'
         self.update_info['parent_operation_id'] = 4567
         self.update_info['is_subflow'] = True
 
