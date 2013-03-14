@@ -384,7 +384,7 @@ def parse_workflow_xml(xml_etree, resources, net_builder, plan_id):
     children_info = []
     for child in children:
         stdout = getattr(child, 'stdout_log_file', None)
-        stderr = getattr(child, 'stdout_log_file', None)
+        stderr = getattr(child, 'stderr_log_file', None)
 
         info = {'id': child.id,
                 'name': child.name,
