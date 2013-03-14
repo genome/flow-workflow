@@ -5,6 +5,7 @@ import logging
 from time import localtime, strftime
 
 LOG = logging.getLogger(__name__)
+TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 class WorkflowHistorianUpdateAction(sn.TransitionAction):
     required_args = ['children_info']
@@ -33,7 +34,7 @@ class WorkflowHistorianUpdateAction(sn.TransitionAction):
         # convert (sec, microsec) to floating sec
         now = now[0] + now[1] * 1e-6
 
-        return strftime("%Y%m%d_%H%M%S", localtime(now)).upper()
+        return strftime(TIMESTAMP_FORMAT, localtime(now)).upper()
 
     def _get_extra_data(self, active_tokens_key):
         extra = {}

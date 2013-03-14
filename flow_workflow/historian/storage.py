@@ -2,6 +2,8 @@ from sqlalchemy import create_engine
 import copy
 import logging
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import event
+from sqlalchemy.dialects.oracle import dialect as oracle_dialect
 from collections import defaultdict, namedtuple
 import re
 
@@ -51,7 +53,7 @@ STATUSES = [
 ]
 
 def _should_overwrite(prev_status, new_status):
-    if new_status is None:
+    if new_status is None or new_status =='new':
         return False
 
     prev_index = STATUSES.index(prev_status)
@@ -64,6 +66,10 @@ TABLES = namedtuple('Tables', ['historian', 'instance', 'execution'])
 SEQUENCES = namedtuple('Sequences', ['instance', 'execution'])
 STATEMENTS = namedtuple('Statements', STATEMENTS_DICT.keys())
 
+def on_oracle_connect(connection, record):
+    connection.execute("alter session set NLS_DATE_FORMAT = 'YYYY-MM-DD HH24:MI:SS'")
+    connection.execute("alter session set NLS_TIMESTAMP_FORMAT = 'YYYY-MM-DD HH24:MI:SSXFF'")
+
 class WorkflowHistorianStorage(object):
     def __init__(self, connection_string, owner):
         self.statements = STATEMENTS(**{k:v % owner
@@ -75,6 +81,10 @@ class WorkflowHistorianStorage(object):
                 execution='%s.workflow_execution_seq' % owner)
 
         self.engine = create_engine(connection_string, case_sensitive=False)
+
+        # Oracle needs us to tell it to accept strings for dates/timestamps
+        if isinstance(self.engine.dialect, oracle_dialect):
+            event.listen(engine.pool, connect, on_oracle_connect)
 
     def update(self, update_info):
         LOG.debug("Updating '%s'" % update_info['name'])

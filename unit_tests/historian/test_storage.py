@@ -76,7 +76,7 @@ CREATE TABLE WORKFLOW.WORKFLOW_PLAN (
 
 class TestStorage(unittest.TestCase):
     def setUp(self):
-        self.s = TestHistorianStorage("sqlite:///:memory:", "WORKFLOW")
+        self.s = TestHistorianStorage("sqlite:///:memory:", owner="WORKFLOW")
         self.s.create_tables()
         self.e = self.s.engine
         self.update_info = {
