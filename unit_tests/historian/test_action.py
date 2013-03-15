@@ -9,6 +9,8 @@ import mock
 
 class TestAction(unittest.TestCase):
     def setUp(self):
+        self.user_name = 'flow_user'
+
         self.conn = fakeredis.FakeRedis()
         self.conn.time = mock.Mock(return_value=(1363285207, 324852))
 
@@ -25,9 +27,12 @@ class TestAction(unittest.TestCase):
                 'workflow_plan_id': 321,
                 }
 
+        self.net_constants = {'user_name': self.user_name}
+
         self.net = mock.Mock()
         self.net.key = 'netkey!'
         self.net.variable.side_effect = self.net_variables.get
+        self.net.constant.side_effect = self.net_constants.get
 
     def test_null_operation_id(self):
         cinfo = [{'status': 'new', 'parent_operation_id': 10}]
@@ -113,7 +118,7 @@ class TestAction(unittest.TestCase):
                 net_key=self.net.key,
                 operation_id=42,
                 dispatch_id='555',
-                start_time=action._get_timestamp())
+                start_time=action._timestamp())
 
     def test_shortcut_pid(self):
         cinfo = [{'id': 42, 'status': 'new', 'parent_operation_id': 10}]
@@ -135,8 +140,26 @@ class TestAction(unittest.TestCase):
                 workflow_plan_id=321,
                 net_key=self.net.key,
                 operation_id=42,
-                dispatch_id='p555',
-                start_time=action._get_timestamp())
+                dispatch_id='P555',
+                start_time=action._timestamp())
+
+    def test_net_constants(self):
+        cinfo = [{'id': 42, 'status': 'new', 'parent_operation_id': 10}]
+        args = {'children_info': cinfo,
+                'net_constants_map': {'user_name': 'user_name'}}
+
+        action = WorkflowHistorianUpdateAction.create(self.conn, args=args)
+
+        action.execute(self.active_tokens_key, self.net, self.services)
+
+        self.historian.update.assert_called_once_with(
+                status='new',
+                parent_net_key=self.net.key,
+                parent_operation_id=10,
+                workflow_plan_id=321,
+                net_key=self.net.key,
+                operation_id=42,
+                user_name=self.user_name)
 
 
 

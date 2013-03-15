@@ -366,17 +366,16 @@ class ModelOperation(WorkflowOperation):
 
 
 def parse_workflow_xml(xml_etree, resources, net_builder, plan_id):
-    outer_net = net_builder.add_subnet(nb.SuccessFailureNet, "workflow")
+    outer_net = net_builder.add_subnet(nb.SuccessFailureNet, 'workflow')
     model = ModelOperation(xml_etree, log_dir=None, resources=resources)
     outer_net.name = model.name
 
     token_merger = nb.ActionSpec(
             cls=sn.MergeTokensAction,
-            args={"input_type": "output", "output_type": "output"},
+            args={'input_type': 'output', 'output_type': 'output'},
             )
 
     inner_net = model.net(outer_net)
-    inner_net.start_transition.action = token_merger
 
     model_info = {'id': model.id, 'name': model.name, 'status': 'new'}
 
@@ -400,11 +399,11 @@ def parse_workflow_xml(xml_etree, resources, net_builder, plan_id):
     token_split = outer_net.add_transition('token split', action=token_merger)
     outer_net.start.arcs_out.add(token_split)
 
-    phist_in = outer_net.add_place("historian data")
-    pinputs_in = outer_net.add_place("input data")
+    phist_in = outer_net.add_place('historian data')
+    pinputs_in = outer_net.add_place('input data')
 
-    phist_out = outer_net.add_place("historian data")
-    pinputs_out = outer_net.add_place("input data")
+    phist_out = outer_net.add_place('historian data')
+    pinputs_out = outer_net.add_place('input data')
 
     token_split.arcs_out.add(phist_in)
     token_split.arcs_out.add(pinputs_in)
@@ -412,8 +411,12 @@ def parse_workflow_xml(xml_etree, resources, net_builder, plan_id):
     phist_out.arcs_out.add(inner_net.start_transition)
     pinputs_out.arcs_out.add(inner_net.start_transition)
 
+    historian_args = {
+            'children_info': historian_info,
+            'net_constants_map': {'user_name': 'user_name'},
+            }
     action_spec = nb.ActionSpec(cls=WorkflowHistorianUpdateAction,
-            args={'children_info': historian_info})
+            args=historian_args)
 
     outer_net.bridge_places(phist_in, phist_out, 'WorkflowHistorianUpdate',
             action_spec)
@@ -421,18 +424,18 @@ def parse_workflow_xml(xml_etree, resources, net_builder, plan_id):
             token_merger)
 
     inner_net.success_transition.arcs_out.add(outer_net.success)
-    failure = getattr(inner_net, "failure_transition", None)
+    failure = getattr(inner_net, 'failure_transition', None)
     if failure:
         failure.arcs_out.add(outer_net.failure)
 
-    net_builder.variables["workflow_id"] = model.id
-    net_builder.variables["workflow_plan_id"] = plan_id
+    net_builder.variables['workflow_id'] = model.id
+    net_builder.variables['workflow_plan_id'] = plan_id
 
-    parent = os.environ.get("FLOW_WORKFLOW_PARENT_ID")
+    parent = os.environ.get('FLOW_WORKFLOW_PARENT_ID')
     if parent:
-        LOG.info("Setting parent workflow to %s" % parent)
-        parent_net_key, parent_op_id = parent.split(" ")
-        net_builder.variables["workflow_parent_net_key"] = parent_net_key
-        net_builder.variables["workflow_parent_operation_id"] = int(parent_op_id)
+        LOG.info('Setting parent workflow to %s' % parent)
+        parent_net_key, parent_op_id = parent.split(' ')
+        net_builder.variables['workflow_parent_net_key'] = parent_net_key
+        net_builder.variables['workflow_parent_operation_id'] = int(parent_op_id)
 
     return outer_net

@@ -26,6 +26,10 @@ def op_outputs_variable_name(operation_id):
     return "_wf_outp_%d" % int(operation_id)
 
 
+def op_exit_code_variable_name(operation_id):
+    return "_wf_exit_%d" % int(operation_id)
+
+
 def store_outputs(outputs, net, operation_id):
     if not outputs:
         return
@@ -80,8 +84,23 @@ class StoreOutputsAction(sn.TransitionAction):
     def input_data(self, active_tokens_key, net):
         token_keys = self.connection.lrange(active_tokens_key, 0, -1)
         tokens = [sn.Token(self.connection, k) for k in token_keys]
-        merged = sn.merge_token_data(tokens, "output")
-        return merged
+        outputs = {}
+        exit_codes = []
+        for token in tokens:
+            LOG.debug("StoreOutputsAction: token %s has data %r", token.key,
+                    token.data.value)
+            tok_outputs = token.data.get("outputs", {})
+            outputs.update(tok_outputs)
+            exit_code = token.data.get("exit_code")
+            if exit_code is not None:
+                exit_codes.append(exit_code)
+
+        LOG.debug("%s: exit code %r", self.name, exit_codes)
+        if len(exit_codes) == 1:
+            vname = op_exit_code_variable_name(self.args["operation_id"])
+            net.set_variable(vname, exit_codes[0])
+
+        return outputs
 
     def execute(self, active_tokens_key, net, service_interfaces):
         operation_id = self.args["operation_id"]

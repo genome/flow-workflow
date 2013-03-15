@@ -52,10 +52,16 @@ class GenomeConvergeNet(GenomeEmptyNet):
 
         action = nb.ActionSpec(cls=GenomeConvergeAction, args=args)
 
-        self.start_transition = self.add_transition("converge",
+        self.start_transition = self.add_transition("update historian (start)",
+                action=self._update_action(status="running",
+                timestamps=["start_time"]))
+
+        self.action_transition = self.add_transition("converge",
                 action=action)
 
-        self.success_transition = self.add_transition("update historian",
-                action=self._update_action(status="done"))
+        self.success_transition = self.add_transition("update historian (done)",
+                action=self._update_action(status="done",
+                timestamps=["end_time"]))
 
-        self.bridge_transitions(self.start_transition, self.success_transition)
+        self.bridge_transitions(self.start_transition, self.action_transition)
+        self.bridge_transitions(self.action_transition, self.success_transition)

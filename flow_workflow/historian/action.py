@@ -9,7 +9,8 @@ TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 class WorkflowHistorianUpdateAction(sn.TransitionAction):
     required_args = ['children_info']
-    optional_args = ['token_data_map', 'timestamps', 'shortcut']
+    optional_args = ['token_data_map', 'timestamps', 'shortcut',
+            'net_constants_map']
 
     def _set_parent_info(self, net, child_info):
         parent_operation_id = child_info.get('parent_operation_id')
@@ -29,41 +30,56 @@ class WorkflowHistorianUpdateAction(sn.TransitionAction):
                 LOG.info("Unable to determine parent for action %r",
                         self.args.value)
 
-    def _get_timestamp(self):
+    def _timestamp(self):
         now = self.connection.time()
-        # convert (sec, microsec) to floating sec
+        # convert (sec, microsec) from redis to floating point sec
         now = now[0] + now[1] * 1e-6
 
         return strftime(TIMESTAMP_FORMAT, localtime(now)).upper()
 
-    def _get_extra_data(self, active_tokens_key):
-        extra = {}
+    def _get_net_constants(self, net):
+        rv = {}
+        name_mapping = self.args.get('net_constants_map', {})
+        for net_name, historian_name in name_mapping.iteritems():
+            value = net.constant(net_name)
+            if value:
+                rv[historian_name] = value
+
+        return rv
+
+    def _get_token_data(self, active_tokens_key):
+        rv = {}
         token_data_map = self.args.get('token_data_map')
         if token_data_map:
             tokens = self.tokens(active_tokens_key)
-            data = sn.merge_token_data(tokens)
-            for k, v in token_data_map.iteritems():
-                extra = {v: data[k]}
-
-        timestamps = self.args.get('timestamps', [])
-        for t in timestamps:
-            extra[t] = self._get_timestamp()
+            token_data = sn.merge_token_data(tokens)
+            for token_name, historian_name in token_data_map.iteritems():
+                rv[historian_name] = token_data[token_name]
 
         shortcut = self.args.get('shortcut')
-        if shortcut is True and 'dispatch_id' in extra:
-            extra['dispatch_id'] = 'p%s' % extra['dispatch_id']
+        if shortcut is True and 'dispatch_id' in rv:
+            rv['dispatch_id'] = 'P%s' % rv['dispatch_id']
 
-        return extra
+        return rv
 
+    def _get_runtime_fields(self, active_tokens_key, net):
+        fields = {}
+        timestamps = self.args.get('timestamps', [])
+        fields.update({t: self._timestamp() for t in timestamps})
+
+        fields.update(self._get_token_data(active_tokens_key))
+        fields.update(self._get_net_constants(net))
+
+        return fields
 
     def execute(self, active_tokens_key, net, service_interfaces):
         historian = service_interfaces['workflow_historian']
         net_key = net.key
 
-        extra_data = self._get_extra_data(active_tokens_key)
+        fields = self._get_runtime_fields(active_tokens_key, net)
 
         for child_info in self.args['children_info']:
-            child_info.update(extra_data)
+            child_info.update(fields)
 
             operation_id = child_info.pop('id', None)
             if operation_id is None:

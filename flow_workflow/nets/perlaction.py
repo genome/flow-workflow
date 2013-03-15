@@ -52,19 +52,47 @@ class GenomeNet(GenomeEmptyNet):
         GenomeEmptyNet.__init__(self, builder, name, operation_id,
                 parent_operation_id, input_connections, queue, resources)
 
-        self.start_transition = self.add_transition("%s start_trans" % name,
-                action=self._update_action(status="running"))
-        self.success_transition = self.add_transition("%s success_trans" % name,
-                action=self._update_action(status="done"))
-        self.failure_transition = self.add_transition("%s failure_trans" % name,
-                action=self._update_action(status="failed"))
+        self.start_transition = self.add_transition("%s start_trans" % name)
+        self.success_transition = self.add_transition("%s success_trans" % name)
+        self.failure_transition = self.add_transition("%s failure_trans" % name)
 
         self.failure_place = self.add_place("%s failure" % name)
         self.failure_place.arcs_out.add(self.failure_transition)
 
 
 class GenomeModelNet(GenomeNet):
-    pass
+    def __init__(self, builder, name, operation_id, parent_operation_id,
+            input_connections, queue=None, resources=None):
+
+        GenomeNet.__init__(self, builder, name, operation_id,
+                parent_operation_id, input_connections, queue, resources)
+
+
+        self.start_transition.action = nb.ActionSpec(
+                cls=sn.MergeTokensAction,
+                args={"input_type": "output", "output_type": "output"},
+                )
+
+        self.notify_start = self.add_transition("notify start",
+                action=self._update_action(
+                        status="running", timestamps=['start_time']))
+
+        self.notify_done = self.add_transition("notify done",
+                action=self._update_action(
+                        status="done", timestamps=['end_time']))
+
+        self.notify_failed = self.add_transition("notify start",
+                action=self._update_action(
+                        status="failed", timestamps=['end_time']))
+
+        self.bridge_transitions(self.start_transition, self.notify_start)
+        self.bridge_transitions(self.success_transition, self.notify_done)
+        self.bridge_transitions(self.failure_transition, self.notify_failed)
+
+        self.success_transition.action = self._update_action(status="done",
+                timestamps=['end_time'])
+        self.failure_transition.action = self._update_action(status="failed",
+                timestamps=['end_time'])
 
 
 class GenomePerlActionNet(GenomeNet):
@@ -112,7 +140,8 @@ class GenomePerlActionNet(GenomeNet):
                 action_class=GenomeShortcutAction, action_args=shortcut_args,
                 begin_execute_action=self._update_action(shortcut=True,
                     token_data_map={"pid": "dispatch_id"},
-                    timestamps=['start_time']),
+                    timestamps=['start_time']
+                    ),
                 success_action=store_outputs_action,
                 failure_action=None)
 
@@ -120,10 +149,10 @@ class GenomePerlActionNet(GenomeNet):
                 enets.LSFCommandNet, "%s execute" % name,
                 action_class=GenomeExecuteAction, action_args=execute_args,
                 dispatch_success_action=self._update_action(status="scheduled",
-                        token_data_map={"pid": "dispatch_id"},
-                        timestamps=['start_time']),
+                        token_data_map={"pid": "dispatch_id"}),
                 dispatch_failure_action=self._update_action(status="failed"),
-                begin_execute_action=self._update_action(status="running"),
+                begin_execute_action=self._update_action(status="running",
+                        timestamps=['start_time']),
                 success_action=store_outputs_action,
                 failure_action=None)
 
@@ -133,13 +162,16 @@ class GenomePerlActionNet(GenomeNet):
         self.success_place.arcs_out.add(self.success_transition)
 
         self.bridge_places(self.shortcut.success, self.success_place, name="",
-                action=self._update_action(status="done",
-                timestamps=['end_time']))
+                action=self._update_action(
+                    status="done",
+                    timestamps=['end_time']))
         self.bridge_places(self.shortcut.failure, self.execute.start, name="")
 
         self.bridge_places(self.execute.success, self.success_place, name="",
-                action=self._update_action(status="done",
-                timestamps=['end_time']))
+                action=self._update_action(
+                    status="done",
+                    timestamps=['end_time']))
         self.bridge_places(self.execute.failure, self.failure_place, name="",
-                action=self._update_action(status="failed",
-                timestamps=['end_time']))
+                action=self._update_action(
+                    status="failed",
+                    timestamps=['end_time']))

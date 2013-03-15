@@ -67,8 +67,10 @@ SEQUENCES = namedtuple('Sequences', ['instance', 'execution'])
 STATEMENTS = namedtuple('Statements', STATEMENTS_DICT.keys())
 
 def on_oracle_connect(connection, record):
-    connection.execute("alter session set NLS_DATE_FORMAT = 'YYYY-MM-DD HH24:MI:SS'")
-    connection.execute("alter session set NLS_TIMESTAMP_FORMAT = 'YYYY-MM-DD HH24:MI:SSXFF'")
+    cursor = connection.cursor()
+    cursor.execute("alter session set NLS_DATE_FORMAT = 'YYYY-MM-DD HH24:MI:SS'")
+    cursor.execute("alter session set NLS_TIMESTAMP_FORMAT = 'YYYY-MM-DD HH24:MI:SSXFF'")
+    cursor.close()
 
 class WorkflowHistorianStorage(object):
     def __init__(self, connection_string, owner):
@@ -84,7 +86,7 @@ class WorkflowHistorianStorage(object):
 
         # Oracle needs us to tell it to accept strings for dates/timestamps
         if isinstance(self.engine.dialect, oracle_dialect):
-            event.listen(engine.pool, connect, on_oracle_connect)
+            event.listen(self.engine.pool, 'connect', on_oracle_connect)
 
     def update(self, update_info):
         LOG.debug("Updating '%s'" % update_info['name'])
@@ -184,7 +186,6 @@ class WorkflowHistorianStorage(object):
         execution_id = self.next_execution_id(transaction)
         insert_instance_dict = {
                 'WORKFLOW_INSTANCE_ID': instance_id,
-                'CURRENT_EXECUTION_ID': execution_id,
         }
 
         insert_instance_dict.update(self._get_update_instance_dict(
@@ -288,7 +289,7 @@ class WorkflowHistorianStorage(object):
         putative_dict['STATUS'] = status
 
         for var_name in ['DISPATCH_ID', 'START_TIME', 'END_TIME', 'STDOUT',
-                'STDERR', 'EXIT_CODE']:
+                'STDERR', 'EXIT_CODE', 'USER_NAME']:
             if update_info.get(var_name.lower(), None) is not None:
                 putative_dict[var_name] = update_info[var_name.lower()]
 

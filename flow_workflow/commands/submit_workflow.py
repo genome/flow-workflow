@@ -45,7 +45,8 @@ class SubmitWorkflowCommand(CommandBase):
         inputs = {}
         if inputs_file:
             inputs = json.load(open(inputs_file))
-        return sn.Token.create(self.storage, data=inputs, data_type="output")
+        token_data = {"outputs": inputs}
+        return sn.Token.create(self.storage, data=token_data, data_type="output")
 
     def __call__(self, parsed_arguments):
         builder = nb.NetBuilder()

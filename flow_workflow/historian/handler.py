@@ -9,7 +9,8 @@ class WorkflowHistorianMessageHandler(object):
         self.queue_name = queue_name
 
     def __call__(self, message):
-        LOG.info("Updating [net_key='%s', operation_id='%s']",
-                message.net_key, message.operation_id)
-        self.storage.update(message.to_dict())
+        message_dict = message.to_dict()
+        LOG.info("Updating [net_key='%s', operation_id='%s']: %r",
+                message.net_key, message.operation_id, message_dict)
+        self.storage.update(message_dict)
 
