@@ -107,6 +107,7 @@ class GenomePerlActionNet(GenomeNet):
         self.action_id = action_id
 
         base_args = {
+                "name": self.name,
                 "action_type": self.action_type, # command or event
                 "action_id": self.action_id,     # command class or event id
                 "with_outputs": True,
@@ -130,7 +131,6 @@ class GenomePerlActionNet(GenomeNet):
                 'resources': self.resources,
                 'queue': self.queue,
                 })
-
 
         store_outputs_action = nb.ActionSpec(cls=StoreOutputsAction,
                 args={"operation_id": operation_id})
