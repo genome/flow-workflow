@@ -23,7 +23,8 @@ class WorkflowHistorianServiceInterface(object):
         else:
             LOG.debug("Sending update (net_key=%s, operation_id=%s, name=%s,"
                     "workflow_plan_id=%s, kwargs=%s)",
-                    net_key, peration_id, name, workflow_plan_id, kwargs)
+                    net_key, operation_id, name, workflow_plan_id, kwargs)
             message = UpdateMessage(net_key=net_key, operation_id=operation_id,
+                    name=name, workflow_plan_id=workflow_plan_id,
                     **kwargs)
             self.broker.publish(self.exchange, self.routing_key, message)
