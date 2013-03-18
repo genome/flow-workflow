@@ -24,6 +24,12 @@ class GenomeEmptyNet(nb.EmptyNet):
                 "parent_net_key": None,
                 "parent_operation_id": self.parent_operation_id}
 
+        optional_attrs = ['peer_net_key', 'peer_operation_id', 'parallel_index']
+        for attr in optional_attrs:
+            value = getattr(self, attr, None)
+            if value:
+                info[attr] = value
+
         args = {"children_info": [info]}
         args.update(kwargs)
 

@@ -428,14 +428,14 @@ def parse_workflow_xml(xml_etree, resources, net_builder, plan_id):
     if failure:
         failure.arcs_out.add(outer_net.failure)
 
-    net_builder.variables['workflow_id'] = model.id
-    net_builder.variables['workflow_plan_id'] = plan_id
+    net_builder.constants['workflow_id'] = model.id
+    net_builder.constants['workflow_plan_id'] = plan_id
 
     parent = os.environ.get('FLOW_WORKFLOW_PARENT_ID')
     if parent:
         LOG.info('Setting parent workflow to %s' % parent)
         parent_net_key, parent_op_id = parent.split(' ')
-        net_builder.variables['workflow_parent_net_key'] = parent_net_key
-        net_builder.variables['workflow_parent_operation_id'] = int(parent_op_id)
+        net_builder.constants['workflow_parent_net_key'] = parent_net_key
+        net_builder.constants['workflow_parent_operation_id'] = int(parent_op_id)
 
     return outer_net

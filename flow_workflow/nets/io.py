@@ -6,7 +6,8 @@ LOG = logging.getLogger(__name__)
 
 
 def get_workflow_outputs(net):
-    workflow_id = net.variable('workflow_id')
+    LOG.info("Fetching outputs for net %s", net.key)
+    workflow_id = net.constant('workflow_id')
     output_names = _operation_outputs(net, workflow_id)
 
     result = {}

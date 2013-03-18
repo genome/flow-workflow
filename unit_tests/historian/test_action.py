@@ -21,17 +21,15 @@ class TestAction(unittest.TestCase):
         self.active_tokens_key = 'tokens'
         self.conn.lpush(self.active_tokens_key, self.token.key)
 
-        self.net_variables = {
+        self.net_constants = {
+                'user_name': self.user_name,
                 'workflow_parent_net_key': 'parent_net_key',
                 'workflow_parent_operation_id': 123,
-                'workflow_plan_id': 321,
+                'workflow_plan_id': 321
                 }
-
-        self.net_constants = {'user_name': self.user_name}
 
         self.net = mock.Mock()
         self.net.key = 'netkey!'
-        self.net.variable.side_effect = self.net_variables.get
         self.net.constant.side_effect = self.net_constants.get
 
     def test_null_operation_id(self):
@@ -62,7 +60,7 @@ class TestAction(unittest.TestCase):
     def test_nested(self):
         # When parent_operation_id is omitted, from 'children_info', but
         # workflow_parent_net_key and workflow_parent_operation_id exist as
-        # net variables, the latter are used as the parent info
+        # net constants, the latter are used as the parent info
 
         cinfo = [{'id': 42, 'status': 'new'}]
         args = {'children_info': cinfo}
@@ -88,7 +86,7 @@ class TestAction(unittest.TestCase):
 
         net = mock.Mock()
         net.key = 'netkey!'
-        net.variable.side_effect = {'workflow_plan_id': 321}.get
+        net.constant.side_effect = {'workflow_plan_id': 321}.get
 
         action.execute(self.active_tokens_key, net, self.services)
 

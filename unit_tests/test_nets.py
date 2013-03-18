@@ -112,7 +112,8 @@ class TestBuildParallelByAction(NetTest):
 
         obj.args = {"action_type": "command", "action_id": "ClassX",
                 "parallel_by": "file", "success_place": 1, "failure_place": 2,
-                "parent_operation_id": None}
+                "parent_operation_id": None, "peer_operation_id": 12,
+                "stdout_base": "out", "stderr_base": "err"}
         obj.input_data = Mock(return_value=inputs)
 
         net = MagicMock()

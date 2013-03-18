@@ -19,8 +19,8 @@ class WorkflowHistorianUpdateAction(sn.TransitionAction):
             if parent_net_key is None:
                 child_info['parent_net_key'] = net.key
         else: # This is a "top level" workflow
-            parent_net_key = net.variable("workflow_parent_net_key")
-            parent_operation_id = net.variable("workflow_parent_operation_id")
+            parent_net_key = net.constant("workflow_parent_net_key")
+            parent_operation_id = net.constant("workflow_parent_operation_id")
 
             if parent_net_key is not None and parent_operation_id is not None:
                 child_info['parent_net_key'] = parent_net_key
@@ -36,6 +36,15 @@ class WorkflowHistorianUpdateAction(sn.TransitionAction):
         now = now[0] + now[1] * 1e-6
 
         return strftime(TIMESTAMP_FORMAT, localtime(now)).upper()
+
+    def _get_net_attributes(self, net):
+        rv = {}
+        name_mapping = self.args.get('net_attributes_map', {})
+        for net_name, historian_name in name_mapping.iteritems():
+            value = getattr(net, net_name, None)
+            if value:
+                rv[historian_name] = value
+        return rv
 
     def _get_net_constants(self, net):
         rv = {}
@@ -69,6 +78,7 @@ class WorkflowHistorianUpdateAction(sn.TransitionAction):
 
         fields.update(self._get_token_data(active_tokens_key))
         fields.update(self._get_net_constants(net))
+        fields.update(self._get_net_attributes(net))
 
         return fields
 
@@ -86,7 +96,7 @@ class WorkflowHistorianUpdateAction(sn.TransitionAction):
                 raise RuntimeError("Null operation id in historian update: %r" %
                         self.args.value)
 
-            child_info['workflow_plan_id'] = net.variable("workflow_plan_id")
+            child_info['workflow_plan_id'] = net.constant("workflow_plan_id")
             self._set_parent_info(net, child_info)
 
             parent = os.environ.get("FLOW_WORKFLOW_PARENT_ID")
@@ -95,6 +105,3 @@ class WorkflowHistorianUpdateAction(sn.TransitionAction):
 
             historian.update(net_key=net_key, operation_id=operation_id,
                     **child_info)
-
-
-
