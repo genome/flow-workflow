@@ -1,8 +1,12 @@
+from flow_workflow.historian.messages import UpdateMessage
+
 import logging
 
 LOG = logging.getLogger(__name__)
 
 class WorkflowHistorianMessageHandler(object):
+    message_class = UpdateMessage
+
     def __init__(self, broker=None, storage=None, queue_name=None):
         self.broker = broker
         self.storage = storage
