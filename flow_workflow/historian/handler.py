@@ -17,4 +17,3 @@ class WorkflowHistorianMessageHandler(object):
         LOG.info("Updating [net_key='%s', operation_id='%s']: %r",
                 message.net_key, message.operation_id, message_dict)
         self.storage.update(message_dict)
-
