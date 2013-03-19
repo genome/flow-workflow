@@ -12,9 +12,14 @@ class WorkflowHistorianUpdateAction(sn.TransitionAction):
     optional_args = ['token_data_map', 'timestamps', 'shortcut',
             'net_constants_map']
 
+    def _set_peer_info(self, net, child_info):
+        peer_operation_id = child_info.get('peer_operation_id')
+        if peer_operation_id is not None:
+            child_info['peer_net_key'] = net.key
+
     def _set_parent_info(self, net, child_info):
         parent_operation_id = child_info.get('parent_operation_id')
-        if parent_operation_id:
+        if parent_operation_id is not None:
             parent_net_key = child_info.get("parent_net_key")
             if parent_net_key is None:
                 child_info['parent_net_key'] = net.key
