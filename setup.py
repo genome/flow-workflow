@@ -4,9 +4,6 @@ entry_points = '''
 [flow.commands]
 submit-workflow = flow_workflow.commands.submit_workflow:SubmitWorkflowCommand
 workflow_historian_service = flow.commands.service:ServiceCommand
-
-[flow.protocol.message_classes]
-workflow_historian_message = flow_workflow.historian.messages:UpdateMessage
 '''
 
 setup(
