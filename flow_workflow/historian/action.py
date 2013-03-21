@@ -103,6 +103,7 @@ class WorkflowHistorianUpdateAction(sn.TransitionAction):
 
             child_info['workflow_plan_id'] = net.constant("workflow_plan_id")
             self._set_parent_info(net, child_info)
+            self._set_peer_info(net, child_info)
 
             parent = os.environ.get("FLOW_WORKFLOW_PARENT_ID")
             LOG.debug("Historian update: (operation=%r, parent=%s), %r",

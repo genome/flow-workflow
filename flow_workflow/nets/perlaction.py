@@ -120,9 +120,7 @@ class GenomePerlActionNet(GenomeNet):
         if parallel_by_spec:
             base_args["parallel_by"] = parallel_by_spec.property
             base_args["parallel_by_idx"] = parallel_by_spec.index
-            # Note: self.parallel_index is only for the historian.
-            # actual parallel by commands need to start at #1 in the historian.
-            self.parallel_index = parallel_by_spec.index + 1
+            self.parallel_index = parallel_by_spec.index
             self.parent_net_key = parallel_by_spec.parent_net_key
             self.peer_operation_id = parallel_by_spec.peer_operation_id
 

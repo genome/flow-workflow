@@ -12,20 +12,21 @@ ParallelBySpec = namedtuple("ParallelBySpec",
         "property index parent_net_key peer_operation_id")
 
 
-def add_parallel_subnets(name, net, num_subnets, action_type, action_id,
-        input_names, parallel_by, parent_net_key, parent_operation_id,
-        peer_operation_id, stdout_base, stderr_base):
+def add_parallel_subnets(name_base, net, num_subnets, action_type, action_id,
+        input_names, parallel_by, parent_net_key,
+        parent_operation_id, stdout_base, stderr_base):
 
     input_source_id = 0
     input_conns = {input_source_id: {x: x for x in input_names}}
 
     for i in xrange(num_subnets):
-        op_id = i+1
-        name = "%s (#%d)" % (name, op_id)
+        op_id = i
+        #name = "%s (#%d)" % (name_base, op_id)
+        name = str(name_base)
 
         pby_spec = ParallelBySpec(property=parallel_by, index=i,
                 parent_net_key=parent_net_key,
-                peer_operation_id=peer_operation_id)
+                peer_operation_id=0) #peer_operation_id)
 
         stdout_log_file = "%s_%d" % (stdout_base, i)
         stderr_log_file = "%s_%d" % (stderr_base, i)
@@ -58,9 +59,9 @@ def add_parallel_subnets(name, net, num_subnets, action_type, action_id,
 
 
 class ParallelByNet(nb.EmptyNet):
-    def __init__(self, builder, name, parallel_by, input_data, parent_net_key,
-            success_place, failure_place, action_type, action_id,
-            parent_operation_id, peer_operation_id, stderr_base, stdout_base):
+    def __init__(self, builder, name, parallel_by, input_data, success_place,
+            failure_place, action_type, action_id, parent_net_key,
+            parent_operation_id, stderr_base, stdout_base):
 
         nb.EmptyNet.__init__(self, builder, name)
 
@@ -100,7 +101,7 @@ class ParallelByNet(nb.EmptyNet):
         input_names = input_data.keys()
 
         add_parallel_subnets(
-                name=self.name,
+                name_base=self.name,
                 net=self,
                 num_subnets=num_subnets,
                 action_type=action_type,
@@ -109,7 +110,6 @@ class ParallelByNet(nb.EmptyNet):
                 parallel_by=parallel_by,
                 parent_net_key=parent_net_key,
                 parent_operation_id=parent_operation_id,
-                peer_operation_id=peer_operation_id,
                 stdout_base=stdout_base,
                 stderr_base=stderr_base)
 
@@ -118,7 +118,7 @@ class BuildParallelByAction(InputsMixin, sn.TransitionAction):
     required_arguments = ["action_type", "action_id", "parallel_by",
             "input_connections", "operation_id", "success_place",
             "failure_place", "parent_operation_id",
-            "peer_operation_id", "stdout_base", "stderr_base"]
+            "stdout_base", "stderr_base"]
 
     def execute(self, active_tokens_key, net, service_interfaces):
         inputs = self.input_data(active_tokens_key, net)
@@ -130,12 +130,11 @@ class BuildParallelByAction(InputsMixin, sn.TransitionAction):
                 parallel_by=self.args['parallel_by'],
                 input_data=inputs,
                 parent_net_key=net.key,
+                parent_operation_id=self.args['parent_operation_id'],
                 success_place=self.args['success_place'],
                 failure_place=self.args['failure_place'],
                 action_type=self.args['action_type'],
                 action_id=self.args['action_id'],
-                parent_operation_id=self.args['parent_operation_id'],
-                peer_operation_id=self.args['peer_operation_id'],
                 stderr_base=self.args['stderr_base'],
                 stdout_base=self.args['stdout_base'])
 
@@ -150,18 +149,18 @@ class BuildParallelByAction(InputsMixin, sn.TransitionAction):
 
 
 class GenomeParallelByNet(GenomeEmptyNet):
-    def __init__(self, builder, name, operation_id, parent_operation_id,
-            input_connections, action_type, action_id, parallel_by, stdout=None,
-            stderr=None, queue=None, resources=None):
+    def __init__(self, builder, name, child_base_name, operation_id,
+            parent_operation_id, input_connections, action_type, action_id,
+            parallel_by, stdout=None, stderr=None, queue=None, resources=None):
 
         GenomeEmptyNet.__init__(self, builder, name, operation_id,
                 parent_operation_id, input_connections, queue, resources)
 
+        self.invisible_to_historian = True
+
         self.parallel_by = parallel_by
         self.action_type = action_type
         self.action_id = action_id
-        self.peer_operation_id = self.operation_id
-        self.parallel_index = 0
 
         self.running = self.add_place("running")
         self.on_success = self.add_place("on_success")
@@ -174,17 +173,16 @@ class GenomeParallelByNet(GenomeEmptyNet):
             "operation_id": self.operation_id,
             "input_connections": self.input_connections,
             "parallel_by": parallel_by,
-            "parent_operation_id": self.operation_id,
+            "parent_operation_id": self.parent_operation_id,
             "stdout_base": stdout,
             "stderr_base": stderr,
             "success_place": self.on_success.index,
             "failure_place": self.on_failure.index,
             "resources": self.resources,
-            "peer_operation_id": operation_id,
         }
 
         action = nb.ActionSpec(cls=BuildParallelByAction, args=args)
-        self.start_transition = self.add_transition(self.name, action=action)
+        self.start_transition = self.add_transition(child_base_name, action=action)
 
         self.success_transition = self.add_transition("success_transition")
         self.failure_transition = self.add_transition("failure_transition")
@@ -195,24 +193,3 @@ class GenomeParallelByNet(GenomeEmptyNet):
 
         self.on_success.arcs_out.add(self.success_transition)
         self.on_failure.arcs_out.add(self.failure_transition)
-
-        self.notify_start = self.add_transition("notify start",
-                action=self._update_action(status="running",
-                        timestamps=["start_time"],
-                        net_attributes_map={"key": "peer_net_key"}))
-
-        self.notify_done = self.add_transition("notify done",
-                action=self._update_action(status="done",
-                        timestamps=["end_time"],
-                        net_attributes_map={"key": "peer_net_key"}))
-
-        self.notify_failed = self.add_transition("notify failed",
-                action=self._update_action(status="failed",
-                        timestamps=["end_time"],
-                        net_attributes_map={"key": "peer_net_key"}))
-
-        self.bridge_transitions(self.start_transition, self.notify_start)
-        self.bridge_transitions(self.success_transition, self.notify_done)
-        self.bridge_transitions(self.failure_transition, self.notify_failed)
-
-
