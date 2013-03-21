@@ -18,7 +18,7 @@ class WorkflowHistorianServiceInterface(object):
             LOG.debug("Received negative workflow_plan_id:%s, "
                     "ignoring update (net_key=%s, operation_id=%s, name=%s,"
                     "workflow_plan_id=%s, kwargs=%s)",
-                    workflow_plan_id, net_key, peration_id, name,
+                    workflow_plan_id, net_key, operation_id, name,
                     workflow_plan_id, kwargs)
         else:
             LOG.debug("Sending update (net_key=%s, operation_id=%s, name=%s,"
