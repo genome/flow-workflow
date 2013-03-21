@@ -77,12 +77,14 @@ class CommandOperation(WorkflowOperation):
         self.parallel_by = ""
         if "parallelBy" in self._operation_attributes:
             self.parallel_by = self._operation_attributes["parallelBy"]
+            self.invisible_to_historian = True
 
     def net(self, builder, input_connections=None):
 
         if self.parallel_by:
             return builder.add_subnet(GenomeParallelByNet,
                     name=self.name,
+                    child_base_name=self.name,
                     operation_id=self.id,
                     parent_operation_id=self.parent_id,
                     action_type="command",
@@ -382,6 +384,9 @@ def parse_workflow_xml(xml_etree, resources, net_builder, plan_id):
     children = model.children
     children_info = []
     for child in children:
+        if getattr(child, 'invisible_to_historian', None) is True:
+            continue
+
         stdout = getattr(child, 'stdout_log_file', None)
         stderr = getattr(child, 'stderr_log_file', None)
 
