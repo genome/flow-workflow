@@ -29,6 +29,7 @@ class WorkflowEntity(object):
     def __init__(self, parent=None):
         self.parent = parent
         self.parent_id = self.parent.id if parent else None
+        self.invisible_to_historian = False
 
     def net(self, builder, input_connections=None):
         raise NotImplementedError("net not implemented in %s" %
