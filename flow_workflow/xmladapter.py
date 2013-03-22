@@ -1,11 +1,11 @@
 from collections import defaultdict
 from flow.orchestrator.graph import transitive_reduction
+from flow_workflow.nets import GenomeInputConnectorNet
+from flow_workflow.nets import GenomeOutputConnectorNet
 from flow_workflow.nets import GenomePerlActionNet
 from flow_workflow.nets import GenomeConvergeNet
 from flow_workflow.nets import GenomeModelNet
 from flow_workflow.nets import GenomeParallelByNet
-from flow_workflow.nets import StoreInputsAsOutputsAction
-from flow_workflow.nets import StoreOutputsAction
 from flow_workflow.nets import WorkflowHistorianUpdateAction
 from lxml import etree
 import flow.petri.netbuilder as nb
@@ -174,17 +174,8 @@ class InputConnector(WorkflowEntity):
         self.name = "input connector"
 
     def net(self, builder, input_connections=None):
-        net = builder.add_subnet(nb.EmptyNet, self.name)
-        args = {"operation_id": self.id}
-
-        action = nb.ActionSpec(cls=StoreOutputsAction, args=args)
-        net.start_transition = net.add_transition("input connector start",
-                action=action
-                )
-
-        net.success_transition = net.start_transition
-
-        return net
+        return builder.add_subnet(GenomeInputConnectorNet,
+                self.name, self.id, self.parent_id)
 
 
 class OutputConnector(WorkflowEntity):
@@ -194,17 +185,9 @@ class OutputConnector(WorkflowEntity):
         self.workflow_id = workflow_id
 
     def net(self, builder, input_connections=None):
-        net = builder.add_subnet(nb.EmptyNet, self.name)
-
-        args = {"operation_id": self.workflow_id,
-                "input_connections": input_connections}
-        action = nb.ActionSpec(cls=StoreInputsAsOutputsAction, args=args)
-
-        net.start_transition = net.add_transition("output connector start",
-                action=action)
-        net.success_transition = net.start_transition
-
-        return net
+        return builder.add_subnet(GenomeOutputConnectorNet,
+            self.name, self.id, self.parent_id, input_connections,
+            self.workflow_id)
 
 
 class ModelOperation(WorkflowOperation):

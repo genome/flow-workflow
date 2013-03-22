@@ -69,7 +69,12 @@ class InputsMixin(object):
         return inputs
 
     def input_data(self, active_tokens_key, net):
-        inputs = self._fetch_inputs(net, self.args.get("input_connections"))
+        operation_id = self.args.get("operation_id", -1)
+        input_connections = self.args.get("input_connections")
+
+        inputs = self._fetch_inputs(net, input_connections)
+        LOG.debug("Inputs: %r", inputs)
+
         parallel_by = self.args.get("parallel_by")
         parallel_by_idx = self.args.get("parallel_by_idx")
         if parallel_by and parallel_by_idx is not None:
@@ -107,7 +112,8 @@ class StoreOutputsAction(sn.TransitionAction):
         operation_id = self.args["operation_id"]
         input_data = self.input_data(active_tokens_key, net)
 
-        LOG.debug("%s storing outputs: %r", self.name, input_data)
+        LOG.debug("%s (%s/%d) storing outputs: %r", self.name, net.key,
+                operation_id, input_data)
 
         store_outputs(input_data, net, operation_id)
 

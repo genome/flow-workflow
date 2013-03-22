@@ -9,7 +9,7 @@ from collections import namedtuple
 
 
 ParallelBySpec = namedtuple("ParallelBySpec",
-        "property index parent_net_key peer_operation_id")
+        "property index parent_net_key")
 
 
 def add_parallel_subnets(name_base, net, num_subnets, action_type, action_id,
@@ -25,8 +25,7 @@ def add_parallel_subnets(name_base, net, num_subnets, action_type, action_id,
         name = str(name_base)
 
         pby_spec = ParallelBySpec(property=parallel_by, index=i,
-                parent_net_key=parent_net_key,
-                peer_operation_id=0) #peer_operation_id)
+                parent_net_key=parent_net_key)
 
         stdout_log_file = "%s_%d" % (stdout_base, i)
         stderr_log_file = "%s_%d" % (stderr_base, i)
