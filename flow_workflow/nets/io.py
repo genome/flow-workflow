@@ -8,7 +8,7 @@ LOG = logging.getLogger(__name__)
 def get_workflow_outputs(net):
     LOG.info("Fetching outputs for net %s", net.key)
     workflow_id = net.constant('workflow_id')
-    output_names = _operation_outputs(net, workflow_id)
+    output_names = operation_output_names(net, workflow_id)
 
     result = {}
     if output_names:
@@ -44,9 +44,15 @@ def store_outputs(outputs, net, operation_id):
     net.set_variable(op_outputs_variable_name(operation_id), keys)
 
 
-def _operation_outputs(net, operation_id):
+def operation_output_names(net, operation_id):
     key = op_outputs_variable_name(operation_id)
     return net.variable(key)
+
+def operation_outputs(net, operation_id):
+    names = operation_output_names(net, operation_id)
+    outputs = {x: net.variable(output_variable_name(operation_id, x))
+            for x in names}
+    return outputs
 
 
 class InputsMixin(object):
@@ -57,7 +63,7 @@ class InputsMixin(object):
         inputs = {}
         for src_id, prop_hash in data_arcs.iteritems():
             if not prop_hash:
-                names = _operation_outputs(net, src_id)
+                names = operation_output_names(net, src_id)
                 prop_hash = {x: x for x in names}
 
             for dst_prop, src_prop in prop_hash.iteritems():
@@ -119,7 +125,7 @@ class StoreOutputsAction(sn.TransitionAction):
 
 
 class StoreInputsAsOutputsAction(InputsMixin, sn.TransitionAction):
-    required_arguments = ["operation_id", "input_connections"]
+    required_arguments = ["operation_id"]
 
     def execute(self, active_tokens_key, net, service_interfaces):
         operation_id = self.args["operation_id"]

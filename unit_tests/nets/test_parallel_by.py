@@ -69,7 +69,7 @@ class TestParallelByNet(NetTest):
             historian = mock.Mock()
             services = {"workflow_historian": historian}
 
-            operation_id = idx
+            operation_id = idx + 1
 
             begin_action_idx = subnet.shortcut.t_begin_execute.index
             begin_transition = stored_net.transition(begin_action_idx)
@@ -84,12 +84,12 @@ class TestParallelByNet(NetTest):
                 parent_net_key=self.parent_net_key,
                 parent_operation_id=self.parent_operation_id,
                 peer_net_key=stored_net.key,
-                peer_operation_id=0,
+                peer_operation_id=1,
                 name=subnet.name,
                 start_time=mock.ANY,
                 operation_id=operation_id,
                 workflow_plan_id=mock.ANY,
-                parallel_index=operation_id,
+                parallel_index=idx,
                 net_key=stored_net.key,
                 dispatch_id='P123')
 
@@ -106,7 +106,7 @@ class TestParallelByNet(NetTest):
             historian = mock.Mock()
             services = {"workflow_historian": historian}
 
-            operation_id = idx
+            operation_id = idx + 1
 
             begin_action_idx = subnet.execute.begin_execute.index
             begin_transition = stored_net.transition(begin_action_idx)
@@ -120,13 +120,13 @@ class TestParallelByNet(NetTest):
                 status='running',
                 parent_net_key=self.parent_net_key,
                 peer_net_key=stored_net.key,
-                peer_operation_id=0,
+                peer_operation_id=1,
                 parent_operation_id=self.parent_operation_id,
                 name=subnet.name,
                 start_time=mock.ANY,
                 operation_id=operation_id,
                 workflow_plan_id=mock.ANY,
-                parallel_index=operation_id,
+                parallel_index=idx,
                 net_key=stored_net.key)
 
         for idx, subnet in enumerate(net.subnets):

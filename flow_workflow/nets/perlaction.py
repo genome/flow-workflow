@@ -122,7 +122,7 @@ class GenomePerlActionNet(GenomeNet):
             base_args["parallel_by_idx"] = parallel_by_spec.index
             self.parallel_index = parallel_by_spec.index
             self.parent_net_key = parallel_by_spec.parent_net_key
-            self.peer_operation_id = 0
+            self.peer_operation_id = parallel_by_spec.peer_operation_id
 
         shortcut_args = dict(base_args)
         execute_args = dict(base_args)

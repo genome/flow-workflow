@@ -1,15 +1,20 @@
 from flow_workflow.nets.core import InputsMixin, GenomeEmptyNet
-from flow_workflow.nets.io import StoreOutputsAction
 from flow_workflow.nets.perlaction import GenomePerlActionNet
 
+from flow_workflow.nets.io import StoreOutputsAction
+from flow_workflow.nets.io import operation_outputs
 import flow.petri.safenet as sn
 import flow.petri.netbuilder as nb
 
 from collections import namedtuple
 
+import logging
+
+LOG = logging.getLogger(__name__)
+
 
 ParallelBySpec = namedtuple("ParallelBySpec",
-        "property index parent_net_key")
+        "property index parent_net_key peer_operation_id")
 
 
 def add_parallel_subnets(name_base, net, num_subnets, action_type, action_id,
@@ -19,13 +24,14 @@ def add_parallel_subnets(name_base, net, num_subnets, action_type, action_id,
     input_source_id = 0
     input_conns = {input_source_id: {x: x for x in input_names}}
 
+    op_ids = []
     for i in xrange(num_subnets):
-        op_id = i
-        #name = "%s (#%d)" % (name_base, op_id)
+        op_id = i+1
+        op_ids.append(op_id)
         name = str(name_base)
 
         pby_spec = ParallelBySpec(property=parallel_by, index=i,
-                parent_net_key=parent_net_key)
+                parent_net_key=parent_net_key, peer_operation_id=1)
 
         stdout_log_file = "%s_%d" % (stdout_base, i)
         stderr_log_file = "%s_%d" % (stderr_base, i)
@@ -56,6 +62,8 @@ def add_parallel_subnets(name_base, net, num_subnets, action_type, action_id,
 
         subnet.failure_transition.arcs_out.add(net.failing_place)
 
+    return op_ids
+
 
 class ParallelByNet(nb.EmptyNet):
     def __init__(self, builder, name, parallel_by, input_data, success_place,
@@ -75,13 +83,7 @@ class ParallelByNet(nb.EmptyNet):
         self.start_transition = self.add_transition("start",
                 action=store_outputs_action)
 
-        success_args = {"remote_net_key": parent_net_key,
-                "remote_place_id": success_place,
-                "data_type": "output"}
-        success_action = nb.ActionSpec(cls=sn.SetRemoteTokenAction,
-                args=success_args)
-        self.success_transition = self.add_transition("success",
-                action=success_action)
+        self.success_transition = self.add_transition("success")
 
         failure_args = {"remote_net_key": parent_net_key,
                 "remote_place_id": failure_place,
@@ -99,7 +101,7 @@ class ParallelByNet(nb.EmptyNet):
         num_subnets = len(input_data[parallel_by])
         input_names = input_data.keys()
 
-        add_parallel_subnets(
+        operation_ids = add_parallel_subnets(
                 name_base=self.name,
                 net=self,
                 num_subnets=num_subnets,
@@ -111,6 +113,18 @@ class ParallelByNet(nb.EmptyNet):
                 parent_operation_id=parent_operation_id,
                 stdout_base=stdout_base,
                 stderr_base=stderr_base)
+
+        success_args = {"remote_net_key": parent_net_key,
+                "remote_place_id": success_place,
+                "operation_ids": operation_ids,
+                "data_type": "output"}
+
+        success_action = nb.ActionSpec(cls=ParallelBySuccessAction,
+                args=success_args)
+
+        self.success_transition.action = success_action
+
+
 
 
 class BuildParallelByAction(InputsMixin, sn.TransitionAction):
@@ -147,6 +161,29 @@ class BuildParallelByAction(InputsMixin, sn.TransitionAction):
                 token.key)
 
 
+class ParallelBySuccessAction(sn.SetRemoteTokenAction):
+    required_arguments = (sn.SetRemoteTokenAction.required_arguments + 
+            ['operation_ids'])
+
+    def input_data(self, active_tokens_key, net):
+        operation_ids = self.args['operation_ids']
+        all_outputs = [operation_outputs(net, x) for x in operation_ids]
+
+        names = set()
+        for x in all_outputs:
+            names.update(x.keys())
+
+        outputs = {}
+        for name in names:
+            outputs[name] = [x.get(name) for x in all_outputs]
+
+        LOG.debug("ParallelBySuccessAction: ops: %r, all outputs: %r, "
+                "outputs: %r",
+                operation_ids, all_outputs, outputs)
+
+        return {"outputs": outputs}
+
+
 class GenomeParallelByNet(GenomeEmptyNet):
     def __init__(self, builder, name, child_base_name, operation_id,
             parent_operation_id, input_connections, action_type, action_id,
@@ -181,9 +218,16 @@ class GenomeParallelByNet(GenomeEmptyNet):
         }
 
         action = nb.ActionSpec(cls=BuildParallelByAction, args=args)
-        self.start_transition = self.add_transition(child_base_name, action=action)
+        self.start_transition = self.add_transition(child_base_name,
+                action=action)
 
-        self.success_transition = self.add_transition("success_transition")
+        store_outputs_action = nb.ActionSpec(
+                cls=StoreOutputsAction,
+                args={"operation_id": operation_id})
+
+        self.success_transition = self.add_transition("success_transition",
+                action=store_outputs_action)
+
         self.failure_transition = self.add_transition("failure_transition")
 
         self.start_transition.arcs_out.add(self.running)
