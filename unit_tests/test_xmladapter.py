@@ -94,9 +94,9 @@ class TestWorkflowOperations(TestCase):
 
         self.assertEqual("/tmp", op.log_dir)
         self.assertRegexpMatches(op.stdout_log_file,
-                "/tmp/[0-9]+-op_nums_1_2.out")
+                "/tmp/op_nums_1_2\.[0-9]+\.out")
         self.assertRegexpMatches(op.stderr_log_file,
-                "/tmp/[0-9]+-op_nums_1_2.err")
+                "/tmp/op_nums_1_2\.[0-9]+\.err")
 
         self.assertEqual("ClassX", op.perl_class)
         self.assertEqual("", op.parallel_by)

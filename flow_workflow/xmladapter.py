@@ -3,10 +3,12 @@ from flow.orchestrator.graph import transitive_reduction
 from flow_workflow.nets import GenomeInputConnectorNet
 from flow_workflow.nets import GenomeOutputConnectorNet
 from flow_workflow.nets import GenomePerlActionNet
+from flow_workflow.nets import GenomeEmptyNet
 from flow_workflow.nets import GenomeConvergeNet
 from flow_workflow.nets import GenomeModelNet
 from flow_workflow.nets import GenomeParallelByNet
 from flow_workflow.nets import WorkflowHistorianUpdateAction
+from flow_workflow.nets import StoreInputsAsOutputsAction
 from lxml import etree
 import flow.petri.netbuilder as nb
 import flow.petri.safenet as sn
@@ -17,7 +19,7 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
-MAX_FILENAME_LEN = 50
+MAX_FILENAME_LEN = 256
 WORKFLOW_WRAPPER = 'workflow-wrapper'
 
 
@@ -29,7 +31,7 @@ class WorkflowEntity(object):
     def __init__(self, parent=None):
         self.parent = parent
         self.parent_id = self.parent.id if parent else None
-        self.invisible_to_historian = False
+        self.notify_historian = True
 
     def net(self, builder, input_connections=None):
         raise NotImplementedError("net not implemented in %s" %
@@ -60,8 +62,8 @@ class WorkflowOperation(WorkflowEntity):
 
         self.log_dir = log_dir
         basename = re.sub("[^A-Za-z0-9_.-]", "_", self.name)[:MAX_FILENAME_LEN]
-        out_file = "%d-%s.out" % (self.id, basename)
-        err_file = "%d-%s.err" % (self.id, basename)
+        out_file = "%s.%d.out" % (basename, self.id)
+        err_file = "%s.%d.err" % (basename, self.id)
         self.stdout_log_file = os.path.join(self.log_dir, out_file)
         self.stderr_log_file = os.path.join(self.log_dir, err_file)
 
@@ -78,7 +80,7 @@ class CommandOperation(WorkflowOperation):
         self.parallel_by = ""
         if "parallelBy" in self._operation_attributes:
             self.parallel_by = self._operation_attributes["parallelBy"]
-            self.invisible_to_historian = True
+            self.notify_historian = False
 
     def net(self, builder, input_connections=None):
 
@@ -168,6 +170,32 @@ class ConvergeOperation(WorkflowOperation):
                 )
 
 
+class BlockOperation(WorkflowOperation):
+    def __init__(self, xml, log_dir, resources, parent):
+        WorkflowOperation.__init__(self, xml, log_dir, parent)
+
+        properties = self._type_node.findall("property")
+        if len(properties) < 1:
+            raise ValueError(
+                "Wrong number of <property> tags (%d) in operation %s" %
+                (len(properties), self.name))
+        self.properties = [x.text for x in properties]
+        self.notify_historian = False
+
+    def net(self, builder, input_connections=None):
+        net = builder.add_subnet(GenomeEmptyNet, self.name, self.id,
+                self.parent_id, input_connections)
+
+        args = {"operation_id": self.id,
+                "input_connections": input_connections}
+        action = nb.ActionSpec(cls=StoreInputsAsOutputsAction, args=args)
+
+        net.start_transition = net.add_transition("block", action=action)
+        net.success_transition = net.start_transition
+
+        return net
+
+
 class InputConnector(WorkflowEntity):
     def __init__(self, parent):
         WorkflowEntity.__init__(self, parent)
@@ -216,6 +244,7 @@ class ModelOperation(WorkflowOperation):
 
         self.operation_types = {
             "Workflow::OperationType::Converge": ConvergeOperation,
+            "Workflow::OperationType::Block": BlockOperation,
             "Workflow::OperationType::Command": CommandOperation,
             "Workflow::OperationType::Model": ModelOperation,
             "Workflow::OperationType::Event": EventOperation,
@@ -285,6 +314,13 @@ class ModelOperation(WorkflowOperation):
             src_prop = link.attrib["fromProperty"]
             dst_prop = link.attrib["toProperty"]
 
+            LOG.info("Model %s processing link (%s:%d:%s) -> (%s:%d:%s)",
+                    self.name, src, src_op.id, src_prop, dst, dst_op.id,
+                    dst_prop)
+
+            msg = "Model %s processing link (%s:%s) -> (%s:%s)" % (
+                    self.name, src, src_prop, dst, dst_prop)
+
             self.add_edge(src_op, dst_op)
 
             self.data_arcs[dst_op.id][src_op.id][dst_prop] = src_prop
@@ -317,6 +353,8 @@ class ModelOperation(WorkflowOperation):
     def net(self, builder, data_arcs=None):
         net = builder.add_subnet(GenomeModelNet, self.name, self.id,
                 self.parent_id, data_arcs)
+        LOG.info("Model %s adding subnet with data arcs %r", self.name,
+                data_arcs)
 
         ops_to_subnets = {}
 
@@ -368,7 +406,7 @@ def parse_workflow_xml(xml_etree, resources, net_builder, plan_id):
     children = model.children
     children_info = []
     for child in children:
-        if getattr(child, 'invisible_to_historian', None) is True:
+        if getattr(child, 'notify_historian', True) is False:
             continue
 
         stdout = getattr(child, 'stdout_log_file', None)
