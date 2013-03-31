@@ -192,8 +192,6 @@ class GenomeParallelByNet(GenomeEmptyNet):
         GenomeEmptyNet.__init__(self, builder, name, operation_id,
                 parent_operation_id, input_connections, queue, resources)
 
-        self.invisible_to_historian = True
-
         self.parallel_by = parallel_by
         self.action_type = action_type
         self.action_id = action_id
