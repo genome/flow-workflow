@@ -48,6 +48,7 @@ def operation_output_names(net, operation_id):
     key = op_outputs_variable_name(operation_id)
     return net.variable(key)
 
+
 def operation_outputs(net, operation_id):
     names = operation_output_names(net, operation_id)
     outputs = {x: net.variable(output_variable_name(operation_id, x))
@@ -69,13 +70,11 @@ class InputsMixin(object):
             for dst_prop, src_prop in prop_hash.iteritems():
                 varname = output_variable_name(src_id, src_prop)
                 value = net.variable(varname)
-                if value:
-                    inputs[dst_prop] = value
+                inputs[dst_prop] = value
 
         return inputs
 
     def input_data(self, active_tokens_key, net):
-        operation_id = self.args.get("operation_id", -1)
         input_connections = self.args.get("input_connections")
 
         inputs = self._fetch_inputs(net, input_connections)
@@ -94,8 +93,7 @@ class StoreOutputsAction(sn.TransitionAction):
     required_arguments = ["operation_id"]
 
     def input_data(self, active_tokens_key, net):
-        token_keys = self.connection.lrange(active_tokens_key, 0, -1)
-        tokens = [sn.Token(self.connection, k) for k in token_keys]
+        tokens = self.tokens(active_tokens_key)
         outputs = {}
         exit_codes = []
         for token in tokens:
