@@ -45,6 +45,36 @@ class GenomeExecuteAction(GenomePerlAction, enets.LSFDispatchAction):
         return self._update_environment(net, env)
 
 
+class GenomeModelInputsAction(InputsMixin, sn.TransitionAction):
+    required_arguments = ["input_connections"]
+
+    def input_data(self, active_tokens_key, net):
+        return InputsMixin.input_data(self, active_tokens_key, net)
+
+    def token_data(self, active_tokens_key):
+        tokens = self.tokens(active_tokens_key)
+        data = {}
+        exit_codes = []
+        for token in tokens:
+            tok_data = token.data.get("outputs", {})
+            data.update(tok_data)
+            exit_code = token.data.get("exit_code")
+            if exit_code is not None:
+                exit_codes.append(exit_code)
+
+        return data
+
+    def execute(self, active_tokens_key, net, service_interfaces):
+        inputs = self.input_data(active_tokens_key, net)
+
+        inputs.update(self.token_data(active_tokens_key))
+
+        token = sn.Token.create(self.connection, data={"outputs": inputs},
+                data_type="output")
+
+        return token
+
+
 class GenomeNet(GenomeEmptyNet):
     def __init__(self, builder, name, operation_id, parent_operation_id,
             input_connections, queue=None, resources=None):
@@ -67,10 +97,9 @@ class GenomeModelNet(GenomeNet):
         GenomeNet.__init__(self, builder, name, operation_id,
                 parent_operation_id, input_connections, queue, resources)
 
-
         self.start_transition.action = nb.ActionSpec(
-                cls=sn.MergeTokensAction,
-                args={"input_type": "output", "output_type": "output"},
+                cls=GenomeModelInputsAction, #sn.MergeTokensAction,
+                args={"input_connections": input_connections}
                 )
 
         self.notify_start = self.add_transition("notify start",
