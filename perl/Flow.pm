@@ -75,7 +75,7 @@ sub encode_io_hash {
     return {
         map {
             my $val = $io->{$_};
-            $_ => $val eq '' ? '' : Flow::encode($val)
+            $_ => (!defined $val || $val eq '') ? '' : Flow::encode($val)
         } keys %$io
     };
 
@@ -108,7 +108,7 @@ sub translate_workflow_resource {
         $f{reserve}{temp_space} = $r{tmpSpace} if exists $r{useGtmp};
     }
     $f{reserve}{memory} = $r{memRequest} if exists $r{memRequest};
-    $f{limit}{max_virtual_memory} = $r{memLimit} * 1024 if exists $r{memLimit};
+    $f{limit}{max_resident_memory} = $r{memLimit} * 1024 if exists $r{memLimit};
 
     $f{limit}{cpu_time} = $r{timeLimit} if exists $r{timeLimit};
 
