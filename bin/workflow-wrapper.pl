@@ -33,8 +33,14 @@ sub run_event {
     }
 
     my $cmd = Genome::Model::Event->get($event_id) || die "No event $event_id";
-    exit(1) if !$cmd->can($method);
+    print "Attempt to execute event $event_id with method $method\n";
+    if (!$cmd->can($method)) {
+        print "Method '$method' not supported\n";
+        exit(1);
+    }
     my $ret = $cmd->$method();
+    print "Return value: $ret\n";
+
     exit(1) unless $ret;
     UR::Context->commit();
 
@@ -61,19 +67,26 @@ sub run_command {
     my %outputs;
     my $inputs = load_inputs($inputs_file);
 
-    print "Creating command $pkg with inputs " . Dumper($inputs);
+    print "Creating command $pkg with inputs ($method):\n" . Dumper($inputs);
     my $cmd = $pkg->create(%$inputs);
-    exit(1) if !$pkg->can($method);
+    if (!$pkg->can($method)) {
+        print "$pkg does not support method '$method'\n";
+        exit(1);
+    }
+
     my $ret = $cmd->$method();
+    print "Return value: " . Dumper($ret);
+
     exit(1) unless $ret;
 
+    for my $prop (@cmd_outputs) {
+        my $prop_name = $prop->property_name;
+        my $value = $cmd->$prop_name;
+            $outputs{$prop_name} = $value;
+    }
 
-    %outputs = map {
-        my $prop_name = $_->property_name;
-        $prop_name => $cmd->$prop_name
-    } @cmd_outputs;
     $outputs{result} = 1 unless exists $outputs{result};
-
+    print "Outputs: " . Dumper(\%outputs);
     my $outputs = Flow::encode_io_hash(\%outputs);
 
     UR::Context->commit();
