@@ -82,7 +82,8 @@ class WorkflowHistorianStorage(object):
         self.sequences = SEQUENCES(instance='%s.workflow_instance_seq' % owner,
                 execution='%s.workflow_execution_seq' % owner)
 
-        self.engine = create_engine(connection_string, case_sensitive=False)
+        self.engine = create_engine(connection_string, case_sensitive=False,
+                pool_size=1, max_overflow=0)
 
         # Oracle needs us to tell it to accept strings for dates/timestamps
         if isinstance(self.engine.dialect, oracle_dialect):
