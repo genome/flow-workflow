@@ -91,7 +91,14 @@ class WorkflowHistorianStorage(object):
     def update(self, update_info):
         LOG.debug("Updating '%s'" % update_info['name'])
         transaction = SimpleTransaction(self.engine)
-        return self._recursive_insert_or_update(transaction, update_info)
+        try:
+            instance_id =self._recursive_insert_or_update(transaction, update_info)
+        except:
+            transaction.rollback()
+            raise
+
+        transaction.commit()
+        return instance_id
 
     def _recursive_insert_or_update(self, transaction, update_info,
             recursion_level=0):
@@ -108,16 +115,10 @@ class WorkflowHistorianStorage(object):
             LOG.debug("Failed to insert (net_key=%s, operation_id=%s) into "
                     "workflow_historian table, attempting update instead." %
                     (update_info['net_key'], update_info['operation_id']))
-
             instance_id = self._update(transaction, update_info,
                     recursion_level)
             LOG.debug("Updated '%s'" % update_info['name'])
-        except:
-            transaction.rollback()
-            raise
 
-        if recursion_level == 0:
-            transaction.commit()
         return instance_id
 
     def _update(self, transaction, update_info, recursion_level):
@@ -329,7 +330,7 @@ class WorkflowHistorianStorage(object):
             return instance_id
         else:
             raise RuntimeError("Expected to find row in WORKFLOW_HISTORIAN"
-                "table, but didn't!")
+                " table, but didn't!")
 
     def _get_or_create_instance_id(self, transaction, recursion_level,
             net_key, operation_id, workflow_plan_id):
@@ -374,16 +375,19 @@ class SimpleTransaction(object):
     def begin_transaction(self):
         self.conn = self.engine.connect()
         self.trans = self.conn.begin()
+        LOG.debug("Beginning transaction (%r) with connection %r.", self.trans, self.conn)
 
     def execute(self, *args, **kwargs):
         return self.conn.execute(*args, **kwargs)
 
     def commit(self, *args, **kwargs):
+        LOG.debug("Commiting transaction (%r) and closing connection (%r).", self.trans, self.conn)
         return_value = self.trans.commit(*args, **kwargs)
         self.conn.close()
         return return_value
 
     def rollback(self, *args, **kwargs):
+        LOG.debug("Rolling back transaction (%r) and closing connection (%r).", self.trans, self.conn)
         return_value = self.trans.rollback(*args, **kwargs)
         self.conn.close()
         return return_value

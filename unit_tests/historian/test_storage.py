@@ -4,7 +4,7 @@ import sqlite3
 from collections import defaultdict
 from flow_workflow.historian.storage import WorkflowHistorianStorage
 from flow_workflow.historian import storage
-from sqlalchemy.exc import IntegrityError, OperationalError
+from sqlalchemy.exc import IntegrityError, OperationalError, SQLAlchemyError
 
 class TestHistorianStorage(WorkflowHistorianStorage):
     def __init__(self, *args, **kwargs):
