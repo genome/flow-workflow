@@ -3,6 +3,7 @@ import copy
 import logging
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import event
+from sqlalchemy.pool import StaticPool
 from sqlalchemy.dialects.oracle import dialect as oracle_dialect
 from collections import defaultdict, namedtuple
 import re
@@ -83,7 +84,7 @@ class WorkflowHistorianStorage(object):
                 execution='%s.workflow_execution_seq' % owner)
 
         self.engine = create_engine(connection_string, case_sensitive=False,
-                pool_size=1, max_overflow=0)
+                poolclass=StaticPool)
 
         # Oracle needs us to tell it to accept strings for dates/timestamps
         if isinstance(self.engine.dialect, oracle_dialect):
