@@ -1,7 +1,7 @@
 import logging
 import sys
 
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import ResourceClosedError, TimeoutError, DisconnectionError
 
 from flow_workflow.historian.messages import UpdateMessage
 
@@ -21,7 +21,7 @@ class WorkflowHistorianMessageHandler(object):
                 message.net_key, message.operation_id, message_dict)
         try:
             self.storage.update(message_dict)
-        except SQLAlchemyError:
-            LOG.exception("Caught sqlalchemy error in historian handler... exiting.")
+        except (ResourceClosedError, TimeoutError, DisconnectionError):
+            LOG.exception("This historian cannot handle messages anymore because it lost access to Oracle... exiting.")
             sys._exit()
 
