@@ -23,8 +23,6 @@ is_deeply([sort keys %$encoded], ["a", "b", "empty_string", "msg", "undefined", 
 
 is(ref($encoded->{a}), "ARRAY", "array values encoded as arrays");
 is(ref($encoded->{b}), "HASH", "hash values encoded as hashes");
-is($encoded->{undefined}, undef, "undef values encoded as undef");
-is($encoded->{empty_string}, "", "empty string encoded as empty string");
 is_deeply($inputs, $decoded, 'decode(x) = encode^{-1}(x)');
 
 done_testing()

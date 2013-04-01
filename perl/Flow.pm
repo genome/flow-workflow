@@ -15,11 +15,17 @@ use warnings;
 
 sub _encode_scalar {
     my $obj = shift;
+
+    return undef if !defined $obj;
+    return "" if $obj eq "";
+
     return MIME::Base64::encode(nfreeze(\$obj));
 }
 
 sub _decode_scalar {
     my $str = shift;
+    return undef if !defined $str;
+    return "" if $str eq "";
     return ${thaw(MIME::Base64::decode($str))};
 }
 
@@ -75,7 +81,7 @@ sub encode_io_hash {
     return {
         map {
             my $val = $io->{$_};
-            $_ => (!defined $val || $val eq '') ? $val : Flow::encode($val)
+            $_ => Flow::encode($val)
         } keys %$io
     };
 
@@ -86,7 +92,7 @@ sub decode_io_hash {
     return {
         map {
             my $val = $io->{$_};
-            $_ => (!defined $val || $val eq '') ? $val : Flow::decode($val)
+            $_ => Flow::decode($val)
         } keys %$io
     };
 }
@@ -118,6 +124,8 @@ sub translate_workflow_resource {
 sub run_workflow {
     my ($wf_string, $inputs, $resource_reqs, $plan_id) = @_;
     my $result;
+
+    print "WF STRING!\n\n$wf_string\n\n";
 
     my $cleanup = !exists $ENV{FLOW_WORKFLOW_NO_CLEANUP};
     my $tmpdir = tempdir(CLEANUP => $cleanup);
