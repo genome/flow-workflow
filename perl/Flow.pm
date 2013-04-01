@@ -75,7 +75,7 @@ sub encode_io_hash {
     return {
         map {
             my $val = $io->{$_};
-            $_ => (!defined $val || $val eq '') ? '' : Flow::encode($val)
+            $_ => (!defined $val || $val eq '') ? $val : Flow::encode($val)
         } keys %$io
     };
 
@@ -86,7 +86,7 @@ sub decode_io_hash {
     return {
         map {
             my $val = $io->{$_};
-            $_ => $val eq '' ? '' : Flow::decode($val);
+            $_ => (!defined $val || $val eq '') ? $val : Flow::decode($val)
         } keys %$io
     };
 }
