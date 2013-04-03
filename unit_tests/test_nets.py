@@ -4,6 +4,7 @@ from mock import Mock, MagicMock
 
 import flow.petri.netbuilder as nb
 import flow.command_runner.executors.nets as exnets
+from fakeredis import FakeRedis
 
 class TestableInputs(wfnets.InputsMixin):
     def __init__(self, args):
@@ -108,7 +109,7 @@ class TestBuildParallelByAction(NetTest):
         inputs = {"file": ["f%d" % x for x in xrange(20)]}
         obj = Mock(wfnets.BuildParallelByAction)
         obj.name = "Parallel By"
-        obj.connection = Mock()
+        obj.connection = FakeRedis()
 
         obj.args = {"action_type": "command", "action_id": "ClassX",
                 "parallel_by": "file", "success_place": 1, "failure_place": 2,
