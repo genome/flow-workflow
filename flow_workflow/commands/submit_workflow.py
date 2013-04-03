@@ -1,6 +1,7 @@
+from flow import petri
+
 from flow.commands.base import CommandBase
 import flow.petri.netbuilder as nb
-import flow.petri.safenet as sn
 import flow_workflow.xmladapter as wfxml
 from flow_workflow import nets
 
@@ -46,7 +47,7 @@ class SubmitWorkflowCommand(CommandBase):
         if inputs_file:
             inputs = json.load(open(inputs_file))
         token_data = {"outputs": inputs}
-        return sn.Token.create(self.storage, data=token_data, data_type="output")
+        return petri.Token.create(self.storage, data=token_data, data_type="output")
 
     def __call__(self, parsed_arguments):
         builder = nb.NetBuilder()

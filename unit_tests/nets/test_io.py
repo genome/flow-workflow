@@ -1,6 +1,6 @@
-from flow_workflow.nets import io
+from flow import petri
 
-import flow.petri.safenet as sn
+from flow_workflow.nets import io
 
 import fakeredis
 import unittest
@@ -12,7 +12,7 @@ class TestIo(unittest.TestCase):
         self.conn = fakeredis.FakeRedis()
         self.services = {}
 
-        self.token = sn.Token.create(self.conn)
+        self.token = petri.Token.create(self.conn)
         self.active_tokens_key = 'tokens'
         self.conn.lpush(self.active_tokens_key, self.token.key)
 

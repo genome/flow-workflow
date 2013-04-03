@@ -1,4 +1,4 @@
-import flow.petri.safenet as sn
+from flow import petri
 
 import logging
 
@@ -89,7 +89,7 @@ class InputsMixin(object):
         return inputs
 
 
-class StoreOutputsAction(sn.TransitionAction):
+class StoreOutputsAction(petri.TransitionAction):
     required_arguments = ["operation_id"]
 
     def input_data(self, active_tokens_key, net):
@@ -122,7 +122,7 @@ class StoreOutputsAction(sn.TransitionAction):
         store_outputs(input_data, net, operation_id)
 
 
-class StoreInputsAsOutputsAction(InputsMixin, sn.TransitionAction):
+class StoreInputsAsOutputsAction(InputsMixin, petri.TransitionAction):
     required_arguments = ["operation_id"]
 
     def execute(self, active_tokens_key, net, service_interfaces):

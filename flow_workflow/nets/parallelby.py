@@ -3,7 +3,7 @@ from flow_workflow.nets.perlaction import GenomePerlActionNet
 
 from flow_workflow.nets.io import StoreOutputsAction
 from flow_workflow.nets.io import operation_outputs
-import flow.petri.safenet as sn
+from flow import petri
 import flow.petri.netbuilder as nb
 
 from collections import namedtuple
@@ -88,7 +88,7 @@ class ParallelByNet(nb.EmptyNet):
         failure_args = {"remote_net_key": parent_net_key,
                 "remote_place_id": failure_place,
                 "data_type": "output"}
-        failure_action = nb.ActionSpec(cls=sn.SetRemoteTokenAction,
+        failure_action = nb.ActionSpec(cls=petri.SetRemoteTokenAction,
                 args=failure_args)
         self.failure_transition = self.add_transition("failure",
                 action=failure_action)
@@ -127,7 +127,7 @@ class ParallelByNet(nb.EmptyNet):
 
 
 
-class BuildParallelByAction(InputsMixin, sn.TransitionAction):
+class BuildParallelByAction(InputsMixin, petri.TransitionAction):
     required_arguments = ["action_type", "action_id", "parallel_by",
             "input_connections", "operation_id", "success_place",
             "failure_place", "parent_operation_id",
@@ -155,14 +155,14 @@ class BuildParallelByAction(InputsMixin, sn.TransitionAction):
         stored_net.copy_constants_from(net)
 
         orchestrator = service_interfaces["orchestrator"]
-        token = sn.Token.create(self.connection, data={"outputs": inputs},
+        token = petri.Token.create(self.connection, data={"outputs": inputs},
                 data_type="output")
         orchestrator.set_token(stored_net.key, parallel_net.start_place.index,
                 token.key)
 
 
-class ParallelBySuccessAction(sn.SetRemoteTokenAction):
-    required_arguments = (sn.SetRemoteTokenAction.required_arguments + 
+class ParallelBySuccessAction(petri.SetRemoteTokenAction):
+    required_arguments = (petri.SetRemoteTokenAction.required_arguments +
             ['operation_ids'])
 
     def input_data(self, active_tokens_key, net):

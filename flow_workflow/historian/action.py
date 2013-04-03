@@ -1,4 +1,4 @@
-import flow.petri.safenet as sn
+from flow import petri
 
 import os
 import logging
@@ -7,7 +7,7 @@ from time import localtime, strftime
 LOG = logging.getLogger(__name__)
 TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S"
 
-class WorkflowHistorianUpdateAction(sn.TransitionAction):
+class WorkflowHistorianUpdateAction(petri.TransitionAction):
     required_args = ['children_info']
     optional_args = ['token_data_map', 'timestamps', 'shortcut',
             'net_constants_map']
@@ -66,7 +66,7 @@ class WorkflowHistorianUpdateAction(sn.TransitionAction):
         token_data_map = self.args.get('token_data_map')
         if token_data_map:
             tokens = self.tokens(active_tokens_key)
-            token_data = sn.merge_token_data(tokens)
+            token_data = petri.merge_token_data(tokens)
             for token_name, historian_name in token_data_map.iteritems():
                 rv[historian_name] = token_data[token_name]
 

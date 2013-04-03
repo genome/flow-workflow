@@ -1,3 +1,5 @@
+from flow import petri
+
 import flow_workflow.nets.parallelby as pby
 
 from unittest import TestCase, main
@@ -5,7 +7,6 @@ from fakeredis import FakeRedis
 import mock
 
 import flow.petri.netbuilder as nb
-import flow.petri.safenet as sn
 import flow.command_runner.executors.nets as exnets
 
 class NetTest(TestCase):
@@ -63,7 +64,7 @@ class TestParallelByNet(NetTest):
         net = self._create_net()
         stored_net = self.builder.store(self.conn)
 
-        token = sn.Token.create(self.conn, data={"pid": 123})
+        token = petri.Token.create(self.conn, data={"pid": 123})
 
         def test_subnet(idx, subnet):
             historian = mock.Mock()
@@ -100,7 +101,7 @@ class TestParallelByNet(NetTest):
         net = self._create_net()
         stored_net = self.builder.store(self.conn)
 
-        token = sn.Token.create(self.conn, data={"pid": 123})
+        token = petri.Token.create(self.conn, data={"pid": 123})
 
         def test_subnet(idx, subnet):
             historian = mock.Mock()

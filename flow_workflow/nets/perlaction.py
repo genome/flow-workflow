@@ -1,9 +1,10 @@
+from flow import petri
+
 from flow_workflow.nets.core import InputsMixin, GenomeEmptyNet
 from flow_workflow.nets.io import StoreOutputsAction
 
 import flow.command_runner.executors.nets as enets
 import flow.petri.netbuilder as nb
-import flow.petri.safenet as sn
 import os
 
 from collections import namedtuple
@@ -45,7 +46,7 @@ class GenomeExecuteAction(GenomePerlAction, enets.LSFDispatchAction):
         return self._update_environment(net, env)
 
 
-class GenomeModelInputsAction(InputsMixin, sn.TransitionAction):
+class GenomeModelInputsAction(InputsMixin, petri.TransitionAction):
     required_arguments = ["input_connections"]
 
     def input_data(self, active_tokens_key, net):
@@ -69,7 +70,7 @@ class GenomeModelInputsAction(InputsMixin, sn.TransitionAction):
 
         inputs.update(self.token_data(active_tokens_key))
 
-        token = sn.Token.create(self.connection, data={"outputs": inputs},
+        token = petri.Token.create(self.connection, data={"outputs": inputs},
                 data_type="output")
 
         return token
@@ -98,7 +99,7 @@ class GenomeModelNet(GenomeNet):
                 parent_operation_id, input_connections, queue, resources)
 
         self.start_transition.action = nb.ActionSpec(
-                cls=GenomeModelInputsAction, #sn.MergeTokensAction,
+                cls=GenomeModelInputsAction,
                 args={"input_connections": input_connections}
                 )
 

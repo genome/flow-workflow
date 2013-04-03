@@ -1,6 +1,6 @@
-from flow_workflow.historian.action import WorkflowHistorianUpdateAction
+from flow import petri
 
-import flow.petri.safenet as sn
+from flow_workflow.historian.action import WorkflowHistorianUpdateAction
 
 import fakeredis
 import unittest
@@ -17,7 +17,7 @@ class TestAction(unittest.TestCase):
         self.historian = mock.Mock()
         self.services = {'workflow_historian': self.historian}
 
-        self.token = sn.Token.create(self.conn)
+        self.token = petri.Token.create(self.conn)
         self.active_tokens_key = 'tokens'
         self.conn.lpush(self.active_tokens_key, self.token.key)
 

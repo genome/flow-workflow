@@ -1,7 +1,7 @@
 from flow_workflow.nets.core import InputsMixin, GenomeEmptyNet
 from flow_workflow.nets.io import *
 
-import flow.petri.safenet as sn
+from flow import petri
 import flow.petri.netbuilder as nb
 
 
@@ -10,7 +10,7 @@ def _do_converge(inputs, input_property_order, output_properties):
     return {prop: out_list for prop in output_properties}
 
 
-class GenomeConvergeAction(InputsMixin, sn.TransitionAction):
+class GenomeConvergeAction(InputsMixin, petri.TransitionAction):
     required_arguments = ["operation_id", "input_property_order",
             "output_properties"]
 

@@ -10,8 +10,8 @@ from flow_workflow.nets import GenomeParallelByNet
 from flow_workflow.nets import WorkflowHistorianUpdateAction
 from flow_workflow.nets import StoreInputsAsOutputsAction
 from lxml import etree
+from flow import petri
 import flow.petri.netbuilder as nb
-import flow.petri.safenet as sn
 import os
 import re
 
@@ -395,7 +395,7 @@ def parse_workflow_xml(xml_etree, resources, net_builder, plan_id):
     outer_net.name = model.name
 
     token_merger = nb.ActionSpec(
-            cls=sn.MergeTokensAction,
+            cls=petri.MergeTokensAction,
             args={'input_type': 'output', 'output_type': 'output'},
             )
 
