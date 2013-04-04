@@ -149,15 +149,16 @@ sub run_workflow {
 
     my $ret = system($cmd);
     if (!WIFEXITED($ret) || WEXITSTATUS($ret)) {
-        confess "Workflow submission failed";
+        print "Workflow submission failed... returning undef.\n";
+        return;
     }
 
     if (-s $out_path) {
-        print "run_workflow got some outputs:\n";
+        print "Run_workflow got some outputs... returning them.\n";
         return _read_outputs($out_path);
     }
     else {
-        print "run_workflow got no outputs :(\n";
+        print "Run_workflow got no outputs... returning 1.\n";
         return 1;
     }
 }
