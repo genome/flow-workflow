@@ -68,6 +68,10 @@ class SubmitWorkflowCommand(CommandBase):
         stored_net = builder.store(self.storage)
         stored_net.capture_environment()
 
+        lsf_project = 'flow %s' % stored_net.key
+        print("Setting LSF project to %s" % lsf_project)
+        stored_net.set_constant('lsf_project', lsf_project)
+
         if parsed_arguments.email:
             stored_net.set_constant("mail_user", parsed_arguments.email)
 

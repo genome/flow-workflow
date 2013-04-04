@@ -45,6 +45,16 @@ class GenomeExecuteAction(GenomePerlAction, enets.LSFDispatchAction):
         env = enets.LSFDispatchAction._environment(self, net)
         return self._update_environment(net, env)
 
+    def _executor_options(self, input_data_key, net):
+        executor_options = enets.LSFDispatchAction._executor_options(
+                self, input_data_key, net)
+
+        lsf_project = net.constant('lsf_project')
+        if lsf_project:
+            executor_options['project'] = lsf_project
+
+        return executor_options
+
 
 class GenomeModelInputsAction(InputsMixin, petri.TransitionAction):
     required_arguments = ["input_connections"]
