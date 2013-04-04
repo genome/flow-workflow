@@ -11,6 +11,9 @@ setup(
         version = '0.1',
         packages = find_packages(exclude=['unit_tests']),
         entry_points = entry_points,
+        data_files = [
+            ('/usr/lib/perl5', ['perl/Flow.pm']),
+        ],
         setup_requires = [
             'nose',
         ],
