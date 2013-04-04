@@ -88,6 +88,11 @@ class WorkflowHistorianUpdateAction(petri.TransitionAction):
         return fields
 
     def execute(self, active_tokens_key, net, service_interfaces):
+        env = net.constant('environment')
+        if env and env.get('UR_DBI_NO_COMMIT'):
+            LOG.debug('UR_DBI_NO_COMMIT is set, not updating status.')
+            return
+
         historian = service_interfaces['workflow_historian']
         net_key = net.key
 
