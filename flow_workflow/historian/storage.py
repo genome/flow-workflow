@@ -92,14 +92,24 @@ class WorkflowHistorianStorage(object):
 
     def update(self, update_info):
         LOG.debug("Updating '%s'" % update_info['name'])
-        transaction = SimpleTransaction(self.engine)
+        try:
+            transaction = SimpleTransaction(self.engine)
+        except:
+            LOG.exception('Failed to create SimpleTransaction.')
+            raise
+
         try:
             instance_id =self._recursive_insert_or_update(transaction, update_info)
         except:
             transaction.rollback()
             raise
 
-        transaction.commit()
+        try:
+            transaction.commit()
+        except:
+            LOG.exception('Failed to commit transaction')
+            raise
+
         return instance_id
 
     def _recursive_insert_or_update(self, transaction, update_info,
