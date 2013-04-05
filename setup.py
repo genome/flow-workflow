@@ -4,6 +4,7 @@ entry_points = '''
 [flow.commands]
 submit-workflow = flow_workflow.commands.submit_workflow:SubmitWorkflowCommand
 workflow_historian_service = flow.commands.service:ServiceCommand
+workflow-wrapper = flow_workflow.commands.workflow_wrapper:WorkflowWrapperCommand
 '''
 
 setup(

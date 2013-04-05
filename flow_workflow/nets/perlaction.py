@@ -13,8 +13,6 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
-GENOME_WRAPPER = "workflow-wrapper"
-
 
 class GenomePerlAction(InputsMixin):
     output_token_type = 'input'
@@ -30,7 +28,8 @@ class GenomePerlAction(InputsMixin):
         return env
 
     def _command_line(self, net, input_data_key):
-        return [GENOME_WRAPPER, self.args["action_type"], self.args['method'],
+        return ['flow', 'workflow-wrapper',
+                self.args["action_type"], self.args['method'],
                 self.args["action_id"]]
 
 

@@ -20,7 +20,6 @@ import logging
 LOG = logging.getLogger(__name__)
 
 MAX_FILENAME_LEN = 256
-WORKFLOW_WRAPPER = 'workflow-wrapper'
 
 
 class WorkflowEntity(object):
