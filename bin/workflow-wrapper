@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/opt/flow0/venv/bin/python
 
 from pprint import pprint
 import flow.redisom as rom
