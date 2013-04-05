@@ -1,6 +1,7 @@
 from flow import petri
 
 from flow_workflow.historian.action import WorkflowHistorianUpdateAction
+from flow_workflow.historian.action import var_is_perl_true
 
 import fakeredis
 import unittest
@@ -159,6 +160,13 @@ class TestAction(unittest.TestCase):
                 operation_id=42,
                 user_name=self.user_name)
 
+    def test_var_is_perl_true(self):
+        self.assertTrue(var_is_perl_true('3'))
+        self.assertTrue(var_is_perl_true('1'))
+        self.assertTrue(var_is_perl_true('yes'))
+
+        self.assertFalse(var_is_perl_true(''))
+        self.assertFalse(var_is_perl_true('0'))
 
 
 if __name__ == '__main__':

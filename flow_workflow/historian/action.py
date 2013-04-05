@@ -88,7 +88,7 @@ class WorkflowHistorianUpdateAction(petri.TransitionAction):
         return fields
 
     def execute(self, active_tokens_key, net, service_interfaces):
-        if _env_is_perl_true(net, 'UR_DBI_NO_COMMIT'):
+        if env_is_perl_true(net, 'UR_DBI_NO_COMMIT'):
             LOG.debug('UR_DBI_NO_COMMIT is set, not updating status.')
             return
 
@@ -117,15 +117,19 @@ class WorkflowHistorianUpdateAction(petri.TransitionAction):
             historian.update(net_key=net_key, operation_id=operation_id,
                     **child_info)
 
+def env_is_perl_true(net, varname):
+    env = net.constant('environment')
+    try:
+        var = env.get(varname)
+        return var_is_perl_true(var)
+    except:
+        pass
+
+    return False
+
 _PERL_FALSE_VALUES = set([
     '0',
     '',
 ])
-def _env_is_perl_true(net, varname):
-    env = net.constant('environment')
-    if env:
-        var = env.get(varname)
-        if var and (str(var) not in _PERL_FALSE_VALUES):
-            return True
-
-    return False
+def var_is_perl_true(var):
+    return var and (str(var) not in _PERL_FALSE_VALUES)
