@@ -464,6 +464,9 @@ class Workflow(object):
             self.builder.constants['workflow_parent_operation_id'] = int(
                     parent_op_id)
 
+        next_id = self.factory.next_operation_id
+        self.builder.constants['workflow_next_operation_id'] = next_id
+
     def historian_updates(self):
         children = self.model.children
         model_info = self.model.historian_info()

@@ -65,6 +65,7 @@ class TestWorkflowEntity(TestCase):
 class TestWorkflowOperations(TestCase):
     def setUp(self):
         self.factory = wfxml.WorkflowEntityFactory.get_instance()
+        self.factory.next_operation_id = 0
         self.builder = nb.NetBuilder()
         self.resources = {}
 
@@ -331,7 +332,8 @@ class TestXmlAdapter(TestCase):
                 _link_xml("input connector", "a", "A", "a"),
                 _link_xml("input connector", "b", "B", "b"),
                 _link_xml("A", "a", "C", "a"),
-                _link_xml("B", "B", "C", "b"),
+                _link_xml("B", "b", "C", "b"),
+                _link_xml("C", "c", "output connector", "c"),
                 E.operationtype({"typeClass": _wf_model_class}),
                 _event_op_xml("A", event_id="100"),
                 _event_op_xml("B", event_id="200"),
