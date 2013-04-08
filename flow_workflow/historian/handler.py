@@ -4,6 +4,7 @@ import os
 from sqlalchemy.exc import ResourceClosedError, TimeoutError, DisconnectionError
 
 from flow_workflow.historian.messages import UpdateMessage
+from flow import exit_codes
 
 LOG = logging.getLogger(__name__)
 
@@ -23,5 +24,5 @@ class WorkflowHistorianMessageHandler(object):
             self.storage.update(message_dict)
         except (ResourceClosedError, TimeoutError, DisconnectionError):
             LOG.exception("This historian cannot handle messages anymore because it lost access to Oracle... exiting.")
-            os._exit(1)
+            os._exit(exit_codes.EXECUTE_FAILURE)
 

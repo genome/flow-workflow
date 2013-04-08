@@ -1,4 +1,5 @@
 from flow import petri
+from flow import exit_codes
 
 from flow.commands.base import CommandBase
 import flow.petri.netbuilder as nb
@@ -96,7 +97,7 @@ class SubmitWorkflowCommand(CommandBase):
                         'Submitted flow completed with result: %s\n' % message)
                 if message != 'success':
                     self.broker.disconnect()
-                    os._exit(1)
+                    os._exit(exit_codes.EXECUTE_FAILURE)
 
                 if parsed_arguments.outputs_file:
                     outputs = nets.get_workflow_outputs(stored_net)
