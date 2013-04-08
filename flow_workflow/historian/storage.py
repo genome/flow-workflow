@@ -92,23 +92,14 @@ class WorkflowHistorianStorage(object):
 
     def update(self, update_info):
         LOG.debug("Updating '%s'" % update_info['name'])
-        try:
-            transaction = SimpleTransaction(self.engine)
-        except:
-            LOG.exception('Failed to create SimpleTransaction.')
-            raise
 
+        transaction = SimpleTransaction(self.engine)
         try:
             instance_id =self._recursive_insert_or_update(transaction, update_info)
         except:
             transaction.rollback()
             raise
-
-        try:
-            transaction.commit()
-        except:
-            LOG.exception('Failed to commit transaction')
-            raise
+        transaction.commit()
 
         return instance_id
 
@@ -382,27 +373,42 @@ class SimpleTransaction(object):
         self.conn = None
         self.trans = None
 
-        self.begin_transaction()
+        try:
+            self.conn, self.trans = self.begin_transaction()
+        except:
+            LOG.exception('Failed to create SimpleTransaction.')
+            raise
 
     def begin_transaction(self):
-        self.conn = self.engine.connect()
-        self.trans = self.conn.begin()
+        conn = self.engine.connect()
+        trans = conn.begin()
         LOG.debug("Beginning transaction (%r) with connection %r.", self.trans, self.conn)
+        return conn, trans
 
     def execute(self, *args, **kwargs):
         return self.conn.execute(*args, **kwargs)
 
     def commit(self, *args, **kwargs):
         LOG.debug("Commiting transaction (%r) and closing connection (%r).", self.trans, self.conn)
-        return_value = self.trans.commit(*args, **kwargs)
-        self.conn.close()
+        try:
+            return_value = self.trans.commit(*args, **kwargs)
+        except:
+            LOG.exception('Failed to commit transaction')
+            raise
+
+        self._close()
         return return_value
 
     def rollback(self, *args, **kwargs):
         LOG.debug("Rolling back transaction (%r) and closing connection (%r).", self.trans, self.conn)
         return_value = self.trans.rollback(*args, **kwargs)
-        self.conn.close()
+        self._close()
         return return_value
+
+    def _close(self):
+        self.conn.close()
+        self.conn = None
+        self.trans = None
 
 
 def validate_update_info(update_info):
