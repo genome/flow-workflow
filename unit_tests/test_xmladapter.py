@@ -58,19 +58,21 @@ def _converge_op_xml(name, inputs, outputs):
 class TestWorkflowEntity(TestCase):
     def test_abstract_net(self):
         builder = nb.NetBuilder()
-        entity = wfxml.WorkflowEntity()
+        entity = wfxml.WorkflowEntity(operation_id=1)
         self.assertRaises(NotImplementedError, entity.net, builder)
 
 
 class TestWorkflowOperations(TestCase):
     def setUp(self):
+        self.factory = wfxml.WorkflowEntityFactory.get_instance()
         self.builder = nb.NetBuilder()
         self.resources = {}
 
     def test_no_operationtype_tag(self):
         tree = E.operation({"name": "badguy"})
         self.assertRaises(ValueError,
-                wfxml.WorkflowOperation, xml=tree, log_dir="/tmp", parent=None)
+                wfxml.WorkflowOperation, operation_id=1, xml=tree,
+                log_dir="/tmp", parent=None)
 
     def test_multiple_operationtype_tags(self):
         type_attr = {"commandClass": "A", "typeClass": _wf_command_class}
@@ -79,15 +81,17 @@ class TestWorkflowOperations(TestCase):
                 E.operationtype(type_attr)
         )
         self.assertRaises(ValueError,
-                wfxml.WorkflowOperation, xml=tree, log_dir="/tmp", parent=None)
+                wfxml.WorkflowOperation, operation_id=1, xml=tree,
+                log_dir="/tmp", parent=None)
 
     def test_command(self):
         tree = _command_op_xml(name="op nums 1/2", perl_class="ClassX",
                 op_attr={"a": "b"}, type_attr={"x": "y"})
 
-        op = wfxml.CommandOperation(xml=tree, log_dir="/tmp",
-                parent=None, resources=self.resources)
+        op = self.factory.create_from_xml(tree, log_dir="/tmp", parent=None,
+                resources=self.resources)
 
+        self.assertEqual(0, op.operation_id)
         self.assertEqual("op nums 1/2", op.name)
         self.assertEqual("b", op._operation_attributes["a"])
         self.assertEqual("y", op._type_attributes["x"])
@@ -134,8 +138,7 @@ class TestWorkflowOperations(TestCase):
         tree = _command_op_xml(name="pby", perl_class="X",
                 op_attr={"parallelBy": "input_file"})
 
-        op = wfxml.CommandOperation(xml=tree, log_dir="/tmp",
-                parent=None,
+        op = self.factory.create_from_xml(tree, log_dir="/tmp", parent=None,
                 resources=self.resources)
 
         self.assertEqual("input_file", op.parallel_by)
@@ -143,24 +146,22 @@ class TestWorkflowOperations(TestCase):
     def test_event(self):
         tree = _event_op_xml(name="evt", event_id="123")
 
-        op = wfxml.EventOperation(xml=tree, log_dir="/tmp",
-                parent=None,
+        op = self.factory.create_from_xml(xml=tree, log_dir="/tmp", parent=None,
                 resources=self.resources)
+
         self.assertEqual("evt", op.name)
         self.assertEqual("123", op.event_id)
 
     def test_converge_exceptions(self):
         tree = _converge_op_xml(name="merge", inputs=[], outputs=["x"])
         self.assertRaises(ValueError,
-                wfxml.ConvergeOperation, xml=tree, log_dir="/tmp",
-                parent=None,
-                resources=self.resources)
+                wfxml.ConvergeOperation, operation_id=1, xml=tree,
+                log_dir="/tmp", parent=None, resources=self.resources)
 
         tree = _converge_op_xml(name="merge", inputs=["x"], outputs=[])
         self.assertRaises(ValueError,
-                wfxml.ConvergeOperation, xml=tree, log_dir="/tmp",
-                parent=None,
-                resources=self.resources)
+                wfxml.ConvergeOperation, operation_id=1, xml=tree,
+                log_dir="/tmp", parent=None, resources=self.resources)
 
 
     def test_converge(self):
@@ -170,8 +171,7 @@ class TestWorkflowOperations(TestCase):
         tree = _converge_op_xml(name="merge", inputs=inputs,
                 outputs=outputs)
 
-        op = wfxml.ConvergeOperation(xml=tree, log_dir="/tmp",
-                parent=None,
+        op = self.factory.create_from_xml(tree, log_dir="/tmp", parent=None,
                 resources=self.resources)
 
         self.assertEqual("merge", op.name)
@@ -183,6 +183,7 @@ class TestXmlAdapter(TestCase):
     def setUp(self):
         self.builder = nb.NetBuilder()
         self.resources = {}
+        self.factory = wfxml.WorkflowEntityFactory.get_instance()
 
         self.serial_xml = E.workflow({"name": "test"},
                 _link_xml("input connector", "input", "job_1", "param"),
@@ -199,9 +200,8 @@ class TestXmlAdapter(TestCase):
                 E.operationtype(
                     {"typeClass": _wf_command_class, "commandClass": "X"}))
 
-        model = wfxml.ModelOperation(xml, log_dir="/tmp",
-                parent=None,
-                resources=self.resources)
+        model = self.factory.create("Workflow::OperationType::Model",
+                xml=xml, log_dir="/tmp", parent=None, resources=self.resources)
 
         self.assertEqual("pby_test", model.name)
         self.assertEqual(3, len(model.operations))
@@ -224,9 +224,9 @@ class TestXmlAdapter(TestCase):
 
 
     def test_serial(self):
-        model = wfxml.ModelOperation(self.serial_xml, log_dir="/tmp",
-                parent=None,
-                resources=self.resources)
+        model = self.factory.create_from_xml(self.serial_xml, log_dir="/tmp",
+                parent=None, resources=self.resources)
+
         self.assertEqual("test", model.name)
 
         self.assertEqual(5, len(model.operations))
@@ -262,24 +262,25 @@ class TestXmlAdapter(TestCase):
                 E.operationtype({"typeClass": _wf_model_class})
                 )
 
-        self.assertRaises(RuntimeError, wfxml.ModelOperation, xml=xml,
-                log_dir="/tmp", resources=self.resources,
-                parent=None)
+        self.assertRaises(RuntimeError, self.factory.create,
+                "Workflow::OperationType::Model", xml=xml, log_dir="/tmp",
+                resources=self.resources, parent=None)
 
     def test_missing_optype(self):
         xml = E.workflow({"name": "test"}, E.operation({"name": "bad"}),
                 E.operationtype({"typeClass": _wf_model_class}))
-        self.assertRaises(ValueError, wfxml.ModelOperation, xml,
-                log_dir="/tmp", resources=self.resources,
-                parent=None)
+        self.assertRaises(ValueError, self.factory.create,
+                "Workflow::OperationType::Model", xml=xml, log_dir="/tmp",
+                resources=self.resources, parent=None)
 
     def test_unknown_optype(self):
         xml = E.workflow({"name": "test"},
                 E.operationtype({"typeClass": _wf_model_class}),
                 E.operation({"name": "bad"},
                     E.operationtype({"typeClass": "unknown"})))
-        self.assertRaises(ValueError, wfxml.ModelOperation, xml,
-                log_dir="/tmp", resources=self.resources)
+        self.assertRaises(ValueError, self.factory.create,
+                "Workflow::OperationType::Model", xml=xml, log_dir="/tmp",
+                resources=self.resources)
 
     def test_nested_models(self):
         xml = E.workflow({"name": "test"},
@@ -290,7 +291,7 @@ class TestXmlAdapter(TestCase):
                     E.operationtype({"typeClass": _wf_model_class}),
                     _command_op_xml("nested", "ClassX")))
 
-        model = wfxml.ModelOperation(xml, log_dir="/tmp",
+        model = self.factory.create_from_xml(xml=xml, log_dir="/tmp",
                 resources=self.resources)
 
         net = model.net(self.builder)
@@ -315,7 +316,7 @@ class TestXmlAdapter(TestCase):
                 _command_op_xml("B", "ClassB"),
                 _converge_op_xml("C", inputs=["a", "b"], outputs=["c", "d"]))
 
-        model = wfxml.ModelOperation(xml, log_dir="/tmp",
+        model = self.factory.create_from_xml( xml, log_dir="/tmp",
                 resources=self.resources)
 
         net = model.net(self.builder)
@@ -336,7 +337,7 @@ class TestXmlAdapter(TestCase):
                 _event_op_xml("B", event_id="200"),
                 _event_op_xml("C", event_id="300"))
 
-        model = wfxml.ModelOperation(xml, log_dir="/tmp",
+        model = self.factory.create_from_xml(xml=xml, log_dir="/tmp",
                 resources=self.resources)
 
         net = model.net(self.builder)
