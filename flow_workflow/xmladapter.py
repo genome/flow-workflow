@@ -22,6 +22,12 @@ LOG = logging.getLogger(__name__)
 
 MAX_FILENAME_LEN = 256
 
+
+def log_file_name(name):
+    base = re.sub("[^A-Za-z0-9_.-]+", "_", name)[:MAX_FILENAME_LEN]
+    return re.sub("^_*|_*$", "", base)
+
+
 class WorkflowEntityFactory(object):
     _instance = None
 
@@ -100,7 +106,6 @@ class WorkflowEntity(object):
         return info
 
 
-
 class WorkflowOperation(WorkflowEntity):
     def __init__(self, operation_id, xml, log_dir, parent):
         WorkflowEntity.__init__(self, operation_id, parent)
@@ -120,7 +125,7 @@ class WorkflowOperation(WorkflowEntity):
         self._type_attributes = self._type_node.attrib
 
         self.log_dir = log_dir
-        basename = re.sub("[^A-Za-z0-9_.-]", "_", self.name)[:MAX_FILENAME_LEN]
+        basename = log_file_name(self.name)
         out_file = "%s.%d.out" % (basename, self.operation_id)
         err_file = "%s.%d.err" % (basename, self.operation_id)
         self.stdout_log_file = os.path.join(self.log_dir, out_file)
