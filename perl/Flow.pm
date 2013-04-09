@@ -163,6 +163,16 @@ sub run_workflow {
     }
 }
 
+# a convenient way to write out files which are suitable as --inputs-file for
+# the workflow-wrapper
+sub _write_outputs {
+    my ($outputs_path, $outputs_hash) = @_;
+
+    my $json = new JSON->allow_nonref;
+    my $encoded_content = $json->encode(encode_io_hash($outputs_hash));
+    return write_file($outputs_path, $encoded_content);
+}
+
 sub _read_outputs {
     my $outputs_path = shift;
 
