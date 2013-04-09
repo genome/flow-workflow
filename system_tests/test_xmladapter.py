@@ -52,7 +52,7 @@ class TestStoreWorkflow(RedisTest):
         #  #2: output connector
         #  #3-5: ops A, B, C
         # The next id should be 6
-        self.assertEqual(6, net.constant("workflow_next_operation_id"))
+        self.assertEqual(6, net.variable("workflow_next_operation_id"))
 
 
 if __name__ == "__main__":

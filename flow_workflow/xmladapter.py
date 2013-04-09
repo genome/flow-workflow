@@ -449,10 +449,10 @@ class Workflow(object):
 
         self.connect_start(self.inner_net, self.outer_net)
         self.connect_end(self.inner_net, self.outer_net)
-        self.set_constants()
+        self.set_variables_and_constants()
 
 
-    def set_constants(self):
+    def set_variables_and_constants(self):
         self.builder.constants['workflow_id'] = self.model.operation_id
         self.builder.constants['workflow_plan_id'] = self.plan_id
 
@@ -465,7 +465,7 @@ class Workflow(object):
                     parent_op_id)
 
         next_id = self.factory.next_operation_id
-        self.builder.constants['workflow_next_operation_id'] = next_id
+        self.builder.variables['workflow_next_operation_id'] = next_id
 
     def historian_updates(self):
         children = self.model.children
