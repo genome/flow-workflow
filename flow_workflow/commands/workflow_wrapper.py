@@ -1,4 +1,5 @@
 from flow.commands.base import CommandBase
+from flow.util.logannotator import LogAnnotator
 
 import json
 import copy
@@ -56,7 +57,8 @@ class WorkflowWrapperCommand(CommandBase):
                 parsed_arguments.inputs_file, parsed_arguments.outputs_file))
 
         LOG.info("Calling perl wrapper: %s", cmdline)
-        exit_code = subprocess.call(cmdline)
+        log_annotator = LogAnnotator(cmdline)
+        exit_code = log_annotator.start()
 
         if exit_code == 0:
             outputs = json.load(open(parsed_arguments.outputs_file))
