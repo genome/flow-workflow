@@ -11,6 +11,7 @@ use strict;
 use warnings;
 
 my $json = JSON->new->allow_nonref;
+$| = 1; # forces perl to not buffer output to pipes
 
 sub load_inputs {
     my $file = shift;
