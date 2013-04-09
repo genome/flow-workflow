@@ -46,6 +46,8 @@ class SubmitWorkflowCommand(CommandBase):
                 help="Create, but do not submit this workflow")
         parser.add_argument('--plan-id', '-P', type=int,
                 help="The workflow plan id")
+        parser.add_argument('--project-name', '-N',
+                help="The project name to use for submitted jobs")
 
 
     def _create_initial_token(self, inputs_file):
@@ -74,7 +76,11 @@ class SubmitWorkflowCommand(CommandBase):
         stored_net = builder.store(self.storage)
         stored_net.capture_environment()
 
-        lsf_project = 'flow %s' % stored_net.key
+        if parsed_arguments.project_name:
+            lsf_project = parsed_arguments.project_name
+        else:
+            lsf_project = 'flow %s' % stored_net.key
+
         print("Setting LSF project to %s" % lsf_project)
         stored_net.set_constant('lsf_project', lsf_project)
 
