@@ -4,7 +4,6 @@ from flow.util.logannotator import LogAnnotator
 import json
 import copy
 import logging
-import subprocess
 
 LOG = logging.getLogger(__name__)
 
