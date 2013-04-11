@@ -41,11 +41,7 @@ sub run_event {
     }
     my $ret = $cmd->$method();
 
-    if (defined($ret)) {
-        print "$cmd->$method() returned: $ret";
-    } else {
-        print "$cmd->$method() returned undef";
-    }
+    print "Return value: " . Dumper($ret);
 
     exit(1) unless $ret;
     UR::Context->commit();
