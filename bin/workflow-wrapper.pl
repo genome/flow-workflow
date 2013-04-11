@@ -40,7 +40,12 @@ sub run_event {
         exit(1);
     }
     my $ret = $cmd->$method();
-    print "Return value: $ret\n";
+
+    if (defined($ret)) {
+        print "$cmd->$method() returned: $ret";
+    } else {
+        print "$cmd->$method() returned undef";
+    }
 
     exit(1) unless $ret;
     UR::Context->commit();
