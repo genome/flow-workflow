@@ -54,7 +54,7 @@ STATUSES = [
 ]
 
 def _should_overwrite(prev_status, new_status):
-    if new_status is None or new_status =='new':
+    if new_status is None or new_status == 'new':
         return False
 
     prev_index = STATUSES.index(prev_status)
@@ -69,8 +69,10 @@ STATEMENTS = namedtuple('Statements', STATEMENTS_DICT.keys())
 
 def on_oracle_connect(connection, record):
     cursor = connection.cursor()
-    cursor.execute("alter session set NLS_DATE_FORMAT = 'YYYY-MM-DD HH24:MI:SS'")
-    cursor.execute("alter session set NLS_TIMESTAMP_FORMAT = 'YYYY-MM-DD HH24:MI:SSXFF'")
+    cursor.execute("alter session set NLS_DATE_FORMAT = "
+            "'YYYY-MM-DD HH24:MI:SS'")
+    cursor.execute("alter session set NLS_TIMESTAMP_FORMAT = "
+            "'YYYY-MM-DD HH24:MI:SSXFF'")
     cursor.close()
 
 class WorkflowHistorianStorage(object):
@@ -91,11 +93,12 @@ class WorkflowHistorianStorage(object):
             event.listen(self.engine.pool, 'connect', on_oracle_connect)
 
     def update(self, update_info):
-        LOG.debug("Updating '%s'" % update_info['name'])
+        LOG.debug("Updating '%s'", update_info['name'])
 
         transaction = SimpleTransaction(self.engine)
         try:
-            instance_id =self._recursive_insert_or_update(transaction, update_info)
+            instance_id = self._recursive_insert_or_update(transaction,
+                    update_info)
         except:
             transaction.rollback()
             raise
@@ -105,7 +108,7 @@ class WorkflowHistorianStorage(object):
 
     def _recursive_insert_or_update(self, transaction, update_info,
             recursion_level=0):
-        LOG.debug("Attempting to insert or update '%s'" % update_info['name'])
+        LOG.debug("Attempting to insert or update '%s'", update_info['name'])
         if recursion_level > 1:
             raise RuntimeError("update should never recurse more than once!")
         update_info = validate_update_info(update_info)
@@ -113,14 +116,14 @@ class WorkflowHistorianStorage(object):
         try:
             instance_id = self._insert(transaction, update_info,
                     recursion_level)
-            LOG.debug("Inserted '%s'" % update_info['name'])
+            LOG.debug("Inserted '%s'", update_info['name'])
         except CannotInsertError:
             LOG.debug("Failed to insert (net_key=%s, operation_id=%s) into "
-                    "workflow_historian table, attempting update instead." %
-                    (update_info['net_key'], update_info['operation_id']))
+                    "workflow_historian table, attempting update instead.",
+                    update_info['net_key'], update_info['operation_id'])
             instance_id = self._update(transaction, update_info,
                     recursion_level)
-            LOG.debug("Updated '%s'" % update_info['name'])
+            LOG.debug("Updated '%s'", update_info['name'])
 
         return instance_id
 
@@ -218,7 +221,8 @@ class WorkflowHistorianStorage(object):
 
         return instance_id
 
-    def _next_id(self, transaction, sequence_name):
+    @staticmethod
+    def _next_id(transaction, sequence_name):
         NEXT_ID = "SELECT %s.nextval FROM DUAL"
         stmnt = NEXT_ID % sequence_name
         result = execute_and_log(transaction, stmnt)
@@ -255,17 +259,19 @@ class WorkflowHistorianStorage(object):
         parent_operation_id = update_info.get('parent_operation_id', None)
         if parent_net_key is not None:
             if update_info.get('is_subflow', None):
-                putative_dict['PARENT_EXECUTION_ID'] = self._get_or_create_execution_id(
-                        transaction, recursion_level,
-                        net_key          = parent_net_key,
-                        operation_id     = parent_operation_id,
-                        workflow_plan_id = update_info['workflow_plan_id'])
+                putative_dict['PARENT_EXECUTION_ID'] =\
+                        self._get_or_create_execution_id(
+                            transaction, recursion_level,
+                            net_key          = parent_net_key,
+                            operation_id     = parent_operation_id,
+                            workflow_plan_id = update_info['workflow_plan_id'])
             else:
-                putative_dict['PARENT_INSTANCE_ID'] = self._get_or_create_instance_id(
-                        transaction, recursion_level,
-                        net_key          = parent_net_key,
-                        operation_id     = parent_operation_id,
-                        workflow_plan_id = update_info['workflow_plan_id'])
+                putative_dict['PARENT_INSTANCE_ID'] =\
+                        self._get_or_create_instance_id(
+                            transaction, recursion_level,
+                            net_key          = parent_net_key,
+                            operation_id     = parent_operation_id,
+                            workflow_plan_id = update_info['workflow_plan_id'])
 
         peer_net_key = update_info.get('peer_net_key', None)
         peer_operation_id = update_info.get('peer_operation_id', None)
@@ -300,7 +306,8 @@ class WorkflowHistorianStorage(object):
         return self._generate_update_dict(putative_dict, row=execution_row,
                 should_overwrite=should_overwrite)
 
-    def _generate_update_dict(self, putative_dict,
+    @staticmethod
+    def _generate_update_dict(putative_dict,
             row              = None,
             should_overwrite = False):
         if row is None:
@@ -382,14 +389,16 @@ class SimpleTransaction(object):
     def begin_transaction(self):
         conn = self.engine.connect()
         trans = conn.begin()
-        LOG.debug("Beginning transaction (%r) with connection %r.", self.trans, self.conn)
+        LOG.debug("Beginning transaction (%r) with connection %r.",
+                self.trans, self.conn)
         return conn, trans
 
     def execute(self, *args, **kwargs):
         return self.conn.execute(*args, **kwargs)
 
     def commit(self, *args, **kwargs):
-        LOG.debug("Commiting transaction (%r) and closing connection (%r).", self.trans, self.conn)
+        LOG.debug("Commiting transaction (%r) and closing connection (%r).",
+                self.trans, self.conn)
         try:
             return_value = self.trans.commit(*args, **kwargs)
         except:
@@ -400,7 +409,8 @@ class SimpleTransaction(object):
         return return_value
 
     def rollback(self, *args, **kwargs):
-        LOG.debug("Rolling back transaction (%r) and closing connection (%r).", self.trans, self.conn)
+        LOG.debug("Rolling back transaction (%r) and closing connection (%r).",
+                self.trans, self.conn)
         return_value = self.trans.rollback(*args, **kwargs)
         self._close()
         return return_value
