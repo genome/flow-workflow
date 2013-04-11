@@ -125,8 +125,6 @@ sub run_workflow {
     my ($wf_string, $inputs, $resource_reqs, $plan_id) = @_;
     my $result;
 
-    print "WF STRING!\n\n$wf_string\n\n";
-
     my $cleanup = !exists $ENV{FLOW_WORKFLOW_NO_CLEANUP};
     my $tmpdir = tempdir(CLEANUP => $cleanup);
 
@@ -137,7 +135,6 @@ sub run_workflow {
     my $js = new JSON->allow_nonref;
 
     write_file($wf_path, $wf_string);
-    print "Inputs: " . Dumper($inputs);
     write_file($inp_path, $js->encode(encode_io_hash($inputs)));
     write_file($res_path, $js->encode($resource_reqs));
 

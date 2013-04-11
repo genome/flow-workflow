@@ -92,7 +92,6 @@ sub run_command {
     }
 
     $outputs{result} = 1 unless exists $outputs{result};
-    print "Outputs: " . Dumper(\%outputs);
     my $outputs = Flow::encode_io_hash(\%outputs);
 
     UR::Context->commit();
