@@ -11,7 +11,7 @@ import flow.shell_command.executors.nets as exnets
 
 class NetTest(TestCase):
     def setUp(self):
-        self.builder = nb.NetBuilder()
+        self.builder = nb.NetBuilder(net_type=petri.Net)
         self.conn = FakeRedis()
         self.time_val = (1363805978, 775085)
         self.conn.time = mock.Mock(return_value=self.time_val)
@@ -54,11 +54,9 @@ class TestParallelByNet(NetTest):
 
     def test_construct(self):
         net = self._create_net()
-        self.assertEqual(3, len(net.subnets))
-
-        names = [x.name for x in net.subnets]
-        expected = ["test"]*3
-        self.assertEqual(expected, names)
+        self.assertEqual(1, len(net.subnets))
+        stored_net = self.builder.store(self.conn)
+        self.assertIsInstance(stored_net, petri.Net)
 
     def test_shortcut_updates(self):
         net = self._create_net()

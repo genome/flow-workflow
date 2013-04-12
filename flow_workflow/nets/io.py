@@ -1,5 +1,6 @@
 from flow import petri
 from twisted.internet import defer
+import flow.redisom as rom
 
 import logging
 
@@ -20,45 +21,46 @@ def get_workflow_outputs(net):
     return result
 
 
-def output_variable_name(operation_id, output_name):
-    return "_wf_outp_%d_%s" % (int(operation_id), output_name)
+def output_variable_name(operation_id, output_name, parallel_idx=0):
+    return "_wf_outp_%d_%s_%d" % (int(operation_id), output_name,
+            int(parallel_idx))
 
 
-def op_outputs_variable_name(operation_id):
-    return "_wf_outp_%d" % int(operation_id)
+def op_outputs_variable_name(operation_id, parallel_idx=0):
+    return "_wf_outp_%d_%d" % (int(operation_id), int(parallel_idx))
 
 
-def op_exit_code_variable_name(operation_id):
-    return "_wf_exit_%d" % int(operation_id)
+def op_exit_code_variable_name(operation_id, parallel_idx=0):
+    return "_wf_exit_%d_%d" % (int(operation_id), int(parallel_idx))
 
 
-def store_outputs(outputs, net, operation_id):
+def store_outputs(outputs, net, operation_id, parallel_idx=0):
     if not outputs:
         return
 
     keys = []
     for k, v in outputs.iteritems():
         keys.append(k)
-        name = output_variable_name(operation_id, k)
+        name = output_variable_name(operation_id, k, parallel_idx)
         net.set_variable(name, v)
 
-    net.set_variable(op_outputs_variable_name(operation_id), keys)
+    net.set_variable(op_outputs_variable_name(operation_id, parallel_idx), keys)
 
 
-def operation_output_names(net, operation_id):
-    key = op_outputs_variable_name(operation_id)
+def operation_output_names(net, operation_id, parallel_idx=0):
+    key = op_outputs_variable_name(operation_id, parallel_idx)
     return net.variable(key)
 
 
-def operation_outputs(net, operation_id):
-    names = operation_output_names(net, operation_id)
-    outputs = {x: net.variable(output_variable_name(operation_id, x))
+def operation_outputs(net, op_id, parallel_idx=0):
+    names = operation_output_names(net, op_id, parallel_idx)
+    outputs = {x: net.variable(output_variable_name(op_id, x, parallel_idx))
             for x in names}
     return outputs
 
 
 class InputsMixin(object):
-    def _fetch_inputs(self, net, data_arcs):
+    def _fetch_inputs(self, net, data_arcs, parallel_idx):
         if data_arcs is None:
             return {}
 
@@ -69,7 +71,7 @@ class InputsMixin(object):
                 prop_hash = {x: x for x in names}
 
             for dst_prop, src_prop in prop_hash.iteritems():
-                varname = output_variable_name(src_id, src_prop)
+                varname = output_variable_name(src_id, src_prop, parallel_idx)
                 value = net.variable(varname)
                 inputs[dst_prop] = value
 
@@ -77,24 +79,23 @@ class InputsMixin(object):
 
     def input_data(self, active_tokens_key, net):
         input_connections = self.args.get("input_connections")
+        tokens = self.tokens(active_tokens_key)
+        try:
+            parallel_index = tokens[0].color_idx.value
+        except rom.NotInRedisError:
+            parallel_index = 0
 
-        inputs = self._fetch_inputs(net, input_connections)
+        inputs = self._fetch_inputs(net, input_connections, parallel_index)
         LOG.debug("Inputs: %r", inputs)
-
-        parallel_by = self.args.get("parallel_by")
-        parallel_by_idx = self.args.get("parallel_by_idx")
-        if parallel_by and parallel_by_idx is not None:
-            idx = self.args["parallel_by_idx"]
-            inputs[parallel_by] = inputs[parallel_by][idx]
 
         return inputs
 
 
 class StoreOutputsAction(petri.TransitionAction):
     required_arguments = ["operation_id"]
+    optional_arguments = ["parallel_by"]
 
-    def input_data(self, active_tokens_key, net):
-        tokens = self.tokens(active_tokens_key)
+    def wf_input_data(self, tokens, net):
         outputs = {}
         exit_codes = []
         for token in tokens:
@@ -115,7 +116,12 @@ class StoreOutputsAction(petri.TransitionAction):
 
     def execute(self, active_tokens_key, net, service_interfaces):
         operation_id = self.args["operation_id"]
-        input_data = self.input_data(active_tokens_key, net)
+        tokens = self.tokens(active_tokens_key)
+        input_data = self.wf_input_data(tokens, net)
+        try:
+            parallel_idx = tokens[0].color_idx.value
+        except rom.NotInRedisError:
+            parallel_idx = 0
 
         LOG.debug("%s (%s/%d) storing outputs: %r", self.name, net.key,
                 operation_id, input_data)
