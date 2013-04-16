@@ -1,17 +1,14 @@
 import logging
 from flow_workflow.historian.messages import UpdateMessage
+from injector import inject, Setting
+import flow.interfaces
 
 LOG = logging.getLogger(__name__)
 
+@inject(broker=flow.interfaces.IBroker,
+        exchange=Setting('workflow.historian.exchange'),
+        routing_key=Setting('workflow.historian.routing_key'))
 class WorkflowHistorianServiceInterface(object):
-    def __init__(self,
-            broker=None,
-            exchange=None,
-            routing_key=None):
-        self.broker = broker
-        self.exchange = exchange
-        self.routing_key = routing_key
-
     def update(self, net_key, operation_id, name, workflow_plan_id, **kwargs):
         if workflow_plan_id < 0:
             # ignore update (don't even make message)

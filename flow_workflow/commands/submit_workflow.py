@@ -1,23 +1,30 @@
-from flow import petri
 from flow import exit_codes
-
+from flow import petri
 from flow.commands.base import CommandBase
+from flow.configuration.inject.broker import BlockingBrokerConfiguration
+from flow.configuration.inject.orchestrator import OrchestratorConfiguration
+from flow.configuration.inject.redis_conf import RedisConfiguration
+from flow_workflow import nets
+from lxml import etree
+from injector import inject, Setting
+
+import flow.interfaces
 import flow.petri.netbuilder as nb
 import flow_workflow.xmladapter as wfxml
-from flow_workflow import nets
-
-from lxml import etree
 import json
 import os
 import sys
 import uuid
 
+
+@inject(storage=flow.interfaces.IStorage, broker=flow.interfaces.IBroker,
+        orchestrator=flow.interfaces.IOrchestrator)
 class SubmitWorkflowCommand(CommandBase):
-    def __init__(self, broker=None, storage=None, orchestrator=None):
-        self.broker = broker
-        self.storage = storage
-        self.orchestrator = orchestrator
-        self.orchestrator.broker = broker
+    injector_modules = [
+            BlockingBrokerConfiguration,
+            RedisConfiguration,
+            OrchestratorConfiguration,
+    ]
 
     @staticmethod
     def annotate_parser(parser):
