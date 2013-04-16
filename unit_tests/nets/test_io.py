@@ -26,7 +26,8 @@ class TestIo(unittest.TestCase):
     def test_store_outputs_action(self):
         op_id = 123
         args = {"operation_id": op_id}
-        action = io.StoreOutputsAction.create(self.conn, args=args)
+        action = io.StoreOutputsAction.create(self.conn, args=args,
+                name='test_action')
 
         outputs = {"a": "b", "c": "d"}
         self.token.data = {"exit_code": 0, "outputs": outputs}
