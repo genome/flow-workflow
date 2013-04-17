@@ -3,7 +3,7 @@ from unittest import TestCase, main
 from mock import Mock, MagicMock
 
 import flow.petri.netbuilder as nb
-import flow.command_runner.executors.nets as exnets
+import flow.shell_command.executors.nets as exnets
 from fakeredis import FakeRedis
 
 class TestableInputs(wfnets.InputsMixin):
@@ -100,7 +100,7 @@ class TestGenomePerlActionNet(NetTest):
         self.assertIsInstance(net.start_transition, nb.Transition)
         self.assertIsInstance(net.success_transition, nb.Transition)
         self.assertIsInstance(net.failure_transition, nb.Transition)
-        self.assertIsInstance(net.shortcut, exnets.LocalCommandNet)
+        self.assertIsInstance(net.shortcut, exnets.ForkCommandNet)
         self.assertIsInstance(net.execute, exnets.LSFCommandNet)
 
 

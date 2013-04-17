@@ -7,7 +7,7 @@ from fakeredis import FakeRedis
 import mock
 
 import flow.petri.netbuilder as nb
-import flow.command_runner.executors.nets as exnets
+import flow.shell_command.executors.nets as exnets
 
 class NetTest(TestCase):
     def setUp(self):

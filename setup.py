@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 entry_points = '''
 [flow.commands]
 submit-workflow = flow_workflow.commands.submit_workflow:SubmitWorkflowCommand
-workflow_historian_service = flow_workflow.commands.historian_service:WorkflowHistorianCommand
+workflow-historian-service = flow_workflow.historian.command:WorkflowHistorianCommand
 workflow-wrapper = flow_workflow.commands.workflow_wrapper:WorkflowWrapperCommand
 
 [flow.services]
