@@ -1,5 +1,6 @@
 from collections import defaultdict, namedtuple
-from injector import inject, Setting
+from flow.configuration.settings.injector import setting
+from injector import inject
 from sqlalchemy import create_engine
 from sqlalchemy import event
 from sqlalchemy.dialects.oracle import dialect as oracle_dialect
@@ -80,8 +81,8 @@ def on_oracle_connect(connection, record):
             "'YYYY-MM-DD HH24:MI:SSXFF'")
     cursor.close()
 
-@inject(connection_string=Setting('workflow.historian.connection_string'),
-        owner=Setting('workflow.historian.owner'))
+@inject(connection_string=setting('workflow.historian.connection_string'),
+        owner=setting('workflow.historian.owner'))
 class WorkflowHistorianStorage(object):
     def __init__(self):
         self.statements = STATEMENTS(**{k:v % self.owner

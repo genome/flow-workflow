@@ -1,6 +1,7 @@
 from flow import exit_codes
+from flow.configuration.settings.injector import setting
 from flow_workflow.historian.messages import UpdateMessage
-from injector import inject, Setting
+from injector import inject
 from sqlalchemy.exc import ResourceClosedError, TimeoutError, DisconnectionError
 
 import flow.interfaces
@@ -11,7 +12,7 @@ import os
 LOG = logging.getLogger(__name__)
 
 @inject(broker=flow.interfaces.IBroker, storage=flow.interfaces.IStorage,
-        queue_name=Setting('workflow.historian.queue'))
+        queue_name=setting('workflow.historian.queue'))
 class WorkflowHistorianMessageHandler(object):
     message_class = UpdateMessage
 

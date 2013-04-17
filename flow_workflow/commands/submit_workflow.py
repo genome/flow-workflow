@@ -6,7 +6,7 @@ from flow.configuration.inject.orchestrator import OrchestratorConfiguration
 from flow.configuration.inject.redis_conf import RedisConfiguration
 from flow_workflow import nets
 from lxml import etree
-from injector import inject, Setting
+from injector import inject
 
 import flow.interfaces
 import flow.petri.netbuilder as nb

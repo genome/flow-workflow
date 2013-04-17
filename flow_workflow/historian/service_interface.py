@@ -1,13 +1,17 @@
-import logging
+from flow.configuration.settings.injector import setting
 from flow_workflow.historian.messages import UpdateMessage
-from injector import inject, Setting
+from injector import inject
+
 import flow.interfaces
+import logging
+
 
 LOG = logging.getLogger(__name__)
 
+
 @inject(broker=flow.interfaces.IBroker,
-        exchange=Setting('workflow.historian.exchange'),
-        routing_key=Setting('workflow.historian.routing_key'))
+        exchange=setting('workflow.historian.exchange'),
+        routing_key=setting('workflow.historian.routing_key'))
 class WorkflowHistorianServiceInterface(object):
     def update(self, net_key, operation_id, name, workflow_plan_id, **kwargs):
         if workflow_plan_id < 0:

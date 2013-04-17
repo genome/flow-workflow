@@ -1,6 +1,7 @@
 from flow.commands.base import CommandBase
+from flow.configuration.settings.injector import setting
 from flow.util.logannotator import LogAnnotator
-from injector import inject, Setting
+from injector import inject
 
 import copy
 import json
@@ -19,7 +20,7 @@ def _build_event_cmdline(parsed_arguments, inputs_file, outputs_file):
     return ["event", parsed_arguments.method, parsed_arguments.event_id, outputs_file]
 
 
-@inject(perl_wrapper=Setting('workflow.perl_wrapper'))
+@inject(perl_wrapper=setting('workflow.perl_wrapper'))
 class WorkflowWrapperCommand(CommandBase):
     # Amazing that this doesn't need anything.
     injector_modules = [ ]
