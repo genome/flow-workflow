@@ -2,7 +2,6 @@ from flow import exit_codes
 from flow import petri
 from flow.commands.base import CommandBase
 from flow.configuration.inject.broker import BlockingBrokerConfiguration
-from flow.configuration.inject.orchestrator import OrchestratorConfiguration
 from flow.configuration.inject.redis_conf import RedisConfiguration
 from flow.service_locator import ServiceLocator
 from flow_workflow import nets
@@ -23,7 +22,6 @@ class SubmitWorkflowCommand(CommandBase):
     injector_modules = [
             BlockingBrokerConfiguration,
             RedisConfiguration,
-            OrchestratorConfiguration,
     ]
 
     @staticmethod
