@@ -4,6 +4,7 @@ from flow.commands.base import CommandBase
 from flow.configuration.inject.broker import BlockingBrokerConfiguration
 from flow.configuration.inject.orchestrator import OrchestratorConfiguration
 from flow.configuration.inject.redis_conf import RedisConfiguration
+from flow.service_locator import ServiceLocator
 from flow_workflow import nets
 from lxml import etree
 from injector import inject
@@ -17,8 +18,7 @@ import sys
 import uuid
 
 
-@inject(storage=flow.interfaces.IStorage, broker=flow.interfaces.IBroker,
-        orchestrator=flow.interfaces.IOrchestrator)
+@inject(storage=flow.interfaces.IStorage, service_locator=ServiceLocator)
 class SubmitWorkflowCommand(CommandBase):
     injector_modules = [
             BlockingBrokerConfiguration,
@@ -93,24 +93,27 @@ class SubmitWorkflowCommand(CommandBase):
         print("Initial inputs: %r" % token.data.value)
 
         if not parsed_arguments.no_submit:
-            self.broker.connect()
-            self.orchestrator.set_token(net_key=stored_net.key, place_idx=0,
+            orchestrator = self.service_locator['orchestrator']
+            broker = orchestrator.broker
+            broker.connect()
+
+            orchestrator.set_token(net_key=stored_net.key, place_idx=0,
                     token_key=token.key)
 
             if parsed_arguments.block:
-                self.broker.create_temporary_queue(queue_name)
-                message = self.broker.raw_get(queue_name)
+                broker.create_temporary_queue(queue_name)
+                message = broker.raw_get(queue_name)
                 sys.stderr.write(
                         'Submitted flow completed with result: %s\n' % message)
                 if message != 'success':
-                    self.broker.disconnect()
+                    broker.disconnect()
                     os._exit(exit_codes.EXECUTE_FAILURE)
 
                 if parsed_arguments.outputs_file:
                     outputs = nets.get_workflow_outputs(stored_net)
                     json.dump(outputs, open(parsed_arguments.outputs_file, 'w'))
 
-            self.broker.disconnect()
+            broker.disconnect()
 
     def add_done_place_observers(self, stored_net):
         queue_name = generate_queue_name()
