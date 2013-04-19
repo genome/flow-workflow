@@ -3,6 +3,7 @@ from flow_workflow.historian.messages import UpdateMessage
 from injector import inject
 
 import flow.interfaces
+import flow_workflow.interfaces
 import logging
 
 
@@ -12,7 +13,7 @@ LOG = logging.getLogger(__name__)
 @inject(broker=flow.interfaces.IBroker,
         exchange=setting('workflow.historian.exchange'),
         routing_key=setting('workflow.historian.routing_key'))
-class WorkflowHistorianServiceInterface(flow.interfaces.IWorkflowHistorian):
+class WorkflowHistorianServiceInterface(flow_workflow.interfaces.IWorkflowHistorian):
     def update(self, net_key, operation_id, name, workflow_plan_id, **kwargs):
         if workflow_plan_id < 0:
             # ignore update (don't even make message)
