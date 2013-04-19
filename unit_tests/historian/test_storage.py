@@ -309,7 +309,7 @@ class TestStorage(unittest.TestCase):
 
         irows = [
                 {'name':'test_name', 'parent_instance_id':2},
-                {'name':'pending'}, # was made by recursive call
+                {'name':'unknown name 4567'}, # was made by recursive call
         ]
         self._test_instance(rows=irows)
 
@@ -329,7 +329,7 @@ class TestStorage(unittest.TestCase):
 
         irows = [
                 {'name':'test_name', 'parent_execution_id':2},
-                {'name':'pending'}, # was made by recursive call
+                {'name':'unknown name 4567'}, # was made by recursive call
         ]
         self._test_instance(rows=irows)
 
@@ -348,7 +348,7 @@ class TestStorage(unittest.TestCase):
 
         rows = [
                 {'peer_instance_id':2},
-                {'name':'pending'},
+                {'name':'unknown name 4567'},
         ]
         self._test_instance(rows=rows)
 

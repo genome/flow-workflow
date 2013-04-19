@@ -361,7 +361,7 @@ class WorkflowHistorianStorage(object):
             update_info = {
                     'net_key':net_key,
                     'operation_id':operation_id,
-                    'name':'pending',
+                    'name':'unknown name %d' % operation_id,
                     'workflow_plan_id': workflow_plan_id,
             }
             return self._recursive_insert_or_update(transaction, update_info,
