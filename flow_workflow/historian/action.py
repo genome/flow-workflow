@@ -1,4 +1,5 @@
 from flow import petri
+from twisted.internet import defer
 
 import os
 import logging
@@ -90,7 +91,7 @@ class WorkflowHistorianUpdateAction(petri.TransitionAction):
     def execute(self, active_tokens_key, net, service_interfaces):
         if env_is_perl_true(net, 'UR_DBI_NO_COMMIT'):
             LOG.debug('UR_DBI_NO_COMMIT is set, not updating status.')
-            return
+            return None, defer.succeed(None)
 
 
         historian = service_interfaces['workflow_historian']
@@ -98,6 +99,7 @@ class WorkflowHistorianUpdateAction(petri.TransitionAction):
 
         fields = self._get_runtime_fields(active_tokens_key, net)
 
+        deferreds = []
         for child_info in self.args['children_info']:
             child_info.update(fields)
 
@@ -114,8 +116,10 @@ class WorkflowHistorianUpdateAction(petri.TransitionAction):
             LOG.debug("Historian update: (operation=%r, parent=%s), %r",
             operation_id, parent, child_info)
 
-            historian.update(net_key=net_key, operation_id=operation_id,
+            deferred = historian.update(net_key=net_key, operation_id=operation_id,
                     **child_info)
+            deferreds.append(deferred)
+        return None, defer.DeferredList(deferreds)
 
 def env_is_perl_true(net, varname):
     env = net.constant('environment')

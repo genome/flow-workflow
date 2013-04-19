@@ -1,4 +1,5 @@
 from flow import petri
+from twisted.internet import defer
 
 import logging
 
@@ -120,6 +121,7 @@ class StoreOutputsAction(petri.TransitionAction):
                 operation_id, input_data)
 
         store_outputs(input_data, net, operation_id)
+        return None, defer.succeed(None)
 
 
 class StoreInputsAsOutputsAction(InputsMixin, petri.TransitionAction):
@@ -133,3 +135,4 @@ class StoreInputsAsOutputsAction(InputsMixin, petri.TransitionAction):
                 net.key, int(operation_id), input_data)
 
         store_outputs(input_data, net, operation_id)
+        return None, defer.succeed(None)

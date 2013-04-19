@@ -5,6 +5,7 @@ from flow_workflow.nets.io import StoreOutputsAction
 
 import flow.shell_command.executors.nets as enets
 import flow.petri.netbuilder as nb
+from twisted.internet import defer
 import os
 
 from collections import namedtuple
@@ -82,7 +83,7 @@ class GenomeModelInputsAction(InputsMixin, petri.TransitionAction):
         token = petri.Token.create(self.connection, data={"outputs": inputs},
                 data_type="output")
 
-        return token
+        return token, defer.succeed(None)
 
 
 class GenomeNet(GenomeEmptyNet):

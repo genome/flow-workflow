@@ -1,5 +1,6 @@
 from flow_workflow.nets.core import InputsMixin, GenomeEmptyNet
 from flow_workflow.nets.io import *
+from twisted.internet import defer
 
 from flow import petri
 import flow.petri.netbuilder as nb
@@ -27,6 +28,7 @@ class GenomeConvergeAction(InputsMixin, petri.TransitionAction):
                 output_properties)
 
         store_outputs(outputs, net, operation_id)
+        return None, defer.succeed(None)
 
 
 class GenomeConvergeNet(GenomeEmptyNet):

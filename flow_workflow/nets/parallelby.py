@@ -157,8 +157,9 @@ class BuildParallelByAction(InputsMixin, petri.TransitionAction):
         orchestrator = service_interfaces["orchestrator"]
         token = petri.Token.create(self.connection, data={"outputs": inputs},
                 data_type="output")
-        orchestrator.set_token(stored_net.key, parallel_net.start_place.index,
+        deferred = orchestrator.set_token(stored_net.key, parallel_net.start_place.index,
                 token.key)
+        return None, deferred
 
 
 class ParallelBySuccessAction(petri.SetRemoteTokenAction):
