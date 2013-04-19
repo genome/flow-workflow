@@ -1,17 +1,23 @@
+from collections import defaultdict, namedtuple
+from flow.configuration.settings.injector import setting
+from injector import inject
 from sqlalchemy import create_engine
+from sqlalchemy import event
+from sqlalchemy.dialects.oracle import dialect as oracle_dialect
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.pool import StaticPool
+
 import copy
 import logging
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy import event
-from sqlalchemy.pool import StaticPool
-from sqlalchemy.dialects.oracle import dialect as oracle_dialect
-from collections import defaultdict, namedtuple
 import re
+
 
 class CannotInsertError(RuntimeError):
     pass
 
+
 LOG = logging.getLogger(__name__)
+
 
 STATEMENTS_DICT = {}
 STATEMENTS_DICT['insert_into_workflow_historian'] = """
@@ -75,17 +81,19 @@ def on_oracle_connect(connection, record):
             "'YYYY-MM-DD HH24:MI:SSXFF'")
     cursor.close()
 
+@inject(connection_string=setting('workflow.historian.connection_string'),
+        owner=setting('workflow.historian.owner'))
 class WorkflowHistorianStorage(object):
-    def __init__(self, connection_string, owner):
-        self.statements = STATEMENTS(**{k:v % owner
+    def __init__(self):
+        self.statements = STATEMENTS(**{k:v % self.owner
                 for k, v in STATEMENTS_DICT.items()})
-        self.tables = TABLES(historian='%s.workflow_historian' % owner,
-                instance='%s.workflow_instance' % owner,
-                execution='%s.workflow_instance_execution' % owner)
-        self.sequences = SEQUENCES(instance='%s.workflow_instance_seq' % owner,
-                execution='%s.workflow_execution_seq' % owner)
+        self.tables = TABLES(historian='%s.workflow_historian' % self.owner,
+                instance='%s.workflow_instance' % self.owner,
+                execution='%s.workflow_instance_execution' % self.owner)
+        self.sequences = SEQUENCES(instance='%s.workflow_instance_seq' % self.owner,
+                execution='%s.workflow_execution_seq' % self.owner)
 
-        self.engine = create_engine(connection_string, case_sensitive=False,
+        self.engine = create_engine(self.connection_string, case_sensitive=False,
                 poolclass=StaticPool)
 
         # Oracle needs us to tell it to accept strings for dates/timestamps

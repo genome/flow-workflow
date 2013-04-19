@@ -3,7 +3,7 @@ from flow import petri
 from flow_workflow.nets.core import InputsMixin, GenomeEmptyNet
 from flow_workflow.nets.io import StoreOutputsAction
 
-import flow.command_runner.executors.nets as enets
+import flow.shell_command.executors.nets as enets
 import flow.petri.netbuilder as nb
 import os
 
@@ -33,9 +33,9 @@ class GenomePerlAction(InputsMixin):
                 self.args["action_id"]]
 
 
-class GenomeShortcutAction(GenomePerlAction, enets.LocalDispatchAction):
+class GenomeShortcutAction(GenomePerlAction, enets.ForkDispatchAction):
     def _environment(self, net):
-        env = enets.LocalDispatchAction._environment(self, net)
+        env = enets.ForkDispatchAction._environment(self, net)
         return self._update_environment(net, env)
 
 
@@ -178,7 +178,7 @@ class GenomePerlActionNet(GenomeNet):
                 args={"operation_id": operation_id})
 
         self.shortcut = self.add_subnet(
-                enets.LocalCommandNet, "%s shortcut" % name,
+                enets.ForkCommandNet, "%s shortcut" % name,
                 action_class=GenomeShortcutAction, action_args=shortcut_args,
                 begin_execute_action=self._update_action(shortcut=True,
                     token_data_map={"pid": "dispatch_id"},

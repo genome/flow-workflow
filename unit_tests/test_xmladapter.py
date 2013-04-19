@@ -6,7 +6,7 @@ from lxml.builder import E
 
 from unittest import TestCase, main
 import flow.petri.netbuilder as nb
-import flow.command_runner.executors.nets as exnets
+import flow.shell_command.executors.nets as exnets
 
 _wf_command_class = "Workflow::OperationType::Command"
 _wf_converge_class = "Workflow::OperationType::Converge"
@@ -113,7 +113,7 @@ class TestWorkflowOperations(TestCase):
         self.assertEqual("command", net.action_type)
         self.assertEqual("ClassX", net.action_id)
 
-        self.assertIsInstance(net.shortcut, exnets.LocalCommandNet)
+        self.assertIsInstance(net.shortcut, exnets.ForkCommandNet)
         shortcut_transition = net.shortcut.dispatch
         action = shortcut_transition.action
         self.assertIsInstance(action, nb.ActionSpec)
