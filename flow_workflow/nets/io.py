@@ -42,6 +42,7 @@ def store_outputs(outputs, net, operation_id, parallel_idx=0):
     for k, v in outputs.iteritems():
         keys.append(k)
         name = output_variable_name(operation_id, k, parallel_idx)
+        LOG.debug("Setting net (%s) variables %r=%r", net.key, name, v)
         net.set_variable(name, v)
 
     net.set_variable(op_outputs_variable_name(operation_id, parallel_idx), keys)
@@ -123,10 +124,10 @@ class StoreOutputsAction(petri.TransitionAction):
         except rom.NotInRedisError:
             parallel_idx = 0
 
-        LOG.debug("%s (%s/%d) storing outputs: %r", self.name, net.key,
-                operation_id, input_data)
+        LOG.debug("%s (%s/%d color=%r) storing outputs: %r", self.name, net.key,
+                operation_id, parallel_idx, input_data)
 
-        store_outputs(input_data, net, operation_id)
+        store_outputs(input_data, net, operation_id, parallel_idx)
         return None, defer.succeed(None)
 
 

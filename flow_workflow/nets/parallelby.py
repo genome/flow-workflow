@@ -7,6 +7,7 @@ from flow import petri
 import flow.petri.netbuilder as nb
 
 from collections import namedtuple
+from twisted.internet import defer
 
 import logging
 
@@ -198,6 +199,7 @@ class BuildParallelByAction(InputsMixin, petri.TransitionAction):
         stored_net.copy_constants_from(net)
 
         orchestrator = service_interfaces["orchestrator"]
+        deferreds = []
         for i in xrange(num_operations):
             data = dict(inputs)
             data[parallel_by] = data[parallel_by][i]
@@ -206,7 +208,7 @@ class BuildParallelByAction(InputsMixin, petri.TransitionAction):
             LOG.debug("Setting parallel by (#%d) token %s: data=%r",
                     i, token.key, data)
             deferred = orchestrator.set_token(stored_net.key,
-                    parallel_net.start_place.index, token.key, token_color=i))
+                    parallel_net.start_place.index, token.key, token_color=i)
             deferreds.append(deferred)
 
         return None, defer.DeferredList(deferreds)
