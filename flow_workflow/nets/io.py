@@ -61,6 +61,8 @@ def operation_outputs(net, op_id, parallel_idx=0):
 
 
 class InputsMixin(object):
+    required_arguments = ["input_connections"]
+
     def _fetch_inputs(self, net, data_arcs, parallel_idx):
         if data_arcs is None:
             return {}
@@ -132,7 +134,7 @@ class StoreOutputsAction(petri.TransitionAction):
 
 
 class StoreInputsAsOutputsAction(InputsMixin, petri.TransitionAction):
-    required_arguments = ["operation_id"]
+    required_arguments = InputsMixin.required_arguments + ["operation_id"]
 
     def execute(self, active_tokens_key, net, service_interfaces):
         operation_id = self.args["operation_id"]

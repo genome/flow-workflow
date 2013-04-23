@@ -168,11 +168,46 @@ class ParallelByNet(nb.EmptyNet):
         self.join_transition.arcs_out.add(self.success_place)
 
 
-class BuildParallelByAction(InputsMixin, petri.TransitionAction):
-    required_arguments = ["action_type", "action_id", "parallel_by",
-            "input_connections", "operation_id", "success_place",
+class RunParallelByAction(InputsMixin, petri.TransitionAction):
+    required_arguments = (InputsMixin.required_arguments +
+            ["action_type", "action_id", "parallel_by",
+            "operation_id", "success_place",
             "failure_place", "parent_operation_id",
-            "stdout_base", "stderr_base"]
+            "stdout_base", "stderr_base"])
+
+    def execute(self, active_tokens_key, net, service_interfaces):
+        inputs = self.input_data(active_tokens_key, net)
+        parallel_by = self.args['parallel_by']
+        num_operations = len(inputs[parallel_by])
+
+        net_key = self.args['net_key']
+        stored_net_net = rom.get_object(self.connection, net_key)
+
+        stored_net.copy_constants_from(net)
+        stored_net.set_num_token_colors(num_operations)
+
+        orchestrator = service_interfaces["orchestrator"]
+        deferreds = []
+        for i in xrange(num_operations):
+            data = dict(inputs)
+            data[parallel_by] = data[parallel_by][i]
+            token = petri.Token.create(self.connection, data={"outputs": data},
+                    data_type="output", color_idx=i)
+            LOG.debug("Setting parallel by (#%d) token %s: data=%r",
+                    i, token.key, data)
+            deferred = orchestrator.set_token(stored_net.key,
+                    parallel_net.start_place.index, token.key, token_color=i)
+            deferreds.append(deferred)
+
+        return None, defer.DeferredList(deferreds)
+
+
+class BuildParallelByAction(InputsMixin, petri.TransitionAction):
+    required_arguments = (InputsMixin.required_arguments +
+            ["action_type", "action_id", "parallel_by",
+            "operation_id", "success_place",
+            "failure_place", "parent_operation_id",
+            "stdout_base", "stderr_base"])
 
     def execute(self, active_tokens_key, net, service_interfaces):
         inputs = self.input_data(active_tokens_key, net)
