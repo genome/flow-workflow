@@ -38,7 +38,7 @@ class SubmitWorkflowCommand(CommandBase):
                 help='File mapping operation names to resource requests '
                 '(json format)')
         parser.add_argument('--outputs-file', '-o',
-                help="File to write final outputs to (json format)")
+                help="File to write final outputs to (json format) NOTE: implies --block")
         parser.add_argument('--email', '-e',
                 help="If set, send notification emails to the given address")
         parser.add_argument('--no-submit', '-n', default=False,
@@ -81,7 +81,9 @@ class SubmitWorkflowCommand(CommandBase):
         if parsed_arguments.email:
             stored_net.set_constant("mail_user", parsed_arguments.email)
 
-        if parsed_arguments.block:
+        should_block = (parsed_arguments.block or
+                parsed_arguments.outputs_file is not None)
+        if should_block:
             queue_name = self.add_done_place_observers(stored_net)
 
         token = self._create_initial_token(parsed_arguments.inputs_file)
@@ -98,7 +100,7 @@ class SubmitWorkflowCommand(CommandBase):
             orchestrator.set_token(net_key=stored_net.key, place_idx=0,
                     token_key=token.key)
 
-            if parsed_arguments.block:
+            if should_block:
                 broker.create_temporary_queue(queue_name)
                 message = broker.raw_get(queue_name)
                 sys.stderr.write(
