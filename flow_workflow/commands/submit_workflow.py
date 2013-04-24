@@ -1,12 +1,15 @@
 from flow import exit_codes
 from flow import petri
 from flow.commands.base import CommandBase
-from flow.configuration.inject.broker import BlockingBrokerConfiguration
+from flow.configuration.inject.broker import BrokerConfiguration
 from flow.configuration.inject.redis_conf import RedisConfiguration
 from flow.service_locator import ServiceLocator
+from flow.petri.netbase import PlaceEntryObservedMessage
+from flow.handler import Handler
 from flow_workflow import nets
 from lxml import etree
 from injector import inject
+from twisted.internet import defer
 
 import flow.interfaces
 import flow.petri.netbuilder as nb
@@ -17,10 +20,12 @@ import sys
 import uuid
 
 
-@inject(storage=flow.interfaces.IStorage, service_locator=ServiceLocator)
+@inject(storage=flow.interfaces.IStorage,
+        broker=flow.interfaces.IBroker,
+        service_locator=ServiceLocator)
 class SubmitWorkflowCommand(CommandBase):
     injector_modules = [
-            BlockingBrokerConfiguration,
+            BrokerConfiguration,
             RedisConfiguration,
     ]
 
@@ -81,11 +86,6 @@ class SubmitWorkflowCommand(CommandBase):
         if parsed_arguments.email:
             stored_net.set_constant("mail_user", parsed_arguments.email)
 
-        should_block = (parsed_arguments.block or
-                parsed_arguments.outputs_file is not None)
-        if should_block:
-            queue_name = self.add_done_place_observers(stored_net)
-
         token = self._create_initial_token(parsed_arguments.inputs_file)
         print("Resources: %r" % resources)
         print("Net key: %s" % stored_net.key)
@@ -93,27 +93,37 @@ class SubmitWorkflowCommand(CommandBase):
         print("Initial inputs: %r" % token.data.value)
 
         if not parsed_arguments.no_submit:
-            orchestrator = self.service_locator['orchestrator']
-            broker = orchestrator.broker
-            broker.connect()
-
-            orchestrator.set_token(net_key=stored_net.key, place_idx=0,
-                    token_key=token.key)
-
+            should_block = (parsed_arguments.block or
+                    parsed_arguments.outputs_file is not None)
             if should_block:
-                broker.create_temporary_queue(queue_name)
-                message = broker.raw_get(queue_name)
-                sys.stderr.write(
-                        'Submitted flow completed with result: %s\n' % message)
-                if message != 'success':
-                    broker.disconnect()
-                    os._exit(exit_codes.EXECUTE_FAILURE)
+                queue_name = self.add_done_place_observers(stored_net)
+                handler = CompletedMessageHandler(self.broker, queue_name)
+                self.broker.register_handler(handler)
+            else:
+                queue_name = None
 
-                if parsed_arguments.outputs_file:
-                    outputs = nets.get_workflow_outputs(stored_net)
-                    json.dump(outputs, open(parsed_arguments.outputs_file, 'w'))
+            self.broker.add_ready_callback(self.once_connected, stored_net.key,
+                    token.key, queue_name)
+            self.broker.connect_and_listen()
 
-            broker.disconnect()
+            if parsed_arguments.outputs_file:
+                outputs = nets.get_workflow_outputs(stored_net)
+                json.dump(outputs, open(parsed_arguments.outputs_file, 'w'))
+
+
+    @defer.inlineCallbacks
+    def once_connected(self, stored_net_key, token_key, queue_name=None):
+        if queue_name is not None:
+            channel = self.broker.channel
+            yield channel.queue_declare(queue=queue_name, durable=False,
+                    auto_delete=False, exclusive=True)
+
+        orchestrator = self.service_locator['orchestrator']
+        yield orchestrator.set_token(net_key=stored_net_key,
+                place_idx=0, token_key=token_key)
+
+        if queue_name is None:
+            self.broker.stop()
 
     def add_done_place_observers(self, stored_net):
         queue_name = generate_queue_name()
@@ -130,3 +140,20 @@ class SubmitWorkflowCommand(CommandBase):
 
 def generate_queue_name():
     return 'submit_flow_block_%s' % uuid.uuid4().hex
+
+class CompletedMessageHandler(Handler):
+    message_class = PlaceEntryObservedMessage
+    def __init__(self, broker, queue_name):
+        self.broker = broker
+        self.queue_name = queue_name
+
+    def _handle_message(self, message):
+        self.broker.stop()
+
+        status = message.body
+        sys.stderr.write(
+                'Submitted flow completed with result: %s\n' % status)
+        if status != 'success':
+            os._exit(exit_codes.EXECUTE_FAILURE)
+
+
