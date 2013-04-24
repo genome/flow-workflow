@@ -50,12 +50,11 @@ class SubmitWorkflowCommand(CommandBase):
                 help="The project name to use for submitted jobs")
 
 
-    def _create_initial_token(self, net, inputs_file):
+    def _create_initial_token_data(self, inputs_file):
         inputs = {}
         if inputs_file:
             inputs = json.load(open(inputs_file))
-        token_data = {"outputs": inputs}
-        return net.create_token(data=token_data, data_type="output")
+        return {"outputs": inputs}
 
     def __call__(self, parsed_arguments):
         builder = nb.NetBuilder()
@@ -90,19 +89,19 @@ class SubmitWorkflowCommand(CommandBase):
         if parsed_arguments.block:
             queue_name = self.add_done_place_observers(stored_net)
 
-        token = self._create_initial_token(
-                stored_net, parsed_arguments.inputs_file)
-        print("Resources: %r" % resources)
-        print("Net key: %s" % stored_net.key)
-        print("Initial token key: %s" % token.key)
-        print("Initial inputs: %r" % token.data.value)
-
         if not parsed_arguments.no_submit:
             orchestrator = self.service_locator['orchestrator']
             broker = orchestrator.broker
             broker.connect()
 
-            orchestrator.create_token(net_key=stored_net.key, place_idx=0)
+            token_data = self._create_initial_token_data(
+                    parsed_arguments.inputs_file)
+            print("Resources: %r" % resources)
+            print("Net key: %s" % stored_net.key)
+
+            orchestrator.create_token(stored_net.key, place_idx=0,
+                   data=token_data, data_type="output")
+
 
             if parsed_arguments.block:
                 broker.create_temporary_queue(queue_name)
