@@ -80,8 +80,7 @@ class GenomeModelInputsAction(InputsMixin, petri.TransitionAction):
 
         inputs.update(self.token_data(active_tokens_key))
 
-        token = petri.Token.create(self.connection, data={"outputs": inputs},
-                data_type="output")
+        token = net.create_token(data={"outputs": inputs}, data_type="output")
 
         return token, defer.succeed(None)
 

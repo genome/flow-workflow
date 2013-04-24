@@ -238,12 +238,9 @@ class BuildParallelByAction(InputsMixin, petri.TransitionAction):
         for i in xrange(num_operations):
             data = dict(inputs)
             data[parallel_by] = data[parallel_by][i]
-            token = petri.Token.create(self.connection, data={"outputs": data},
-                    data_type="output", color_idx=i)
-            LOG.debug("Setting parallel by (#%d) token %s: data=%r",
-                    i, token.key, data)
-            deferred = orchestrator.set_token(stored_net.key,
-                    parallel_net.start_place.index, token.key, token_color=i)
+            deferred = orchestrator.create_token(stored_net.key,
+                    parallel_net.start_place.index, token_color=i,
+                    data_type="output", data={"outputs": data})
             deferreds.append(deferred)
 
         return None, defer.DeferredList(deferreds)

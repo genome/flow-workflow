@@ -50,12 +50,12 @@ class SubmitWorkflowCommand(CommandBase):
                 help="The project name to use for submitted jobs")
 
 
-    def _create_initial_token(self, inputs_file):
+    def _create_initial_token(self, net, inputs_file):
         inputs = {}
         if inputs_file:
             inputs = json.load(open(inputs_file))
         token_data = {"outputs": inputs}
-        return petri.Token.create(self.storage, data=token_data, data_type="output")
+        return net.create_token(data=token_data, data_type="output")
 
     def __call__(self, parsed_arguments):
         builder = nb.NetBuilder()
@@ -90,7 +90,8 @@ class SubmitWorkflowCommand(CommandBase):
         if parsed_arguments.block:
             queue_name = self.add_done_place_observers(stored_net)
 
-        token = self._create_initial_token(parsed_arguments.inputs_file)
+        token = self._create_initial_token(
+                stored_net, parsed_arguments.inputs_file)
         print("Resources: %r" % resources)
         print("Net key: %s" % stored_net.key)
         print("Initial token key: %s" % token.key)
@@ -101,8 +102,7 @@ class SubmitWorkflowCommand(CommandBase):
             broker = orchestrator.broker
             broker.connect()
 
-            orchestrator.set_token(net_key=stored_net.key, place_idx=0,
-                    token_key=token.key)
+            orchestrator.create_token(net_key=stored_net.key, place_idx=0)
 
             if parsed_arguments.block:
                 broker.create_temporary_queue(queue_name)
