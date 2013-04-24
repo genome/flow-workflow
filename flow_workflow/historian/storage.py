@@ -250,7 +250,6 @@ class WorkflowHistorianStorage(object):
         iresult = execute_and_log(transaction, self.statements.select_instance,
                 workflow_instance_id=instance_id)
         instance_row = iresult.fetchone()
-        print str(instance_row)
 
         execution_id = instance_row['CURRENT_EXECUTION_ID']
 
