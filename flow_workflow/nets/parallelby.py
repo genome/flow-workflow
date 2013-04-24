@@ -101,11 +101,10 @@ class ParallelByJoinAction(petri.ColorJoinAction):
         LOG.debug("Parallel by join completing, notifying %s place %d",
                 remote_net_key, remote_place_id)
         input_data = self.input_data(active_tokens_key, net)
-        token = petri.Token.create(self.connection, data=input_data,
-                data_type=data_type, color_idx=token_color)
 
         orchestrator = service_interfaces['orchestrator']
-        orchestrator.set_token(remote_net_key, remote_place_id, token.key)
+        orchestrator.create_token(remote_net_key, remote_place_id,
+                data=input_data, data_type=data_type, color_idx=token_color)
 
 
 
@@ -191,12 +190,11 @@ class RunParallelByAction(InputsMixin, petri.TransitionAction):
         for i in xrange(num_operations):
             data = dict(inputs)
             data[parallel_by] = data[parallel_by][i]
-            token = petri.Token.create(self.connection, data={"outputs": data},
-                    data_type="output", color_idx=i)
             LOG.debug("Setting parallel by (#%d) token %s: data=%r",
                     i, token.key, data)
-            deferred = orchestrator.set_token(stored_net.key,
-                    parallel_net.start_place.index, token.key, token_color=i)
+            deferred = orchestrator.create_token(stored_net.key,
+                    parallel_net.start_place.index, token_color=i,
+                    data={"outputs": data}, data_type="output")
             deferreds.append(deferred)
 
         return None, defer.DeferredList(deferreds)
