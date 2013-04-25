@@ -49,7 +49,7 @@ class WorkflowWrapperCommand(CommandBase):
                 help="Path to a file containing outputs in json format")
         event_parser.set_defaults(build_cmdline=_build_event_cmdline)
 
-    def __call__(self, parsed_arguments):
+    def _execute(self, parsed_arguments):
         cmdline = copy.copy(self.perl_wrapper)
 
         if parsed_arguments.inputs_file is None:
@@ -60,12 +60,14 @@ class WorkflowWrapperCommand(CommandBase):
                 parsed_arguments.inputs_file, parsed_arguments.outputs_file))
 
         LOG.info("Calling perl wrapper: %s", cmdline)
-        log_annotator = LogAnnotator(cmdline)
-        exit_code = log_annotator.start()
+        self.log_annotator = LogAnnotator(cmdline)
+        deferred = self.log_annotator.start()
+        deferred.addCallback(self._finish_up, parsed_arguments)
+        return deferred
 
-        if exit_code == 0:
-            outputs = json.load(open(parsed_arguments.outputs_file))
+    def _finish_up(self, exit_code, parsed_arguments):
+        self.exit_code = exit_code
 
         LOG.debug('Perl wrapper exited with code: %d', exit_code)
-
-        return exit_code
+        if exit_code == 0:
+            outputs = json.load(open(parsed_arguments.outputs_file))

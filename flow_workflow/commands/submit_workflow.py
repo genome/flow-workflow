@@ -60,7 +60,7 @@ class SubmitWorkflowCommand(CommandBase):
         token_data = {"outputs": inputs}
         return petri.Token.create(self.storage, data=token_data, data_type="output")
 
-    def __call__(self, parsed_arguments):
+    def _execute(self, parsed_arguments):
         builder = nb.NetBuilder()
         parsed_xml = etree.XML(open(parsed_arguments.xml).read())
         if parsed_arguments.resource_file:
@@ -92,38 +92,44 @@ class SubmitWorkflowCommand(CommandBase):
         print("Initial token key: %s" % token.key)
         print("Initial inputs: %r" % token.data.value)
 
+        exit_deferred = defer.Deferred()
         if not parsed_arguments.no_submit:
             should_block = (parsed_arguments.block or
                     parsed_arguments.outputs_file is not None)
             if should_block:
                 queue_name = self.add_done_place_observers(stored_net)
-                handler = CompletedMessageHandler(self.broker, queue_name)
-                self.broker.register_handler(handler)
             else:
                 queue_name = None
 
-            self.broker.add_ready_callback(self.once_connected, stored_net.key,
-                    token.key, queue_name)
-            self.broker.connect_and_listen()
-
-            if parsed_arguments.outputs_file:
-                outputs = nets.get_workflow_outputs(stored_net)
-                json.dump(outputs, open(parsed_arguments.outputs_file, 'w'))
-
+            deferred = self.broker.connect()
+            deferred.addCallback(self.once_connected, stored_net=stored_net,
+                    token_key=token.key, queue_name=queue_name,
+                    outputs_file=parsed_arguments.outputs_file,
+                    exit_deferred=exit_deferred)
+            return exit_deferred
+        else:
+            exit_deferred.callback(None)
+            return exit_deferred
 
     @defer.inlineCallbacks
-    def once_connected(self, stored_net_key, token_key, queue_name=None):
+    def once_connected(self, _, stored_net, token_key, queue_name, outputs_file,
+                exit_deferred):
         if queue_name is not None:
             channel = self.broker.channel
             yield channel.queue_declare(queue=queue_name, durable=False,
                     auto_delete=False, exclusive=True)
 
-        orchestrator = self.service_locator['orchestrator']
-        yield orchestrator.set_token(net_key=stored_net_key,
-                place_idx=0, token_key=token_key)
+            handler = SubmitWorkflowMessageHandler(broker=self.broker,
+                    queue_name=queue_name, stored_net=stored_net,
+                    outputs_file=outputs_file, exit_deferred=exit_deferred)
+            self.broker.register_handler(handler)
+            self.broker.start_handler(handler)
 
+        orchestrator = self.service_locator['orchestrator']
+        yield orchestrator.set_token(net_key=stored_net.key,
+                place_idx=0, token_key=token_key)
         if queue_name is None:
-            self.broker.stop()
+            exit_deferred.callback(None)
 
     def add_done_place_observers(self, stored_net):
         queue_name = generate_queue_name()
@@ -141,19 +147,29 @@ class SubmitWorkflowCommand(CommandBase):
 def generate_queue_name():
     return 'submit_flow_block_%s' % uuid.uuid4().hex
 
-class CompletedMessageHandler(Handler):
+
+class SubmitWorkflowMessageHandler(Handler):
     message_class = PlaceEntryObservedMessage
-    def __init__(self, broker, queue_name):
+    def __init__(self, broker, queue_name, stored_net,
+                outputs_file, exit_deferred):
         self.broker = broker
         self.queue_name = queue_name
+        self.stored_net = stored_net
+        self.outputs_file = outputs_file
+        self.exit_deferred = exit_deferred
 
     def _handle_message(self, message):
-        self.broker.stop()
+        if self.outputs_file is not None:
+            outputs = nets.get_workflow_outputs(self.stored_net)
+            json.dump(outputs, open(self.outputs_file, 'w'))
 
         status = message.body
         sys.stderr.write(
                 'Submitted flow completed with result: %s\n' % status)
         if status != 'success':
             os._exit(exit_codes.EXECUTE_FAILURE)
+        else:
+            self.exit_deferred.callback(None)
+        return defer.succeed(None)
 
 
