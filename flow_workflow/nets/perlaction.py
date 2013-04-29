@@ -17,7 +17,8 @@ LOG = logging.getLogger(__name__)
 
 class GenomePerlAction(InputsMixin):
     output_token_type = 'input'
-    required_arguments = ['operation_id', 'action_type', 'action_id', 'method']
+    required_arguments = (InputsMixin.required_arguments +
+            ['operation_id', 'action_type', 'action_id', 'method'])
 
     def _update_environment(self, net, env):
         parent_id = '%s %s' % (net.key, self.args['operation_id'])
@@ -57,7 +58,6 @@ class GenomeExecuteAction(GenomePerlAction, enets.LSFDispatchAction):
 
 
 class GenomeModelInputsAction(InputsMixin, petri.TransitionAction):
-    required_arguments = ["input_connections"]
 
     def input_data(self, active_tokens_key, net):
         return InputsMixin.input_data(self, active_tokens_key, net)
@@ -80,8 +80,7 @@ class GenomeModelInputsAction(InputsMixin, petri.TransitionAction):
 
         inputs.update(self.token_data(active_tokens_key))
 
-        token = petri.Token.create(self.connection, data={"outputs": inputs},
-                data_type="output")
+        token = net.create_token(data={"outputs": inputs}, data_type="output")
 
         return token, defer.succeed(None)
 

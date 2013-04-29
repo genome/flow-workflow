@@ -12,8 +12,8 @@ def _do_converge(inputs, input_property_order, output_properties):
 
 
 class GenomeConvergeAction(InputsMixin, petri.TransitionAction):
-    required_arguments = ["operation_id", "input_property_order",
-            "output_properties"]
+    required_arguments = (InputsMixin.required_arguments +
+            ["operation_id", "input_property_order", "output_properties"])
 
     output_token_type = "output"
 

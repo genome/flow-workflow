@@ -69,6 +69,10 @@ class TestWorkflowOperations(TestCase):
         self.builder = nb.NetBuilder()
         self.resources = {}
 
+    def test_log_file_names(self):
+        self.assertEqual("hi_.log",
+                wfxml.log_file_name(" @#$  hi  )%^*@#  .log"))
+
     def test_no_operationtype_tag(self):
         tree = E.operation({"name": "badguy"})
         self.assertRaises(ValueError,
@@ -86,14 +90,14 @@ class TestWorkflowOperations(TestCase):
                 log_dir="/tmp", parent=None)
 
     def test_command(self):
-        tree = _command_op_xml(name="op nums 1/2", perl_class="ClassX",
+        tree = _command_op_xml(name="op  nums  1/2", perl_class="ClassX",
                 op_attr={"a": "b"}, type_attr={"x": "y"})
 
         op = self.factory.create_from_xml(tree, log_dir="/tmp", parent=None,
                 resources=self.resources)
 
         self.assertEqual(0, op.operation_id)
-        self.assertEqual("op nums 1/2", op.name)
+        self.assertEqual("op  nums  1/2", op.name)
         self.assertEqual("b", op._operation_attributes["a"])
         self.assertEqual("y", op._type_attributes["x"])
 

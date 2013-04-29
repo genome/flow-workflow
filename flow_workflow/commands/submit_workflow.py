@@ -4,7 +4,7 @@ from flow.commands.base import CommandBase
 from flow.configuration.inject.broker import BrokerConfiguration
 from flow.configuration.inject.redis_conf import RedisConfiguration
 from flow.service_locator import ServiceLocator
-from flow.petri.netbase import PlaceEntryObservedMessage
+from flow.orchestrator.messages import PlaceEntryObservedMessage
 from flow.handler import Handler
 from flow_workflow import nets
 from lxml import etree
@@ -51,14 +51,15 @@ class SubmitWorkflowCommand(CommandBase):
                 help="Create, but do not submit this workflow")
         parser.add_argument('--plan-id', '-P', type=int,
                 help="The workflow plan id")
+        parser.add_argument('--project-name', '-N',
+                help="The project name to use for submitted jobs")
 
 
-    def _create_initial_token(self, inputs_file):
+    def _create_initial_token_data(self, inputs_file):
         inputs = {}
         if inputs_file:
             inputs = json.load(open(inputs_file))
-        token_data = {"outputs": inputs}
-        return petri.Token.create(self.storage, data=token_data, data_type="output")
+        return {"outputs": inputs}
 
     def _execute(self, parsed_arguments):
         builder = nb.NetBuilder()
@@ -79,18 +80,21 @@ class SubmitWorkflowCommand(CommandBase):
         stored_net = builder.store(self.storage)
         stored_net.capture_environment()
 
-        lsf_project = 'flow %s' % stored_net.key
+        if parsed_arguments.project_name:
+            lsf_project = parsed_arguments.project_name
+        else:
+            lsf_project = 'flow %s' % stored_net.key
+
         print("Setting LSF project to %s" % lsf_project)
         stored_net.set_constant('lsf_project', lsf_project)
 
         if parsed_arguments.email:
             stored_net.set_constant("mail_user", parsed_arguments.email)
 
-        token = self._create_initial_token(parsed_arguments.inputs_file)
+        token_data = self._create_initial_token_data(
+                parsed_arguments.inputs_file)
         print("Resources: %r" % resources)
         print("Net key: %s" % stored_net.key)
-        print("Initial token key: %s" % token.key)
-        print("Initial inputs: %r" % token.data.value)
 
         exit_deferred = defer.Deferred()
         if not parsed_arguments.no_submit:
@@ -103,7 +107,7 @@ class SubmitWorkflowCommand(CommandBase):
 
             deferred = self.broker.connect()
             deferred.addCallback(self.once_connected, stored_net=stored_net,
-                    token_key=token.key, queue_name=queue_name,
+                    token_data=token_data, queue_name=queue_name,
                     outputs_file=parsed_arguments.outputs_file,
                     exit_deferred=exit_deferred)
             return exit_deferred
@@ -112,7 +116,7 @@ class SubmitWorkflowCommand(CommandBase):
             return exit_deferred
 
     @defer.inlineCallbacks
-    def once_connected(self, _, stored_net, token_key, queue_name, outputs_file,
+    def once_connected(self, _, stored_net, token_data, queue_name, outputs_file,
                 exit_deferred):
         if queue_name is not None:
             channel = self.broker.channel
@@ -126,8 +130,9 @@ class SubmitWorkflowCommand(CommandBase):
             self.broker.start_handler(handler)
 
         orchestrator = self.service_locator['orchestrator']
-        yield orchestrator.set_token(net_key=stored_net.key,
-                place_idx=0, token_key=token_key)
+        yield orchestrator.create_token(stored_net.key, place_idx=0,
+                   data=token_data, data_type="output")
+
         if queue_name is None:
             exit_deferred.callback(None)
 
@@ -171,5 +176,3 @@ class SubmitWorkflowMessageHandler(Handler):
         else:
             self.exit_deferred.callback(None)
         return defer.succeed(None)
-
-
