@@ -116,12 +116,12 @@ class SubmitWorkflowCommand(CommandBase):
             return exit_deferred
 
     @defer.inlineCallbacks
-    def once_connected(self, _, stored_net, token_data, queue_name, outputs_file,
-                exit_deferred):
+    def once_connected(self, _, stored_net, token_data, queue_name,
+                outputs_file, exit_deferred):
         if queue_name is not None:
             channel = self.broker.channel
-            yield channel.queue_declare(queue=queue_name, durable=False,
-                    auto_delete=False, exclusive=True)
+            yield channel.queue_declare(queue=queue_name,
+                    durable=False, auto_delete=False, exclusive=True)
 
             handler = SubmitWorkflowMessageHandler(broker=self.broker,
                     queue_name=queue_name, stored_net=stored_net,
@@ -137,7 +137,7 @@ class SubmitWorkflowCommand(CommandBase):
             exit_deferred.callback(None)
 
     def add_done_place_observers(self, stored_net):
-        queue_name = generate_queue_name()
+        queue_name = generate_queue_name(stored_net.key)
 
         success_place = stored_net.place(1)
         failure_place = stored_net.place(2)
@@ -149,8 +149,8 @@ class SubmitWorkflowCommand(CommandBase):
 
         return queue_name
 
-def generate_queue_name():
-    return 'submit_flow_block_%s' % uuid.uuid4().hex
+def generate_queue_name(_uuid):
+    return 'submit_workflow_%s' % _uuid
 
 
 class SubmitWorkflowMessageHandler(Handler):
