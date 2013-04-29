@@ -130,7 +130,7 @@ class StoreOutputsAction(petri.TransitionAction):
                 operation_id, parallel_idx, input_data)
 
         store_outputs(input_data, net, operation_id, parallel_idx)
-        return None, defer.succeed(None)
+        return defer.succeed(None)
 
 
 class StoreInputsAsOutputsAction(InputsMixin, petri.TransitionAction):
@@ -144,4 +144,4 @@ class StoreInputsAsOutputsAction(InputsMixin, petri.TransitionAction):
                 net.key, int(operation_id), input_data)
 
         store_outputs(input_data, net, operation_id)
-        return None, defer.succeed(None)
+        return defer.succeed(None)

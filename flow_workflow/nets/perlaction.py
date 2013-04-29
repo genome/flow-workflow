@@ -82,7 +82,7 @@ class GenomeModelInputsAction(InputsMixin, petri.TransitionAction):
 
         token = net.create_token(data={"outputs": inputs}, data_type="output")
 
-        return token, defer.succeed(None)
+        return defer.succeed(token)
 
 
 class GenomeNet(GenomeEmptyNet):

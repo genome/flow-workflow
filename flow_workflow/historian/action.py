@@ -91,7 +91,7 @@ class WorkflowHistorianUpdateAction(petri.TransitionAction):
     def execute(self, active_tokens_key, net, service_interfaces):
         if env_is_perl_true(net, 'UR_DBI_NO_COMMIT'):
             LOG.debug('UR_DBI_NO_COMMIT is set, not updating status.')
-            return None, defer.succeed(None)
+            return defer.succeed(None)
 
 
         historian = service_interfaces['workflow_historian']
@@ -119,7 +119,11 @@ class WorkflowHistorianUpdateAction(petri.TransitionAction):
             deferred = historian.update(net_key=net_key, operation_id=operation_id,
                     **child_info)
             deferreds.append(deferred)
-        return None, defer.DeferredList(deferreds)
+
+        dlist = defer.DeferredList(deferreds)
+        execute_deferred = defer.Deferred()
+        dlist.addCallback(lambda _: execute_deferred.callback(None))
+        return execute_deferred
 
 def env_is_perl_true(net, varname):
     env = net.constant('environment')

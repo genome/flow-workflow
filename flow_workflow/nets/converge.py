@@ -28,7 +28,7 @@ class GenomeConvergeAction(InputsMixin, petri.TransitionAction):
                 output_properties)
 
         store_outputs(outputs, net, operation_id)
-        return None, defer.succeed(None)
+        return defer.succeed(None)
 
 
 class GenomeConvergeNet(GenomeEmptyNet):

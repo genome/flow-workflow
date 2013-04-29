@@ -197,7 +197,10 @@ class RunParallelByAction(InputsMixin, petri.TransitionAction):
                     data={"outputs": data}, data_type="output")
             deferreds.append(deferred)
 
-        return None, defer.DeferredList(deferreds)
+        dlist = defer.DeferredList(deferreds)
+        execute_deferred = defer.Deferred()
+        dlist.addCallback(lambda _: execute_deferred.callback(None))
+        return execute_deferred
 
 
 class BuildParallelByAction(InputsMixin, petri.TransitionAction):
@@ -241,7 +244,10 @@ class BuildParallelByAction(InputsMixin, petri.TransitionAction):
                     data_type="output", data={"outputs": data})
             deferreds.append(deferred)
 
-        return None, defer.DeferredList(deferreds)
+        dlist = defer.DeferredList(deferreds)
+        execute_deferred = defer.Deferred()
+        dlist.addCallback(lambda _: execute_deferred.callback(None))
+        return execute_deferred
 
 
 class GenomeParallelByNet(GenomeEmptyNet):
