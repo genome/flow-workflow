@@ -120,7 +120,7 @@ class WorkflowHistorianUpdateAction(petri.TransitionAction):
                     **child_info)
             deferreds.append(deferred)
 
-        dlist = defer.DeferredList(deferreds)
+        dlist = defer.gatherResults(deferreds)
         execute_deferred = defer.Deferred()
         dlist.addCallback(lambda _: execute_deferred.callback(None))
         return execute_deferred

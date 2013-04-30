@@ -197,7 +197,7 @@ class RunParallelByAction(InputsMixin, petri.TransitionAction):
                     data={"outputs": data}, data_type="output")
             deferreds.append(deferred)
 
-        dlist = defer.DeferredList(deferreds)
+        dlist = defer.gatherResults(deferreds)
         execute_deferred = defer.Deferred()
         dlist.addCallback(lambda _: execute_deferred.callback(None))
         return execute_deferred
@@ -244,7 +244,7 @@ class BuildParallelByAction(InputsMixin, petri.TransitionAction):
                     data_type="output", data={"outputs": data})
             deferreds.append(deferred)
 
-        dlist = defer.DeferredList(deferreds)
+        dlist = defer.gatherResults(deferreds)
         execute_deferred = defer.Deferred()
         dlist.addCallback(lambda _: execute_deferred.callback(None))
         return execute_deferred
