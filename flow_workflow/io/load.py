@@ -30,7 +30,7 @@ def extract_data_from_tokens(tokens):
     outputs = {}
 
     for token in tokens:
-        tok_outputs = token.data.get("outputs", {})
+        tok_outputs = token.data.get('workflow_data', {})
         outputs.update(tok_outputs)
 
     return outputs

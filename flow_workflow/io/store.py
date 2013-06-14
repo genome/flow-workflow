@@ -13,12 +13,12 @@ def store_variable(net, operation_id, parallel_idx, name, value):
     net.set_variable(key, value)
 
 
-def store_outputs(outputs, net, operation_id, parallel_idx):
-    if not outputs:
+def store_outputs(wf_data, net, operation_id, parallel_idx):
+    if not wf_data:
         return
 
-    for k, v in outputs.iteritems():
+    for k, v in wf_data.iteritems():
         store_variable(net, operation_id, parallel_idx, k, v)
 
     net.set_variable(common.op_outputs_variable_name(
-        operation_id, parallel_idx), outputs.keys())
+        operation_id, parallel_idx), wf_data.keys())

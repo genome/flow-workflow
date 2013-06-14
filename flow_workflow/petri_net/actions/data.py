@@ -19,7 +19,7 @@ class LoadDataAction(BasicActionBase):
         outputs = load.operation_outputs(net, operation_id, parallel_idx)
         data = {
             'parallel_idx': parallel_idx,
-            'outputs': outputs
+            'workflow_data': outputs
         }
 
         output_token = net.create_token(color=color_descriptor.color,
@@ -36,12 +36,12 @@ class StoreDataAction(BasicActionBase):
         operation_id = self.args["operation_id"]
         parallel_idx = active_tokens[0].data.get('parallel_idx', 0)
 
-        token_data = load.extract_data_from_tokens(active_tokens)
+        workflow_data = load.extract_data_from_tokens(active_tokens)
 
         LOG.debug("StoreOutputsAction (%s/%d color=%r) storing outputs: %r",
-                net.key, operation_id, parallel_idx, token_data)
+                net.key, operation_id, parallel_idx, workflow_data)
 
-        store.store_outputs(token_data, net, operation_id, parallel_idx)
+        store.store_outputs(workflow_data, net, operation_id, parallel_idx)
 
         output_token = net.create_token(color=color_descriptor.color,
                 color_group_idx=color_descriptor.group.idx,

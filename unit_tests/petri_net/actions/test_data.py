@@ -42,7 +42,7 @@ class DataActionTest(unittest.TestCase):
 
         expected_data = {
             'parallel_idx': self.parallel_idx,
-            'outputs': outputs,
+            'workflow_data': outputs,
         }
         operation_outputs.assert_called_once_with(self.net,
                 self.operation_id, self.parallel_idx)

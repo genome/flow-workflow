@@ -27,9 +27,9 @@ class GenomeConvergeAction(BasicActionBase):
         input_property_order = self.args["input_property_order"]
         output_properties = self.args["output_properties"]
 
-        token_data = load.extract_data_from_tokens(active_tokens)
+        workflow_data = load.extract_data_from_tokens(active_tokens)
 
-        outputs = order_outputs(token_data,
+        outputs = order_outputs(workflow_data,
                 input_property_order, output_properties)
 
         store.store_outputs(outputs, net, operation_id, parallel_idx)
