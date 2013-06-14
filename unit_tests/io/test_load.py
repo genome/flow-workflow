@@ -9,24 +9,26 @@ class LoadOperationDataTest(unittest.TestCase):
     def setUp(self):
         self.net = mock.Mock()
         self.operation_id = 12345
-        self.parallel_idx = 42
 
     def test_get_workflow_outputs(self):
         self.net.constant.return_value = self.operation_id
-        self.check_operation_outputs()
+        self.parallel_idx = 0
+        self.check_operation_outputs(load.get_workflow_outputs, self.net)
+        self.net.constant.assert_any_call('workflow_id')
 
     def test_operation_outputs(self):
-        self.check_operation_outputs()
+        self.parallel_idx = 42
+        self.check_operation_outputs(load.operation_outputs,
+                self.net, self.operation_id, self.parallel_idx)
 
-    def check_operation_outputs(self):
+    def check_operation_outputs(self, f, *args):
         output_names = ['a', 'b', 'c']
 
         operation_output_names = mock.Mock()
         operation_output_names.return_value = output_names
         with mock.patch('flow_workflow.io.common.operation_output_names',
                 new=operation_output_names):
-            results = load.operation_outputs(self.net,
-                    self.operation_id, self.parallel_idx)
+            results = f(*args)
 
         operation_output_names.assert_called_once_with(self.net,
                 self.operation_id, self.parallel_idx)
@@ -59,9 +61,6 @@ class LoadActionDataTest(unittest.TestCase):
     def setUp(self):
         self.net = mock.MagicMock()
         self.parallel_idx = 42
-
-    def test_action_inputs(self):
-        self.assertTrue(False)
 
     def test_collect_inputs_provided_prop_hash(self):
         source_values = {

@@ -36,11 +36,6 @@ def extract_data_from_tokens(tokens):
     return outputs
 
 
-def action_inputs(net, action, parallel_idx):
-    input_connections = action.args.get('input_connections', {})
-    return collect_inputs(net, input_connections, parallel_idx)
-
-
 def collect_inputs(net, input_connections, parallel_idx):
     inputs = {}
     for src_id, prop_hash in input_connections.iteritems():
