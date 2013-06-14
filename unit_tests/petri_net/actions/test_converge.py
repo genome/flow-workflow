@@ -1,3 +1,4 @@
+from action_base import TestGenomeActionMixin
 from flow_workflow.petri_net.actions import converge
 
 import fakeredis
@@ -25,26 +26,16 @@ class OrderOutputsTest(unittest.TestCase):
         self.assertEqual(expected_result, result)
 
 
-class ConvergeActionTest(unittest.TestCase):
+class ConvergeActionTest(TestGenomeActionMixin, unittest.TestCase):
     def setUp(self):
-        self.conn = fakeredis.FakeRedis()
-
-        self.operation_id = 12345
-
+        TestGenomeActionMixin.setUp(self)
         self.args = {
             'operation_id': self.operation_id,
             'input_property_order': ['b0', 'b1', 'b2', 'b3'],
             'output_properties': ['bar'],
         }
-        self.action = converge.GenomeConvergeAction.create(self.conn,
+        self.action = converge.GenomeConvergeAction.create(self.connection,
                 args=self.args)
-
-        self.parallel_idx = 42
-        self.net = mock.Mock()
-        self.color_descriptor = mock.Mock()
-        self.service_interfaces = {
-            'orchestrator': mock.Mock(),
-        }
 
         self.token = mock.MagicMock()
         self.token.data.get.return_value = self.parallel_idx

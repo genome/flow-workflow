@@ -1,19 +1,13 @@
+from action_base import TestGenomeActionMixin
 from flow_workflow.petri_net.actions import perl_action
 
 import copy
-import fakeredis
-import mock
 import unittest
 
 
-class PerlActionTest(unittest.TestCase):
+class PerlActionTest(TestGenomeActionMixin, unittest.TestCase):
     def setUp(self):
-        self.connection = fakeredis.FakeRedis()
-
-        self.net = mock.MagicMock()
-        self.net.key = 'netkey!'
-
-        self.operation_id = 12345
+        TestGenomeActionMixin.setUp(self)
 
         self.args = {
             'operation_id': self.operation_id,
@@ -24,13 +18,8 @@ class PerlActionTest(unittest.TestCase):
         self.action = perl_action.GenomeShortcutAction.create(
                 self.connection, args=self.args)
 
-    def tearDown(self):
-        self.connection.flushall()
-
-
     def test_command_line(self):
-        parallel_idx = 7
-        token_data = {'parallel_idx': parallel_idx}
+        token_data = {'parallel_idx': self.parallel_idx}
         command_line = self.action.command_line(self.net, token_data)
 
         self.assertEqual(map(str, ['flow', 'workflow-wrapper',
@@ -38,7 +27,7 @@ class PerlActionTest(unittest.TestCase):
                 '--method', 'shortcut',
                 '--action-id', self.args['action_id'],
                 '--operation-id', self.operation_id,
-                '--parallel-idx', parallel_idx]),
+                '--parallel-idx', self.parallel_idx]),
             command_line)
 
     def test_environment(self):

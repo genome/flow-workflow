@@ -1,3 +1,4 @@
+from action_base import TestGenomeActionMixin
 from flow_workflow.petri_net.actions import data
 
 import fakeredis
@@ -5,27 +6,17 @@ import mock
 import unittest
 
 
-class DataActionTest(unittest.TestCase):
+class DataActionTest(TestGenomeActionMixin, unittest.TestCase):
     def setUp(self):
-        self.operation_id = 12345
-        self.parallel_idx = 42
-
+        TestGenomeActionMixin.setUp(self)
         self.args = {'operation_id': self.operation_id}
 
         self.token = mock.MagicMock()
         self.token.data.get.return_value = self.parallel_idx
 
-        self.net = mock.Mock()
-        self.color_descriptor = mock.Mock()
-        self.service_interfaces = {
-            'orchestrator': mock.Mock(),
-        }
-
-        self.conn = fakeredis.FakeRedis()
-
 
     def test_load_action(self):
-        action = data.LoadDataAction.create(self.conn, args=self.args)
+        action = data.LoadDataAction.create(self.connection, args=self.args)
 
         outputs = {
             'foo': 'bar',
@@ -54,7 +45,7 @@ class DataActionTest(unittest.TestCase):
 
 
     def test_store_action(self):
-        action = data.StoreDataAction.create(self.conn, args=self.args)
+        action = data.StoreDataAction.create(self.connection, args=self.args)
 
         outputs = {
             'foo': 'bar',
