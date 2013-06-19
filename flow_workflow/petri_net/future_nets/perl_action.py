@@ -1,5 +1,5 @@
 from flow.petri_net import future
-from flow.shell_command.petri_net import future_nets
+from flow.shell_command.petri_net.future_nets import ShellCommandNet
 from flow_workflow.petri_net.actions import perl_action
 from flow_workflow.petri_net.future_nets.base import GenomeNetBase
 
@@ -7,9 +7,9 @@ import abc
 import copy
 
 
-class GenomePerlActionStepNetBase(future_nets.ShellCommandNet):
+class GenomePerlActionStepNetBase(ShellCommandNet):
     def __init__(self, name='', **action_args):
-        future_nets.ShellCommandNet.__init__(self,
+        ShellCommandNet.__init__(self,
                 name=name, **action_args)
 
         # XXX Attach historian transition observers
@@ -29,6 +29,10 @@ class GenomeShortcutNet(GenomePerlActionStepNetBase):
 
 
 class GenomePerlActionNet(GenomeNetBase):
+    """
+    A success-failure net that internally tries to shortcut and then to
+    execute a perl action.
+    """
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractproperty
@@ -47,11 +51,10 @@ class GenomePerlActionNet(GenomeNetBase):
             'stdout': stdout,
             'resources': resources,
         }
-        lsf_options = {'project': project_name}
-
         shortcut_net = self.add_subnet(GenomeShortcutNet,
                 **base_action_args)
 
+        lsf_options = {'project': project_name}
         execute_action_args = copy.copy(base_action_args)
         execute_action_args['lsf_options'] = lsf_options
         execute_net = self.add_subnet(GenomeExecuteNet,
