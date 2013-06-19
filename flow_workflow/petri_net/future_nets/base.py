@@ -1,11 +1,15 @@
 from flow.petri_net import future
-from flow.petri_net import success_failure_net
+from flow.petri_net.success_failure_net import SuccessFailureNet
 
 
 # XXX Maybe this turns into a historian mixin?
-class GenomeNetBase(success_failure_net.SuccessFailureNet):
+class GenomeNetBase(SuccessFailureNet):
+    """
+    Basically a success-failure net with operation_id and parent_operation_id and
+    the ability to construct historian_actions
+    """
     def __init__(self, name, operation_id, parent_operation_id=None):
-        success_failure_net.SuccessFailureNet.__init__(self, name=name)
+        SuccessFailureNet.__init__(self, name=name)
         self.operation_id = operation_id
         self.parent_operation_id = parent_operation_id
 
