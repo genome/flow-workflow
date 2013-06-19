@@ -107,6 +107,7 @@ class WorkflowEntity(object):
 
 
 class WorkflowOperation(WorkflowEntity):
+    # adds xml and log_dir
     def __init__(self, operation_id, xml, log_dir, parent):
         WorkflowEntity.__init__(self, operation_id, parent)
 
@@ -133,6 +134,7 @@ class WorkflowOperation(WorkflowEntity):
 
 
 class CommandOperation(WorkflowOperation):
+    # adds resources
     def __init__(self, operation_id, xml, log_dir, resources, parent):
         WorkflowOperation.__init__(self, operation_id, xml, log_dir, parent)
         self.perl_class = self._type_attributes['commandClass']
@@ -179,6 +181,7 @@ class CommandOperation(WorkflowOperation):
 
 
 class EventOperation(WorkflowOperation):
+    # adds resources
     def __init__(self, operation_id, xml, log_dir, resources, parent):
         WorkflowOperation.__init__(self, operation_id, xml, log_dir, parent)
         self.event_id = self._type_attributes['eventId']
@@ -203,6 +206,7 @@ class EventOperation(WorkflowOperation):
 
 
 class ConvergeOperation(WorkflowOperation):
+    # adds resources
     def __init__(self, operation_id, xml, log_dir, resources, parent):
         WorkflowOperation.__init__(self, operation_id, xml, log_dir, parent)
 
@@ -235,6 +239,7 @@ class ConvergeOperation(WorkflowOperation):
 
 
 class BlockOperation(WorkflowOperation):
+    # adds resources
     def __init__(self, operation_id, xml, log_dir, resources, parent):
         WorkflowOperation.__init__(self, operation_id, xml, log_dir, parent)
 
@@ -283,25 +288,10 @@ class OutputConnector(WorkflowEntity):
 
 
 class ModelOperation(WorkflowOperation):
+    # adds resources
     _input_connector_idx = 0
     _output_connector_idx = 1
     _first_operation_idx = 2
-
-    @property
-    def children(self):
-        result = []
-        for op in self.operations:
-            result.append(op)
-            result.extend(op.children)
-        return result
-
-    @property
-    def input_connector(self):
-        return self.operations[self._input_connector_idx]
-
-    @property
-    def output_connector(self):
-        return self.operations[self._output_connector_idx]
 
     def __init__(self, operation_id, xml, log_dir, resources, parent=None):
         self.resources = resources
@@ -320,6 +310,7 @@ class ModelOperation(WorkflowOperation):
 
         self.edges = {}
         self.data_arcs = defaultdict(lambda: defaultdict(dict))
+        # self.data_arcs[dst_id][src_id][dst_prop] = src_prop
 
 
         self.optype = xml.find("operationtype")
@@ -336,6 +327,23 @@ class ModelOperation(WorkflowOperation):
         for src, dst_set in self.edges.iteritems():
             for dst in dst_set:
                 self.rev_edges.setdefault(dst, set()).add(src)
+
+
+    @property
+    def children(self):
+        result = []
+        for op in self.operations:
+            result.append(op)
+            result.extend(op.children)
+        return result
+
+    @property
+    def input_connector(self):
+        return self.operations[self._input_connector_idx]
+
+    @property
+    def output_connector(self):
+        return self.operations[self._output_connector_idx]
 
     def _parse_workflow_simple(self):
         self._add_operation(self.xml)
