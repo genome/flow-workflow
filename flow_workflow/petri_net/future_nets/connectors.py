@@ -1,4 +1,4 @@
-from flow.petri_net import future
+from flow.petri_net.future import FutureAction
 from flow_workflow.petri_net.actions import data
 from flow_workflow.petri_net.future_nets.base import GenomeNetBase
 
@@ -14,9 +14,9 @@ class GenomeInputConnectorNet(GenomeNetBase):
 
         self.store_transition = self.bridge_places(
                 self.internal_start_place, self.internal_success_place,
-                name='input-connector-%s' % self.operation_id)
+                name='input-connector(%s)' % self.operation_id)
 
-        self.store_transition.action = future.FutureAction(
+        self.store_transition.action = FutureAction(
                 cls=data.StoreDataAction, args=args)
 
 
@@ -34,5 +34,5 @@ class GenomeOutputConnectorNet(GenomeNetBase):
                 name='output-connector-%s' % self.operation_id)
 
         # XXX This one is probably supposed to be LoadDataAction
-        self.store_transition.action = future.FutureAction(
+        self.store_transition.action = FutureAction(
                 cls=data.StoreDataAction, args=args)
