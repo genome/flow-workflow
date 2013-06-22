@@ -18,10 +18,16 @@ class GenomePerlAction(object):
 
     def environment(self, net):
         env = net.constant('environment', {})
-        return self._update_environment(net, env)
+        parent_id = '%s %s' % (net.key, self.args['operation_id'])
 
-    def command_line(self, net, token_data):
-        parallel_idx = token_data.get('parallel_idx', 0)
+        LOG.debug('Setting environment variable FLOW_WORKFLOW_PARENT_ID=%s',
+                parent_id)
+        env['FLOW_WORKFLOW_PARENT_ID'] = parent_id
+
+        return env
+
+    def command_line(self, net, workflow_data):
+        parallel_idx = workflow_data.get('parallel_idx', 0)
 
         return map(str, ['flow', 'workflow-wrapper',
                 '--action-type', self.args["action_type"],
@@ -29,16 +35,6 @@ class GenomePerlAction(object):
                 '--action-id', self.args["action_id"],
                 '--operation-id', self.args['operation_id'],
                 '--parallel-idx', parallel_idx ])
-
-
-    def _update_environment(self, net, env):
-        parent_id = '%s %s' % (net.key, self.args['operation_id'])
-        env['FLOW_WORKFLOW_PARENT_ID'] = parent_id
-
-        LOG.debug('Setting environment variable FLOW_WORKFLOW_PARENT_ID=%s',
-                parent_id)
-
-        return env
 
 
 class GenomeShortcutAction(GenomePerlAction, actions.ForkDispatchAction):
@@ -54,14 +50,3 @@ class GenomeForkExecuteAction(GenomeExecuteAction, actions.ForkDispatchAction):
 class GenomeLSFExecuteAction(GenomeExecuteAction, actions.LSFDispatchAction):
     pass
 
-
-# XXX This can just be put in lsf_options on net creation
-#    def _executor_options(self, input_data_key, net):
-#        executor_options = actions.LSFDispatchAction._executor_options(
-#                self, input_data_key, net)
-#
-#        lsf_project = net.constant('lsf_project')
-#        if lsf_project:
-#            executor_options['project'] = lsf_project
-#
-#        return executor_options
