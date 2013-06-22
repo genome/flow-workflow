@@ -1,4 +1,3 @@
-from flow.petri_net import future
 from flow.shell_command.petri_net.future_nets import ShellCommandNet
 from flow_workflow.petri_net.actions import perl_action
 from flow_workflow.petri_net.future_nets.base import GenomeNetBase
@@ -7,7 +6,7 @@ import abc
 import copy
 
 
-class GenomePerlActionStepNetBase(ShellCommandNet):
+class StepNetBase(ShellCommandNet):
     def __init__(self, name='', **action_args):
         ShellCommandNet.__init__(self,
                 name=name, **action_args)
@@ -15,16 +14,16 @@ class GenomePerlActionStepNetBase(ShellCommandNet):
         # XXX Attach historian transition observers
 
 
-class GenomeExecuteNet(GenomePerlActionStepNetBase):
+class GenomeExecuteNet(StepNetBase):
     def __init__(self, name='', remote_execute=True, **action_args):
         if remote_execute:
             self.DISPATCH_ACTION = perl_action.GenomeLSFExecuteAction
         else:
             self.DISPATCH_ACTION = perl_action.GenomeForkExecuteAction
 
-        GenomePerlActionStepNetBase.__init__(self, **action_args)
+        StepNetBase.__init__(self, **action_args)
 
-class GenomeShortcutNet(GenomePerlActionStepNetBase):
+class GenomeShortcutNet(StepNetBase):
     DISPATCH_ACTION = perl_action.GenomeShortcutAction
 
 
@@ -40,7 +39,7 @@ class GenomePerlActionNet(GenomeNetBase):
         pass
 
     def __init__(self, name, operation_id, input_connections,
-            stderr, stdout, resources,
+            stderr, stdout, resources, action_id
             remote_execute=True, project_name=''):
         GenomeNetBase.__init__(self, name=name, operation_id=operation_id)
 
@@ -50,6 +49,7 @@ class GenomePerlActionNet(GenomeNetBase):
             'stderr': stderr,
             'stdout': stdout,
             'resources': resources,
+            'action_id': action_id,
         }
         shortcut_net = self.add_subnet(GenomeShortcutNet,
                 **base_action_args)
