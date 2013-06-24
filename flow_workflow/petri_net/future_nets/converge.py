@@ -17,7 +17,7 @@ class GenomeConvergeNet(GenomeNetBase):
 
         self.converge_transition = self.bridge_places(
                 self.internal_start_place, self.internal_success_place,
-                name='converge-%s' % self.operation_id)
+                name='converge(%s)' % self.operation_id)
 
         self.converge_transition.action = future.FutureAction(
                 cls=GenomeConvergeAction, args=args)
