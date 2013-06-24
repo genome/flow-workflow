@@ -8,7 +8,8 @@ LOG = logging.getLogger(__name__)
 
 
 class GenomePerlAction(object):
-    required_arguments = ['operation_id', 'action_type', 'action_id']
+    required_arguments = ['operation_id', 'input_connections', 
+            'action_type', 'action_id']
 
     @property
     def method(self):
@@ -27,14 +28,16 @@ class GenomePerlAction(object):
         return env
 
     def command_line(self, net, workflow_data):
-        parallel_idx = workflow_data.get('parallel_idx', 0)
-
-        return map(str, ['flow', 'workflow-wrapper',
-                '--action-type', self.args["action_type"],
+        cmd_line = map(str, ['flow', 'workflow-wrapper',
                 '--method', self.method,
+                '--action-type', self.args["action_type"],
                 '--action-id', self.args["action_id"],
                 '--operation-id', self.args['operation_id'],
-                '--parallel-idx', parallel_idx ])
+                '--input-connections', self.args['input_connections']])
+        parallel_idx = workflow_data.get('parallel_idx', None)
+        if parallel_idx is not None:
+            cmd_line.extend(['--parallel-idx', parallel_idx])
+        return cmd_line
 
 
 class GenomeShortcutAction(GenomePerlAction, actions.ForkDispatchAction):

@@ -39,17 +39,18 @@ class GenomePerlActionNet(GenomeNetBase):
         pass
 
     def __init__(self, name, operation_id, input_connections,
-            stderr, stdout, resources, action_id
+            stderr, stdout, resources, action_id,
             remote_execute=True, project_name=''):
         GenomeNetBase.__init__(self, name=name, operation_id=operation_id)
 
         base_action_args = {
             'operation_id': operation_id,
             'input_connections': input_connections,
+            'action_id': action_id,
+            'action_type':self.action_type,
             'stderr': stderr,
             'stdout': stdout,
             'resources': resources,
-            'action_id': action_id,
         }
         shortcut_net = self.add_subnet(GenomeShortcutNet,
                 **base_action_args)
