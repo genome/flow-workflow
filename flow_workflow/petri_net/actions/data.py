@@ -8,43 +8,24 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
-
-class LoadDataAction(BasicActionBase):
-    required_arguments = ["operation_id"]
-
-    def execute(self, net, color_descriptor, active_tokens, service_interfaces):
-        operation_id = self.args["operation_id"]
-        parallel_idx = active_tokens[0].data.get('parallel_idx', 0)
-
-        outputs = load.operation_outputs(net, operation_id, parallel_idx)
-        data = {
-            'parallel_idx': parallel_idx,
-            'workflow_data': outputs
-        }
-
-        output_token = net.create_token(color=color_descriptor.color,
-                color_group_idx=color_descriptor.group.idx,
-                data=data)
-
-        return [output_token], defer.succeed(None)
-
-
-class StoreDataAction(BasicActionBase):
-    required_arguments = ["operation_id"]
+class StoreInputsAsOutputsAction(BasicActionBase):
+    required_arguments = ["operation_id", "input_connections"]
 
     def execute(self, net, color_descriptor, active_tokens, service_interfaces):
         operation_id = self.args["operation_id"]
-        parallel_idx = active_tokens[0].data.get('parallel_idx', 0)
+        input_connections = self.args["input_connections"]
 
         workflow_data = load.extract_data_from_tokens(active_tokens)
+        parallel_idx = workflow_data['parallel_idx']
 
-        LOG.debug("StoreOutputsAction (%s/%d color=%r) storing outputs: %r",
-                net.key, operation_id, parallel_idx, workflow_data)
+        inputs = io.load_input(net=net, input_connections=input_connections,
+                parallel_idx=parallel_idx)
+        io.store_outputs(net=net, operation_id=operation_id,
+                outputs=inputs, parallel_idx=parallel_idx)
 
-        store.store_outputs(workflow_data, net, operation_id, parallel_idx)
-
+        data = {'workflow_data':workflow_data}
         output_token = net.create_token(color=color_descriptor.color,
                 color_group_idx=color_descriptor.group.idx,
-                data={'parallel_idx': parallel_idx})
+                data=workflow_data)
 
         return [output_token], defer.succeed(None)
