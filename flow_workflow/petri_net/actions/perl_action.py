@@ -32,8 +32,11 @@ class GenomePerlAction(object):
                 '--method', self.method,
                 '--action-type', self.args["action_type"],
                 '--action-id', self.args["action_id"],
+                '--net-key', net.key,
                 '--operation-id', self.args['operation_id'],
-                '--input-connections', self.args['input_connections']])
+                '--input-connections',
+                        json.dumps(self.args['input_connections'])]
+        )
         parallel_idx = workflow_data.get('parallel_idx', None)
         if parallel_idx is not None:
             cmd_line.extend(['--parallel-idx', parallel_idx])

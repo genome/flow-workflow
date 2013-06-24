@@ -2,7 +2,9 @@ from flow.commands.base import CommandBase
 from flow.configuration.settings.injector import setting
 from flow.util.logannotator import LogAnnotator
 from injector import inject
+from flow.configuration.inject.redis_conf import RedisConfiguration
 
+import flow.interfaces
 import copy
 import json
 import logging
@@ -17,57 +19,97 @@ def _build_command_cmdline(parsed_arguments, inputs_file, outputs_file):
 
 
 def _build_event_cmdline(parsed_arguments, inputs_file, outputs_file):
-    return ["event", parsed_arguments.method, parsed_arguments.event_id, outputs_file]
+    return ["event", parsed_arguments.method, parsed_arguments.event_id,
+            outputs_file]
 
+CMDLINE_BUILDERS = {
+        'command':_build_command_cmdline,
+        'event':_build_event_cmdline,
+        }
 
-@inject(perl_wrapper=setting('workflow.perl_wrapper'))
+@inject(perl_wrapper=setting('workflow.perl_wrapper'),
+        storage=flow.interfaces.IStorage,)
 class WorkflowWrapperCommand(CommandBase):
-    # Amazing that this doesn't need anything.
-    injector_modules = [ ]
+    injector_modules = [RedisConfiguration]
 
     @staticmethod
     def annotate_parser(parser):
-        subparsers = parser.add_subparsers()
-        cmd_parser = subparsers.add_parser("command")
         cmd_parser.add_argument("method", help="shortcut or execute")
-        cmd_parser.add_argument("perl_command", help="The genome command class")
-        cmd_parser.add_argument("--inputs-file", default=None,
-                help="Path to a file containing inputs in json format")
-        cmd_parser.add_argument("--outputs-file", default=None,
-                help="Path to a file containing outputs in json format")
-        cmd_parser.add_argument("--parallel-by")
-        cmd_parser.add_argument("--parallel-by-index", type=int)
-        cmd_parser.add_argument("--reply", action="store_true", default=False)
-        cmd_parser.set_defaults(build_cmdline=_build_command_cmdline)
+        cmd_parser.add_argument('action-type', help='event or command')
+        cmd_parser.add_argument('action-id', help='event_id or perl_class')
 
-        event_parser = subparsers.add_parser("event")
-        event_parser.add_argument("method", help="shortcut or execute")
-        event_parser.add_argument("event_id", help="The event id")
-        event_parser.add_argument("--inputs-file", default=None,
-                help="Path to a file containing inputs in json format")
-        event_parser.add_argument("--outputs-file", default=None,
-                help="Path to a file containing outputs in json format")
-        event_parser.set_defaults(build_cmdline=_build_event_cmdline)
+        cmd_parser.add_argument('net_key', help='used to look up inputs')
+        cmd_parser.add_argument('operation-id', type=int,
+                help='used to look up inputs')
+        cmd_parser.add_argument('input-connections',
+                help='used to look up inputs')
+        cmd_parser.add_argument('parallel_idx', default=None,
+                help='used to look up inputs')
 
+
+    @defer.inlineCallbacks
     def _execute(self, parsed_arguments):
-        cmdline = copy.copy(self.perl_wrapper)
+        net_key = parsed_arguments.net_key
+        operation_id = parsed_arguments.operation_id
+        input_connections = json.loads(parsed_arguments.input_connections)
+        parallel_idx = parsed_arguments.parallel_idx
 
-        if parsed_arguments.inputs_file is None:
-            LOG.debug('No inputs file specified, using /dev/null')
-            parsed_arguments.inputs_file = "/dev/null"
+        net = rom.get_object(parsed_arguments.net_key)
+        # load inputs from redis
+        inputs = self._load_inputs(storage=storage,
+                net=net, operation_id=operation_id,
+                input_connections=input_connections,
+                parallel_idx=parallel_idx)
 
-        cmdline.extend(parsed_arguments.build_cmdline(parsed_arguments,
-                parsed_arguments.inputs_file, parsed_arguments.outputs_file))
+        with NamedTemporaryFile() as inputs_file:
+            with NamedTemporaryFile() as outputs_file:
+                # write inputs to file
+                self._write_inputs(inputs, inputs_file)
 
-        LOG.info("Calling perl wrapper: %s", cmdline)
-        self.log_annotator = LogAnnotator(cmdline)
-        deferred = self.log_annotator.start()
-        deferred.addCallback(self._finish_up, parsed_arguments)
-        return deferred
+                cmdline = copy.copy(self.perl_wrapper)
+                cmdline_builder = CMDLINE_BUILDERS[parsed_arguments.action_type]
+                cmdline.extend(cmdline_builder(parsed_arguments, inputs_file,
+                    outputs_file))
 
-    def _finish_up(self, exit_code, parsed_arguments):
-        self.exit_code = exit_code
+                # XXX future
+                #process_monitor = ProcessMonitor(os.getpid())
+                #process_monitor.start()
 
-        LOG.debug('Perl wrapper exited with code: %d', exit_code)
-        if exit_code == 0:
-            outputs = json.load(open(parsed_arguments.outputs_file))
+                LOG.info("On host %s: executing %s", platform.node(),
+                        " ".join(cmdline))
+                logannotator = LogAnnotator(cmdline)
+                self.exit_code = yield logannotator.start()
+
+                if self.exit_code == 0:
+                    # read outputs from file
+                    outputs = self._read_outputs(outputs_file)
+
+                    # store outputs in redis
+                    self._store_outputs(storage=storage, net=net,
+                            operation_id=operation_id, outputs=outputs,
+                            parallel_idx=parallel_idx)
+                else:
+                    LOG.warning("Non-zero exit-code: %s from perl_wrapper.", %
+                            self.exit_code)
+
+        @staticmethod
+        def _load_inputs(storage, net, operation_id, input_connections, parallel_idx):
+            inputs = io.load_input(net=net,
+                input_connections=input_connections,
+                parallel_index=parallel_index)
+            LOG.debug("Input values: %s", inputs)
+            return inputs
+
+        @staticmethod
+        def _write_inputs(inputs, infile):
+            json.dump(inputs, infile)
+            infile.flush()
+
+        @staticmethod
+        def _read_outputs(outfile):
+            return json.load(outfile)
+
+        @staticmethod
+        def _store_outputs(storage, net, operation_id, outputs, parallel_idx):
+            outputs = io.store_outputs(net=net, operation_id=operation_id,
+                    outputs=outputs, parallel_idx=parallel_idx)
