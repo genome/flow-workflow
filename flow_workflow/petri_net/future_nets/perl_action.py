@@ -40,8 +40,9 @@ class GenomePerlActionNet(GenomeNetBase):
 
     def __init__(self, name, operation_id, input_connections,
             stderr, stdout, resources, action_id,
-            remote_execute=True, project_name=''):
-        GenomeNetBase.__init__(self, name=name, operation_id=operation_id)
+            remote_execute=True, project_name='', parent_operation_id=None):
+        GenomeNetBase.__init__(self, name=name, operation_id=operation_id,
+                parent_operation_id=parent_operation_id)
 
         base_action_args = {
             'operation_id': operation_id,
