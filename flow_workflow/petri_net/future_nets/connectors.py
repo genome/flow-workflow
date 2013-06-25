@@ -8,7 +8,7 @@ class GenomeConnectorBase(GenomeNetBase):
         GenomeNetBase.__init__(self, **kwargs)
 
         args = {
-            "operation_id": self.operation_id,
+            "operation_id": self._action_arg_operation_id,
             "input_connections": input_connections,
         }
 
@@ -19,8 +19,18 @@ class GenomeConnectorBase(GenomeNetBase):
         self.store_transition.action = FutureAction(
                 cls=data.StoreInputsAsOutputsAction, args=args)
 
+
 class GenomeInputConnectorNet(GenomeConnectorBase):
     name = 'input-connector'
 
+    @property
+    def _action_arg_operation_id(self):
+        self.operation_id
+
+
 class GenomeOutputConnectorNet(GenomeConnectorBase):
     name = 'output-connector'
+
+    @property
+    def _action_arg_operation_id(self):
+        self.parent.operation_id
