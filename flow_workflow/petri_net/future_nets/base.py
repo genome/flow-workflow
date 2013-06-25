@@ -1,35 +1,30 @@
-from flow.petri_net import future
+from flow.petri_net.future_net import FutureNet
 from flow.petri_net.success_failure_net import SuccessFailureNet
 
 
-# XXX Maybe this turns into a historian mixin?
-class GenomeNetBase(SuccessFailureNet):
-    """
-    Basically a success-failure net with operation_id and parent_operation_id and
-    the ability to construct historian_actions
-    """
+class SimplifiedSuccessFailureNet(FutureNet):
+    def __init__(self, name=''):
+        FutureNet.__init__(self, name=name)
+
+        # Internal -- subclasses should connect to these
+        self.internal_start_transition = self.add_basic_transition('internal-start')
+
+        self.internal_failure_place = self.add_place('internal-failure')
+        self.internal_success_place = self.add_place('internal-success')
+
+        # Transitions to observe -- owners and subclasses may observe these
+        self.start_transition = self.add_basic_transition(name='start')
+        self.bridge_transitions(self.start_transition, self.internal_start_transition)
+
+        self.failure_transition = self.add_basic_transition(name='failure')
+        self.failure_transition.add_arc_in(self.internal_failure_place)
+
+        self.success_transition = self.add_basic_transition(name='success')
+        self.failure_transition.add_arc_in(self.internal_success_place)
+
+
+class GenomeNetBase(SimplifiedSuccessFailureNet):
     def __init__(self, name, operation_id, parent_operation_id=None):
-        SuccessFailureNet.__init__(self, name=name)
+        SimplifiedSuccessFailureNet.__init__(self, name=name)
         self.operation_id = operation_id
         self.parent_operation_id = parent_operation_id
-
-
-    def historian_action(self, status, **kwargs):
-        info = {"id": self.operation_id,
-                "name": self.name,
-                "status": status,
-                "parent_net_key": None,
-                "parent_operation_id": self.parent_operation_id}
-
-        # XXX the name 'parallel_index' is suspicious
-        optional_attrs = ['parent_net_key',
-                'peer_operation_id', 'parallel_index']
-        for attr in optional_attrs:
-            value = getattr(self, attr, None)
-            if value is not None:
-                info[attr] = value
-
-        args = {"children_info": [info]}
-        args.update(kwargs)
-
-        return future.FutureAction(cls=WorkflowHistorianUpdateAction, args=args)
