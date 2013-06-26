@@ -79,6 +79,13 @@ class ModelOperation(WorkflowOperation):
             src_id = src_op.operation_id
             self.data_arcs[dst_id][src_id][dst_prop] = src_prop
 
+    def _get_output_properties(self, operation_id):
+        input_connections = self.data_arcs[operation_id]
+        output_properties = set()
+        for mapping in input_connections.values():
+            output_properties.update(mapping.keys())
+        return output_properties
+
     @property
     def children(self):
         result = []
@@ -105,14 +112,16 @@ class ModelOperation(WorkflowOperation):
         # generate the subnets
         subnets = {}
         for name, operation in self.operations.iteritems():
+            operation_id = operation.operation_id
             if operation is self.input_connector:
                 op_input_connections = input_connections
             else:
-                op_input_connections = self.data_arcs.get(
-                        operation.operation_id)
+                op_input_connections = self.data_arcs.get(operation_id)
             op_resources = resources.get(name, {})
+            op_output_properties = self._get_output_properties(operation_id)
             subnets[operation] = operation.net(super_net=model_net,
                     input_connections=op_input_connections,
+                    output_properties=op_output_properties,
                     resources=op_resources)
 
         # model_net(start) -> input_connector(start)
