@@ -126,12 +126,17 @@ class ModelOperation(WorkflowOperation):
 
         # model_net(start) -> input_connector(start)
         ic_net = subnets[self.input_connector]
-        model_net.bridge_transitions(model_net.internal_start_transition,
-                ic_net.start_transition)
+        model_net.starting_place = model_net.bridge_transitions(
+                model_net.internal_start_transition,
+                ic_net.start_transition,
+                name='starting')
 
         # output_connector(success) -> model_net(success)
         oc_net = subnets[self.output_connector]
-        model_net.internal_success_place.add_arc_in(oc_net.success_transition)
+        model_net.succeeding_place = model_net.bridge_transitions(
+                oc_net.success_transition,
+                model_net.internal_success_transition,
+                name='succeeding')
 
         for src_op, dst_set in self.edges.iteritems():
             src_net = subnets[src_op]
