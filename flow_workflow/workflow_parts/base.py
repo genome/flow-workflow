@@ -27,14 +27,29 @@ class Workflow(object):
                 xml_etree, log_dir=None, resources=resources)
 
         self.outer_net = SuccessFailureNet(name=self.model.name)
+        self.outer_net.wrap_in_places()
+
         self.inner_net = self.model.net(super_net=self.outer_net)
 
-        outer_net.bridge_places(inner_net.start_place,
-                outer_net.internal_start_place)
-        outer_net.bridge_places(inner_net.success_place,
-                outer_net.internal_success_place)
-        outer_net.bridge_places(inner_net.failure_place,
-                outer_net.internal_failure_place)
+        outer_net.starting_place = outer_net.bridge_transitions(
+                outer_net.internal_start_transition,
+                inner_net.start_transition,
+                name='starting')
+        outer_net.succeeding_place = outer_net.bridge_transitions(
+                inner_net.success_transition,
+                outer_net.internal_success_transition,
+                name='succeeding')
+        outer_net.failing_place = outer_net.bridge_transitions(
+                inner_net.failure_transition,
+                outer_net.internal_failure_transition,
+                name='failing')
+
+        #outer_net.bridge_places(inner_net.start_place,
+        #        outer_net.internal_start_place)
+        #outer_net.bridge_places(inner_net.success_place,
+        #        outer_net.internal_success_place)
+        #outer_net.bridge_places(inner_net.failure_place,
+        #        outer_net.internal_failure_place)
 
     def get_variables_and_constants(self):
         variables = {}
