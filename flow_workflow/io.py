@@ -78,7 +78,7 @@ def _output_variable_name(operation_id, property, parallel_id=None):
     else:
         parallel_part = ''
         for key in sorted(parallel_id.keys()):
-            parallel_part += '|%s:%s' % key, parallel_id[key]
+            parallel_part += '|%s:%s' % (key, parallel_id[key])
 
         return base + parallel_part
 
