@@ -12,10 +12,10 @@ def extract_workflow_data(tokens):
     return outputs
 
 
-def load_input(net, input_connections, name=None, parallel_idx=None):
+def load_input(net, input_connections, name=None, parallel_id=None):
     """
     Return the input <name>d from the <net> for an operation when given its
-    <input_connections> and <parallel_idx>.  If name is None then all
+    <input_connections> and <parallel_id>.  If name is None then all
     inputs are returned as a dictionary keyed on name.
 
     input_connections[src_operation_id][property] = src_property
@@ -28,7 +28,7 @@ def load_input(net, input_connections, name=None, parallel_idx=None):
                         net=net,
                         operation_id=src_id,
                         property=src_prop,
-                        parallel_idx=parallel_idx)
+                        parallel_id=parallel_id)
                 if name == dst_prop:
                     return value
                 inputs[dst_prop] = value
@@ -39,24 +39,24 @@ def load_input(net, input_connections, name=None, parallel_idx=None):
     else:
         return inputs
 
-def load_output(net, operation_id, property, parallel_idx=None):
+def load_output(net, operation_id, property, parallel_id=None):
     varname = _output_variable_name(operation_id=operation_id,
-            property=property, parallel_idx=parallel_idx)
+            property=property, parallel_id=parallel_id)
     value = net.variable(varname)
     return value
 
 
-def store_output(net, operation_id, property, value, parallel_idx=None):
+def store_output(net, operation_id, property, value, parallel_id=None):
     varname = _output_variable_name(operation_id=operation_id,
             property=property,
-            parallel_idx=parallel_idx)
+            parallel_id=parallel_id)
     LOG.debug("Setting output (%s) from operation (%s) on net (%s) via %s = %s",
             property, operation_id, net.key, varname, value)
 
     net.set_variable(varname, value)
 
 
-def store_outputs(net, operation_id, outputs, parallel_idx=None):
+def store_outputs(net, operation_id, outputs, parallel_id=None):
     if not outputs:
         return
 
@@ -65,17 +65,21 @@ def store_outputs(net, operation_id, outputs, parallel_idx=None):
                 operation_id=operation_id,
                 property=name,
                 value=value,
-                parallel_idx=parallel_idx)
+                parallel_id=parallel_id)
 
-def _output_variable_name(operation_id, property, parallel_idx=None):
+def _output_variable_name(operation_id, property, parallel_id=None):
     """
     Operation outputs are stored on the net.  This constructs the name of
     the variable where they are stored.
     """
     base = "_wf_outp_%s_%s" % (int(operation_id), property)
-    if parallel_idx is None:
+    if parallel_id is None:
         return base
     else:
-        return base + "_%s" % int(parallel_idx)
+        parallel_part = ''
+        for key in sorted(parallel_id.keys()):
+            parallel_part += '|%s:%s' % key, parallel_id[key]
+
+        return base + parallel_part
 
 

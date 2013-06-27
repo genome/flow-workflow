@@ -44,7 +44,8 @@ class GenomeParallelByNet(GenomeNetBase):
                 action=join_action)
         self.bridge_transitions(target_net.success_transition,
                 self.join_transition)
-        self.join_transition.add_arc_out(self.success_place)
+        self.bridge_transitions(self.join_transition,
+                self.internal_success_transition)
 
         # fail transition
         target_fail_action = FutureAction(cls=pb.ParallelByFail)
@@ -53,4 +54,5 @@ class GenomeParallelByNet(GenomeNetBase):
                 action=fail_action)
         self.bridge_transitions(target_net.failure_transition,
                 self.target_fail_transition)
-        self.fail_transition.add_arc_out(self.internal_failure_place)
+        self.bridge_transitions(self.target_fail_transition,
+                self.internal_failure_transition)
