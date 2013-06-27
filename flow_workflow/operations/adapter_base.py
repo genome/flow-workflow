@@ -6,9 +6,33 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
-def log_file_name(name):
+MAX_FILENAME_LEN = 256
+
+
+def clean_log_file_name(name):
     base = re.sub("[^A-Za-z0-9_.-]+", "_", name)[:MAX_FILENAME_LEN]
     return re.sub("^_*|_*$", "", base)
+
+def parse_xml(xml):
+    name = xml.attrib["name"]
+    type_nodes = xml.findall("operationtype")
+    if len(type_nodes) != 1:
+        raise ValueError(
+            "Wrong number of <operationtype> tags in operation %s" % name)
+
+    type_node = type_nodes[0]
+    operation_attributes = xml.attrib
+    type_attributes = type_node.attrib
+    return name, type_node, operation_attributes, type_attributes
+
+def determine_log_paths(name, operation_id, log_dir):
+    basename = clean_log_file_name(name)
+    out_file = "%s.%s.out" % (basename, operation_id)
+    err_file = "%s.%s.err" % (basename, operation_id)
+    stdout_log_file = os.path.join(log_dir, out_file)
+    stderr_log_file = os.path.join(log_dir, err_file)
+    return stdout_log_file, stderr_log_file
+
 
 class AdapterBase(object):
     def __init__(self, adapter_factory, operation_id, xml, log_dir, parent):
@@ -18,27 +42,19 @@ class AdapterBase(object):
         self.parent_id = self.parent.operation_id if parent else None
 
         self.xml = xml
-        type_nodes = xml.findall("operationtype")
-        self.name = xml.attrib["name"]
-        if len(type_nodes) != 1:
-            raise ValueError(
-                "Wrong number of <operationtype> tags in operation %s" %
-                self.name
-        )
-
-        self._type_node = type_nodes[0]
-        self._operation_attributes = xml.attrib
-        self._type_attributes = self._type_node.attrib
+        name, type_node, operation_attributes, type_attributes = parse_xml(xml)
+        self.name = name
+        self._type_node = type_node
+        self._operation_attributes = operation_attributes
+        self._type_attributes = type_attributes
 
         self.log_dir = log_dir
-        basename = log_file_name(self.name)
-        out_file = "%s.%d.out" % (basename, operation_id)
-        err_file = "%s.%d.err" % (basename, operation_id)
-        self.stdout_log_file = os.path.join(log_dir, out_file)
-        self.stderr_log_file = os.path.join(log_dir, err_file)
+        stdout, stderr = determine_log_paths(name, operation_id, log_dir)
+        self.stdout_log_file = stdout
+        self.stderr_log_file = stderr
 
-
-    def net(self, super_net, input_connections=None):
+    def net(self, super_net, output_properties=None, input_connections=None,
+            resources=None):
         raise NotImplementedError("net not implemented in %s" %
                                   self.__class__.__name__)
 
