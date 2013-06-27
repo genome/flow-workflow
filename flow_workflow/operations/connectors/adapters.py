@@ -1,22 +1,14 @@
-from flow_workflow.workflow_parts.base import WorkflowOperation
+from flow_workflow.operations.pass_thru_adapter import PassThruAdapter
+from flow_workflow.operations.connectors.future_nets import (InputConnectorNet,
+        OutputConnectorNet)
 
-def net_class_kwargs(operation):
-    return {
-            'name':operation.name,
-            'operation_id':operation.operation_id,
-            'input_connections':input_connections,
-            'parent_operation_id':operation.parent.operation_id,
-            }
+import logging
 
-class InputConnector(WorkflowOperation):
-    def net(self, super_net, input_connections=None, output_properties=None,
-            resources=None):
-        kwargs = net_class_kwargs(self, input_connections, resources)
-        return super_net.add_subnet(GenomeInputConnectorNet, **kwargs)
 
-class OutputConnector(WorkflowOperation):
-    def net(self, super_net, input_connections=None, output_properties=None,
-            resources=None):
-        kwargs = net_class_kwargs(self, input_connections, resources)
-        return super_net.add_subnet(GenomeOutputConnectorNet, **kwargs)
+LOG = logging.getLogger(__name__)
 
+class InputConnectorAdapter(PassThruAdapter):
+    net_class = InputConnectorNet
+
+class OutputConnectorAdapter(PassThruAdapter):
+    net_class = OutputConnectorNet

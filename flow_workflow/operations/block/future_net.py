@@ -1,4 +1,9 @@
-from flow_workflow.petri_net.future_nets.connectors import GenomeConnectorBase
+from flow_workflow.operations.pass_thru_net import PassThruNet
 
-class GenomeBlockNet(GenomeConnectorBase):
+import logging
+
+
+LOG = logging.getLogger(__name__)
+
+class BlockNet(PassThruNet):
     name = 'block'

@@ -1,16 +1,10 @@
-from flow_workflow.workflow_parts.base import WorkflowOperation
-from flow_workflow.petri_net.future_nets.block import GenomeBlockNet
+from flow_workflow.operations.pass_thru_adapter import PassThruAdapter
+from flow_workflow.operations.block.future_net import BlockNet
 
-def net_class_kwargs(operation):
-    return {
-            'name':operation.name,
-            'operation_id':operation.operation_id,
-            'input_connections':input_connections,
-            'parent_operation_id':operation.parent.operation_id,
-            }
+import logging
 
-class BlockOperation(WorkflowOperation):
-    def net(self, super_net, input_connections=None, output_properties=None,
-            resources=None):
-        kwargs = net_class_kwargs(self, input_connections, resources)
-        return super_net.add_subnet(GenomeBlockNet, **kwargs)
+
+LOG = logging.getLogger(__name__)
+
+class BlockAdapter(PassThruAdapter):
+    net_class = BlockNet

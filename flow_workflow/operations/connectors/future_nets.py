@@ -1,34 +1,14 @@
-from flow.petri_net.future import FutureAction
-from flow_workflow.petri_net.actions import data
-from flow_workflow.petri_net.future_nets.base import GenomeNetBase
+from flow_workflow.operations.pass_thru_net import PassThruNet
+
+import logging
 
 
-class GenomeConnectorBase(GenomeNetBase):
-    def __init__(self, input_connections, **kwargs):
-        GenomeNetBase.__init__(self, **kwargs)
+LOG = logging.getLogger(__name__)
 
-        args = {
-            "operation_id": self._action_arg_operation_id,
-            "input_connections": input_connections,
-        }
-
-        self.store_transition = self.bridge_places(
-                self.internal_start_place, self.internal_success_place,
-                name=self.name + '(%s)' % self.operation_id)
-
-        self.store_transition.action = FutureAction(
-                cls=data.StoreInputsAsOutputsAction, args=args)
-
-
-class GenomeInputConnectorNet(GenomeConnectorBase):
+class InputConnectorNet(PassThruNet):
     name = 'input-connector'
 
-    @property
-    def _action_arg_operation_id(self):
-        self.operation_id
-
-
-class GenomeOutputConnectorNet(GenomeConnectorBase):
+class OutputConnectorNet(PassThruNet):
     name = 'output-connector'
 
     @property
