@@ -1,8 +1,11 @@
-from flow.petri_net.future_net import FutureNet
 from flow.petri_net.success_failure_net import SuccessFailureNet
 
+import logging
 
-class GenomeNetBase(SuccessFailureNet):
+
+LOG = logging.getLogger(__name__)
+
+class WorkflowNetBase(SuccessFailureNet):
     def __init__(self, name, operation_id, parent_operation_id=None):
         SuccessFailureNet.__init__(self, name=name)
         self.operation_id = operation_id
