@@ -1,16 +1,21 @@
 from collections import defaultdict
-from flow_workflow.workflow_parts.base import WorkflowOperation
+from flow_workflow.operations.adapter_base import AdapterBase
 
-class ModelOperation(WorkflowOperation):
-    def __init__(self, part_factory, operation_id, xml, log_dir, parent=None):
-        log_dir = log_dir or xml.attrib.get("logDir", ".")
-        WorkflowOperation.__init__(self, part_factory=part_factory,
+import logging
+
+
+LOG = logging.getLogger(__name__)
+
+class ModelAdapter(AdapterBase):
+    def __init__(self, adapter_factory, operation_id, xml, log_dir, parent=None):
+        log_:wqdir = log_dir or xml.attrib.get("logDir", ".")
+        AdapterBase.__init__(self, adapter_factory=adapter_factory,
                 operation_id=operation_id, xml=xml, log_dir=log_dir,
                 parent=parent)
 
         self.operations = {}
-        self.input_connector = self.part_factory.create("InputConnector", parent=self),
-        self.output_connector = self.part_factory.create("OutputConnector",
+        self.input_connector = self.adapter_factory.create("InputConnector", parent=self),
+        self.output_connector = self.adapter_factory.create("OutputConnector",
                     workflow_id=self.operation_id, parent=self),
         self._add_operation(self.input_connector)
         self._add_operation(self.output_connector)
@@ -40,7 +45,7 @@ class ModelOperation(WorkflowOperation):
         #self.edges = transitive_reduction(self.edges)
 
     def _add_operation_from_xml(self, operation_xml):
-        operation = self.part_factory.create_from_xml(xml=operation_xml,
+        operation = self.adapter_factory.create_from_xml(xml=operation_xml,
                 log_dir=self.log_dir,
                 parent=self)
         self._add_operation(operation)
