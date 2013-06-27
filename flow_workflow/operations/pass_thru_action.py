@@ -1,14 +1,13 @@
 from flow.petri_net.actions.base import BasicActionBase
-from flow_workflow.io import load
-from flow_workflow.io import store
 from twisted.internet import defer
 
+import io
 import logging
 
 
 LOG = logging.getLogger(__name__)
 
-class StoreInputsAsOutputsAction(BasicActionBase):
+class PassThruAction(BasicActionBase):
     required_arguments = ["operation_id", "input_connections"]
 
     def execute(self, net, color_descriptor, active_tokens, service_interfaces):
