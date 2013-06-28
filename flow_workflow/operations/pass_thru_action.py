@@ -1,7 +1,7 @@
 from flow.petri_net.actions.base import BasicActionBase
+from flow_workflow import io
 from twisted.internet import defer
 
-import io
 import logging
 
 
@@ -14,17 +14,17 @@ class PassThruAction(BasicActionBase):
         operation_id = self.args["operation_id"]
         input_connections = self.args["input_connections"]
 
-        workflow_data = load.extract_data_from_tokens(active_tokens)
-        parallel_idx = workflow_data['parallel_idx']
+        workflow_data = io.extract_workflow_data(active_tokens)
+        parallel_id = workflow_data['parallel_id']
 
         inputs = io.load_input(net=net, input_connections=input_connections,
-                parallel_idx=parallel_idx)
+                parallel_id=parallel_id)
         io.store_outputs(net=net, operation_id=operation_id,
-                outputs=inputs, parallel_idx=parallel_idx)
+                outputs=inputs, parallel_id=parallel_id)
 
         data = {'workflow_data':workflow_data}
         output_token = net.create_token(color=color_descriptor.color,
                 color_group_idx=color_descriptor.group.idx,
-                data=workflow_data)
+                data=data)
 
         return [output_token], defer.succeed(None)
