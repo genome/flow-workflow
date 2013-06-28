@@ -7,7 +7,7 @@ import sys
 LOG = logging.getLogger(__name__)
 
 
-class GenomePerlAction(object):
+class PerlAction(object):
     required_arguments = ['operation_id', 'input_connections', 
             'action_type', 'action_id']
 
@@ -43,16 +43,16 @@ class GenomePerlAction(object):
         return cmd_line
 
 
-class GenomeShortcutAction(GenomePerlAction, actions.ForkDispatchAction):
+class ShortcutAction(PerlAction, actions.ForkDispatchAction):
     method = 'shortcut'
 
 
-class GenomeExecuteAction(GenomePerlAction):
+class ExecuteAction(PerlAction):
     method = 'execute'
 
-class GenomeForkExecuteAction(GenomeExecuteAction, actions.ForkDispatchAction):
+class WorkflowForkExecuteAction(ExecuteAction, actions.ForkDispatchAction):
     pass
 
-class GenomeLSFExecuteAction(GenomeExecuteAction, actions.LSFDispatchAction):
+class WorkflowLSFExecuteAction(ExecuteAction, actions.LSFDispatchAction):
     pass
 

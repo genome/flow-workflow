@@ -1,12 +1,12 @@
 from flow.petri_net.future import FutureAction
-from flow_workflow.petri_net.actions.parallel_by as pb
-from flow_workflow.petri_net.future_nets.base import GenomeNetBase
+from flow_workflow.operations.perl_actions import parallel_by_actions as pb
+from flow_workflow.operations.workflow_net_base import WorkflowNetBase
 
 
-class GenomeParallelByNet(GenomeNetBase):
+class ParallelByNet(WorkflowNetBase):
     """
     Make a given <target_net> run parallel on the given <parallel_property>.
-    The target_net must be a GenomeNetBase net.
+    The target_net must be a WorkflowNetBase net.
     """
     def __init__(self, target_net, parallel_property):
         # adopt values from the target_net
@@ -16,7 +16,7 @@ class GenomeParallelByNet(GenomeNetBase):
         input_connections = target_net.input_connections
         output_properties = target_net.output_properties
 
-        GenomeNetBase.__init__(self, name=name, operation_id=operation_id,
+        WorkflowNetBase.__init__(self, name=name, operation_id=operation_id,
                 parent_operation_id=parent_operation_id)
 
         # add target_net to self

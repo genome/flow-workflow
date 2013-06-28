@@ -1,6 +1,6 @@
 from flow.shell_command.petri_net.future_nets import ShellCommandNet
-from flow_workflow.petri_net.actions import perl_action
-from flow_workflow.petri_net.future_nets.base import GenomeNetBase
+from flow_workflow.operations.perl_actions import actions
+from flow_workflow.operations.workflow_net_base import WorkflowNetBase
 
 import abc
 import copy
@@ -14,20 +14,20 @@ class StepNetBase(ShellCommandNet):
         # XXX Attach historian transition observers
 
 
-class GenomeExecuteNet(StepNetBase):
+class ExecuteNet(StepNetBase):
     def __init__(self, name='', remote_execute=True, **action_args):
         if remote_execute:
-            self.DISPATCH_ACTION = perl_action.GenomeLSFExecuteAction
+            self.DISPATCH_ACTION = actions.WorkflowLSFExecuteAction
         else:
-            self.DISPATCH_ACTION = perl_action.GenomeForkExecuteAction
+            self.DISPATCH_ACTION = actions.WorkflowForkExecuteAction
 
         StepNetBase.__init__(self, **action_args)
 
-class GenomeShortcutNet(StepNetBase):
-    DISPATCH_ACTION = perl_action.GenomeShortcutAction
+class ShortcutNet(StepNetBase):
+    DISPATCH_ACTION = actions.ShortcutAction
 
 
-class GenomePerlActionNet(GenomeNetBase):
+class PerlActionNet(WorkflowNetBase):
     """
     A success-failure net that internally tries to shortcut and then to
     execute a perl action.
@@ -41,7 +41,7 @@ class GenomePerlActionNet(GenomeNetBase):
     def __init__(self, name, operation_id, input_connections,
             stderr, stdout, resources, action_id,
             remote_execute=True, project_name='', parent_operation_id=None):
-        GenomeNetBase.__init__(self, name=name, operation_id=operation_id,
+        WorkflowNetBase.__init__(self, name=name, operation_id=operation_id,
                 parent_operation_id=parent_operation_id)
 
         base_action_args = {
@@ -53,13 +53,13 @@ class GenomePerlActionNet(GenomeNetBase):
             'stdout': stdout,
             'resources': resources,
         }
-        shortcut_net = self.add_subnet(GenomeShortcutNet,
+        shortcut_net = self.add_subnet(ShortcutNet,
                 **base_action_args)
 
         lsf_options = {'project': project_name}
         execute_action_args = copy.copy(base_action_args)
         execute_action_args['lsf_options'] = lsf_options
-        execute_net = self.add_subnet(GenomeExecuteNet,
+        execute_net = self.add_subnet(ExecuteNet,
                 remote_execute=remote_execute,
                 **execute_action_args)
 
@@ -81,9 +81,9 @@ class GenomePerlActionNet(GenomeNetBase):
         # XXX Attach historian observers
 
 
-class GenomeCommandNet(GenomePerlActionNet):
+class CommandNet(PerlActionNet):
     action_type = 'command'
 
 
-class GenomeEventNet(GenomePerlActionNet):
+class EventNet(PerlActionNet):
     action_type = 'event'

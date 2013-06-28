@@ -1,23 +1,24 @@
-from flow_workflow.workflow_parts.base import WorkflowOperation
-from flow_workflow.petri_net.future_nets.perl_action import (GenomeCommandNet,
-        GenomeEventNet)
-from flow_workflow.petri_net.future_nets.parallel_by import GenomeParallelByNet
+from flow_workflow.operations.adapter_base import AdapterBase
+from flow_workflow.operations.perl_actions.future_nets import (CommandNet,
+        EventNet)
+from flow_workflow.operations.perl_actions.parallel_by_net import ParallelByNet
 
-def net_class_kwargs(operation, input_connections, resources):
-    return {
-            'name':operation.name,
-            'operation_id':operation.operation_id,
-            'input_connections':input_connections,
-            'stderr':operation.stderr_log_file,
-            'sdtout':operation.stdout_log_file,
-            'resources':resources,
-            'action_id':operation.action_id,
-            'remote_execution':operation.remote_execution,
-            'project_name':operation.project_name,
-            'parent_operation_id':operation.parent.operation_id,
-    }
+class PerlActionAdapterBase(AdapterBase):
+    def net_class_kwargs(self, input_connections, resources):
+        return {
+                'name':self.name,
+                'operation_id':self.operation_id,
+                'input_connections':input_connections,
+                'stderr':self.stderr_log_file,
+                'sdtout':self.stdout_log_file,
+                'resources':resources,
+                'action_id':self.action_id,
+                'remote_execution':self.remote_execution,
+                'project_name':self.project_name,
+                'parent_operation_id':self.parent.operation_id,
+        }
 
-class CommandOperation(WorkflowOperation):
+class CommandAdapter(PerlActionAdapterBase):
     @property
     def parallel_by(self):
         if "parallelBy" in self._operation_attributes:
@@ -31,21 +32,21 @@ class CommandOperation(WorkflowOperation):
 
     def net(self, super_net, input_connections=None, output_properties=None,
             resources=None):
-        kwargs = net_class_kwargs(self, input_connections, resources)
+        kwargs = self.net_class_kwargs(input_connections, resources)
         if self.parallel_by is not None:
-            this_net = GenomeCommandNet(**kwargs)
-            return super_net.add_subnet(GenomeParallelByNet,
+            this_net = CommandNet(**kwargs)
+            return super_net.add_subnet(ParallelByNet,
                     target_net=this_net,
                     parallel_property=self.parallel_by)
         else:
-            return super_net.add_subnet(GenomeCommandNet, **kwargs)
+            return super_net.add_subnet(CommandNet, **kwargs)
 
-class EventOperation(WorkflowOperation):
+class EventAdapter(PerlActionAdapterBase):
     @property
     def action_id(self):
         self.action_id = self._type_attributes['event_id']
 
     def net(self, super_net, input_connections=None, output_properties=None,
             resources=None):
-        kwargs = net_class_kwargs(self, input_connections, resources)
+        kwargs = self.net_class_kwargs(input_connections, resources)
         return super_net.add_subnet(GenomeEventNet, **kwargs)
