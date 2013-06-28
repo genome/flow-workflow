@@ -6,4 +6,4 @@ import logging
 LOG = logging.getLogger(__name__)
 
 class BlockNet(PassThruNet):
-    name = 'block'
+    _name = 'block'

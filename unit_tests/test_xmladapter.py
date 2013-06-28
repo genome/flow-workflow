@@ -172,7 +172,7 @@ class TestWorkflowOperations(TestCase):
     def test_converge(self):
         inputs = ["a", "b", "c"]
         outputs = ["x", "y"]
-
+/
         tree = _converge_op_xml(name="merge", inputs=inputs,
                 outputs=outputs)
 

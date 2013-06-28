@@ -35,23 +35,29 @@ def determine_log_paths(name, operation_id, log_dir):
 
 
 class AdapterBase(object):
-    def __init__(self, adapter_factory, operation_id, xml, log_dir, parent):
+    def __init__(self, adapter_factory, operation_id, log_dir=None, parent=None, xml=None):
         self.adapter_factory = adapter_factory
         self.operation_id = operation_id
         self.parent = parent
-        self.parent_id = self.parent.operation_id if parent else None
+        if parent is None:
+            self.parent_id = None
+        else:
+            self.parent_id = self.parent.operation_id
 
         self.xml = xml
-        name, type_node, operation_attributes, type_attributes = parse_xml(xml)
-        self.name = name
-        self._type_node = type_node
-        self._operation_attributes = operation_attributes
-        self._type_attributes = type_attributes
+        self.name = 'UnnamedOperation'
+        if xml is not None:
+            name, type_node, operation_attributes, type_attributes = parse_xml(xml)
+            self.name = name
+            self._type_node = type_node
+            self._operation_attributes = operation_attributes
+            self._type_attributes = type_attributes
 
         self.log_dir = log_dir
-        stdout, stderr = determine_log_paths(name, operation_id, log_dir)
-        self.stdout_log_file = stdout
-        self.stderr_log_file = stderr
+        if log_dir is not None:
+            stdout, stderr = determine_log_paths(self.name, operation_id, log_dir)
+            self.stdout_log_file = stdout
+            self.stderr_log_file = stderr
 
     def net(self, super_net, output_properties=None, input_connections=None,
             resources=None):

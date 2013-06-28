@@ -4,9 +4,15 @@ from flow_workflow.operations.workflow_net_base import WorkflowNetBase
 
 
 class ConvergeNet(WorkflowNetBase):
-    def __init__(self, input_connections, input_property_order,
-            output_properties, **kwargs):
-        WorkflowNetBase.__init__(self, **kwargs)
+    def __init__(self, name, operation_id, input_connections,
+            input_property_order, output_properties,
+            resources, parent_operation_id=None):
+        WorkflowNetBase.__init__(self, name=name,
+                operation_id=operation_id,
+                input_connections=input_connections,
+                output_properties=output_properties,
+                resources=resources,
+                parent_operation_id=parent_operation_id)
 
         args = {
             "operation_id": self.operation_id,
@@ -15,7 +21,7 @@ class ConvergeNet(WorkflowNetBase):
             "input_connections": input_connections,
         }
 
-        action = FutureAction(cls=ConvergeAction, args=args)
+        action = FutureAction(cls=ConvergeAction, **args)
         self.converge_transition = self.add_basic_transition(
                 name='converge(%s)' % self.operation_id,
                 action=action)

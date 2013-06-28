@@ -8,7 +8,7 @@ LOG = logging.getLogger(__name__)
 
 class ModelAdapter(AdapterBase):
     def __init__(self, adapter_factory, operation_id, xml, log_dir, parent=None):
-        log_:wqdir = log_dir or xml.attrib.get("logDir", ".")
+        log_dir = log_dir or xml.attrib.get("logDir", ".")
         AdapterBase.__init__(self, adapter_factory=adapter_factory,
                 operation_id=operation_id, xml=xml, log_dir=log_dir,
                 parent=parent)
