@@ -42,6 +42,6 @@ class ConvergeAction(BasicActionBase):
         data = {'workflow_data':workflow_data}
         output_token = net.create_token(color=color_descriptor.color,
                 color_group_idx=color_descriptor.group.idx,
-                data=workflow_data)
+                data=data)
 
         return [output_token], defer.succeed(None)
