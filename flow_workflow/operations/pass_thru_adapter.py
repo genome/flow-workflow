@@ -18,5 +18,5 @@ class PassThruAdapter(AdapterBase):
 
     def net(self, super_net, input_connections=None, output_properties=None,
             resources=None):
-        kwargs = get_net_class_kwargs(self, input_connections)
+        kwargs = self.get_net_class_kwargs(self, input_connections)
         return super_net.add_subnet(self.net_class, **kwargs)
