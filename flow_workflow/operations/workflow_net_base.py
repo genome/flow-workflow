@@ -5,8 +5,9 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
+
 class WorkflowNetBase(SuccessFailureNet):
-    def __init__(self, name, operation_id, input_connections, output_properties, 
+    def __init__(self, name, operation_id, input_connections, output_properties,
             resources, parent_operation_id=None):
         SuccessFailureNet.__init__(self, name=name)
         self.operation_id = operation_id
