@@ -83,8 +83,8 @@ sub run_command {
 
     for my $prop (@cmd_outputs) {
         my $prop_name = $prop->property_name;
-        my $value = $cmd->$prop_name;
-            $outputs{$prop_name} = $value;
+        my $value = $prop->is_many ? [$cmd->$prop_name] : $cmd->$prop_name;
+        $outputs{$prop_name} = $value;
     }
 
     $outputs{result} = 1 unless exists $outputs{result};
