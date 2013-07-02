@@ -67,7 +67,7 @@ class IOTests(TestCase):
             self.assertIs(return_value, test_load_output.return_value)
             test_load_output.assert_called_once_with(net=self.net,
                     operation_id=0,
-                    property='b',
+                    property_name='b',
                     parallel_id=parallel_id)
 
             # should error if input name not in input_connections
@@ -91,7 +91,7 @@ class IOTests(TestCase):
 
     def test_load_output(self):
         operation_id = object()
-        property = object()
+        property_name = object()
         parallel_id = object()
 
         test_variable_name = Mock()
@@ -100,11 +100,11 @@ class IOTests(TestCase):
                 new=test_variable_name):
             return_value = io.load_output(net=self.net,
                     operation_id=operation_id,
-                    property=property,
+                    property_name=property_name,
                     parallel_id=parallel_id)
             self.assertIs(return_value, test_variable_name.return_value)
             test_variable_name.assert_called_once_with(
-                    operation_id=operation_id, property=property,
+                    operation_id=operation_id, property_name=property_name,
                     parallel_id=parallel_id)
 
     def test_store_output(self):
@@ -112,13 +112,13 @@ class IOTests(TestCase):
         self.net.set_variable.return_value = object()
 
         operation_id = 44
-        property = 'test_output_name'
+        property_name = 'test_output_name'
         value = object()
         parallel_id = {1:2, 3:4}
 
         return_value = io.store_output(net=self.net,
                 operation_id=operation_id,
-                property=property,
+                property_name=property_name,
                 value=value,
                 parallel_id=parallel_id)
         self.assertIs(return_value, None)
@@ -148,29 +148,29 @@ class IOTests(TestCase):
 
             test_store_output.assert_any_call(net=self.net,
                     operation_id=operation_id,
-                    property=0,
+                    property_name=0,
                     value=1,
                     parallel_id=parallel_id)
 
             test_store_output.assert_any_call(net=self.net,
                     operation_id=operation_id,
-                    property=2,
+                    property_name=2,
                     value=3,
                     parallel_id=parallel_id)
 
 
     def test_private_output_variable_name(self):
         operation_id = 44
-        property = 'test_property'
+        property_name = 'test_property'
         parallel_id = {1:2, 3:4, 5:6}
 
         return_value = io._output_variable_name(operation_id=operation_id,
-                property=property,
+                property_name=property_name,
                 parallel_id=parallel_id)
         self.assertEqual(return_value, '_wf_outp_44_test_property|1:2|3:4|5:6')
 
         return_value = io._output_variable_name(operation_id=operation_id,
-                property=property)
+                property_name=property_name)
         self.assertEqual(return_value, '_wf_outp_44_test_property')
 
 

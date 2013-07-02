@@ -18,7 +18,7 @@ def load_input(net, input_connections, name=None, parallel_id=None):
     <input_connections> and <parallel_id>.  If name is None then all
     inputs are returned as a dictionary keyed on name.
 
-    input_connections[src_operation_id][property] = src_property
+    input_connections[src_operation_id][property_name] = src_property
     """
     inputs = {}
     for src_id, prop_hash in input_connections.iteritems():
@@ -27,7 +27,7 @@ def load_input(net, input_connections, name=None, parallel_id=None):
                 value = load_output(
                         net=net,
                         operation_id=src_id,
-                        property=src_prop,
+                        property_name=src_prop,
                         parallel_id=parallel_id)
                 if name == dst_prop:
                     return value
@@ -39,19 +39,19 @@ def load_input(net, input_connections, name=None, parallel_id=None):
     else:
         return inputs
 
-def load_output(net, operation_id, property, parallel_id=None):
+def load_output(net, operation_id, property_name, parallel_id=None):
     varname = _output_variable_name(operation_id=operation_id,
-            property=property, parallel_id=parallel_id)
+            property_name=property_name, parallel_id=parallel_id)
     value = net.variable(varname)
     return value
 
 
-def store_output(net, operation_id, property, value, parallel_id=None):
+def store_output(net, operation_id, property_name, value, parallel_id=None):
     varname = _output_variable_name(operation_id=operation_id,
-            property=property,
+            property_name=property_name,
             parallel_id=parallel_id)
     LOG.debug("Setting output (%s) from operation (%s) on net (%s) via %s = %s",
-            property, operation_id, net.key, varname, value)
+            property_name, operation_id, net.key, varname, value)
 
     net.set_variable(varname, value)
 
@@ -63,16 +63,16 @@ def store_outputs(net, operation_id, outputs, parallel_id=None):
     for name, value in outputs.iteritems():
         store_output(net=net,
                 operation_id=operation_id,
-                property=name,
+                property_name=name,
                 value=value,
                 parallel_id=parallel_id)
 
-def _output_variable_name(operation_id, property, parallel_id=None):
+def _output_variable_name(operation_id, property_name, parallel_id=None):
     """
     Operation outputs are stored on the net.  This constructs the name of
     the variable where they are stored.
     """
-    base = "_wf_outp_%s_%s" % (int(operation_id), property)
+    base = "_wf_outp_%s_%s" % (int(operation_id), property_name)
     if parallel_id is None:
         return base
     else:
