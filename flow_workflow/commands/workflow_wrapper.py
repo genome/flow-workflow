@@ -1,8 +1,9 @@
 from flow.commands.base import CommandBase
+from flow.configuration.inject.redis_conf import RedisConfiguration
 from flow.configuration.settings.injector import setting
 from flow.util.logannotator import LogAnnotator
 from injector import inject
-from flow.configuration.inject.redis_conf import RedisConfiguration
+from twisted.internet import defer
 
 import flow.interfaces
 import copy
@@ -89,7 +90,7 @@ class WorkflowWrapperCommand(CommandBase):
                             operation_id=operation_id, outputs=outputs,
                             parallel_idx=parallel_idx)
                 else:
-                    LOG.warning("Non-zero exit-code: %s from perl_wrapper.", %
+                    LOG.warning("Non-zero exit-code: %s from perl_wrapper.",
                             self.exit_code)
 
         @staticmethod
