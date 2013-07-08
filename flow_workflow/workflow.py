@@ -45,6 +45,6 @@ class WorkflowNet(future.FutureNet):
         future.FutureNet.__init__(self)
 
         self.start_place = self.add_place('start')
-        self.operation_net = operation_net
+        self.subnets.add(operation_net)
 
         self.start_place.add_arc_out(operation_net.start_transition)
