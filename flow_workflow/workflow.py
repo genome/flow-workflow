@@ -1,49 +1,50 @@
-from flow.petri_net.success_failure_net import SuccessFailureNet
+from flow.petri_net import future
+from flow_workflow import io
+from flow_workflow.operations import factory
+
 
 class Workflow(object):
-    def __init__(self, adapter_factory, xml_etree, resources, plan_id):
-        self.adapter_factory = adapter_factory
-        self.plan_id = plan_id
+    def __init__(self, xml, inputs, resources):
+        self.xml = xml
+        self.inputs = inputs
+        self.resources = resources
 
-        # We have to force the outer xml to be a model.
-        # Sometimes, a workflow consists of a single <operation> tag instead of
-        # a <workflow> tag
-        self.model = self.adapter_factory.create("Workflow::OperationType::Model",
-                xml_etree, log_dir=None, resources=resources)
+        self.dummy_operation = factory.operation('null')
 
-        self.outer_net = SuccessFailureNet(name=self.model.name)
-        self.outer_net.wrap_in_places()
+    def store_inputs(self, net):
+        io.store_outputs(net, self.dummy_operation.operation_id, self.inputs)
 
-        self.inner_net = self.model.net(super_net=self.outer_net)
+    @property
+    def input_connections(self):
+        return {
+            self.dummy_operation.operation_id:
+                {name: name for name, value in self.inputs.iteritems()}
+        }
 
-        outer_net.starting_place = outer_net.bridge_transitions(
-                outer_net.internal_start_transition,
-                inner_net.start_transition,
-                name='starting')
-        outer_net.succeeding_place = outer_net.bridge_transitions(
-                inner_net.success_transition,
-                outer_net.internal_success_transition,
-                name='succeeding')
-        outer_net.failing_place = outer_net.bridge_transitions(
-                inner_net.failure_transition,
-                outer_net.internal_failure_transition,
-                name='failing')
+    @property
+    def output_properties(self):
+        return self.operation.output_properties
 
-    def get_variables_and_constants(self):
-        variables = {}
-        next_id = self.adapter_factory.next_operation_id
-        variables['workflow_next_operation_id'] = next_id
+    @property
+    def operation(self):
+        return factory.operation_from_xml(self.xml,
+                parent=factory.operation('null'))
 
-        constants = {}
-        constants['workflow_id'] = self.model.operation_id
-        constants['workflow_plan_id'] = self.plan_id
+    @property
+    def operation_future_net(self):
+        return self.operation.net(self.input_connections,
+                self.output_properties, self.resources)
 
-        parent = os.environ.get('FLOW_WORKFLOW_PARENT_ID')
-        if parent:
-            LOG.info('Setting parent workflow to %s' % parent)
-            parent_net_key, parent_op_id = parent.split(' ')
-            constants['workflow_parent_net_key'] = parent_net_key
-            constants['workflow_parent_operation_id'] = int(
-                    parent_op_id)
+    @property
+    def future_net(self):
+        return WorkflowNet(self.operation_future_net)
 
-        return variables, constants
+
+class WorkflowNet(future.FutureNet):
+    def __init__(self, operation_net):
+        future.FutureNet.__init__(self)
+
+        self.start_place = self.add_place('start')
+        self.operation_net = operation_net
+
+        self.start_place.add_arc_out(operation_net.start_transition)
