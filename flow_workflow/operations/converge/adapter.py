@@ -1,28 +1,27 @@
-from flow_workflow.operations.adapter_base import AdapterBase
-from flow_workflow.operations.converge.future_net import ConvergeNet
-
-import logging
+from flow_workflow.operations import base
+from flow_workflow.operations.converge.future_nets import ConvergeNet
 
 
-LOG = logging.getLogger(__name__)
+class ConvergeAdapter(base.AdapterBase):
+    def net(self, input_connections, output_properties, resources):
+        return ConvergeNet(name=self.name,
+                operation_id=self.operation_id,
+                input_connections=input_connections,
+                output_properties=self.output_properties,
+                resources=resources,
+                input_property_order=self.input_property_order,
+                parent_operation_id=self.parent.operation_id)
 
-class ConvergeAdapter(AdapterBase):
-    def net(self, super_net, input_connections=None, output_properties=None,
-            resources=None):
-
-        # determine input_property_order
-        inputs = operation._type_node.findall("inputproperty")
+    @property
+    def input_property_order(self):
+        inputs = self.operation_type_node.findall('inputproperty')
         if len(inputs) < 1:
             raise ValueError(
                 "Wrong number of <inputproperty> tags (%d) in operation %s" %
-                (len(inputs), operation.name))
-        input_property_order = [x.text for x in inputs]
+                (len(inputs), self.name))
+        return [x.text for x in inputs]
 
-        net_class_kwargs = {
-                'operation_id':self.operation_id,
-                'input_connections':input_connections,
-                'input_property_order':input_property_order,
-                'output_properties':output_properties,
-                'parent_operation_id':self.parent.operation_id,
-                }
-        return super_net.add_subnet(ConvergeNet, **net_class_kwargs)
+    @property
+    def output_properties(self):
+        return [o.text for o in
+                self.operation_type_node.findall('outputproperty')]

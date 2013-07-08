@@ -1,160 +1,152 @@
 from collections import defaultdict
-from flow_workflow.operations.adapter_base import AdapterBase
+from flow_workflow.operations import base
+from flow_workflow.operations import factory
+from flow_workflow.operations.model import future_nets
 
-import logging
+
+class LinkAdapter(object):
+    def __init__(self, xml):
+        self.xml = xml
+
+    @property
+    def from_operation(self):
+        return self.xml.attrib['fromOperation']
+
+    @property
+    def to_operation(self):
+        return self.xml.attrib['toOperation']
+
+    @property
+    def from_property(self):
+        return self.xml.attrib['fromProperty']
+
+    @property
+    def to_property(self):
+        return self.xml.attrib['toProperty']
 
 
-LOG = logging.getLogger(__name__)
+class ModelAdapter(base.AdapterBase):
+    def __init__(self, *args, **kwargs):
+        base.AdapterBase.__init__(self, *args, **kwargs)
 
-class ModelAdapter(AdapterBase):
-    def __init__(self, adapter_factory, operation_id, xml, log_dir, parent=None):
-        log_dir = log_dir or xml.attrib.get("logDir", ".")
-        AdapterBase.__init__(self, adapter_factory=adapter_factory,
-                operation_id=operation_id, xml=xml, log_dir=log_dir,
-                parent=parent)
+        self._children = []
+        self._child_operation_ids = {}
 
-        self.operations = {}
-        self.input_connector = self.adapter_factory.create("InputConnector", parent=self),
-        self.output_connector = self.adapter_factory.create("OutputConnector",
-                    workflow_id=self.operation_id, parent=self),
-        self._add_operation(self.input_connector)
-        self._add_operation(self.output_connector)
+        self.input_connector = factory.operation('input connector', parent=self)
+        self.output_connector = factory.operation('output connector',
+                parent=self)
 
-        self.edges = defaultdict(set)
-        self.data_arcs = defaultdict(lambda: defaultdict(dict))
+        self._add_child(self.input_connector)
+        self._add_child(self.output_connector)
+
+        for operation_xml in self.xml.findall('operation'):
+            child = factory.operation_from_xml(operation_xml,
+                    log_dir=self.log_dir, parent=self)
+            self._add_child(child)
+
+        self.links = map(LinkAdapter, self.xml.findall('link'))
+
+    def _add_child(self, child):
+        self._children.append(child)
+        self._child_operation_ids[child.name] = child.operation_id
+
+    @property
+    def output_properties(self):
+        results = []
+        for link in self.links:
+            if link.to_operation == 'output connector':
+                results.append(link.to_property)
+        return results
+
+    # XXX fix log dir
+    @property
+    def log_dir(self):
+        return self._log_dir or self.xml.attrib.get('logDir', '.')
+
+    @property
+    def edges(self):
+        edges = defaultdict(set)
+        for link in self.links:
+            edges[link.from_operation].add(link.to_operation)
+
+        #return transitive_reduction(edges)
+        return edges
+
+    @property
+    def data_arcs(self):
         # self.data_arcs[dst_id][src_id][dst_prop] = src_prop
         # -aka- self.data_arcs[dst_id] = input_connections
+        data_arcs = defaultdict(lambda: defaultdict(dict))
 
-        self.optype = xml.find("operationtype")
-        type_class = self.optype.attrib["typeClass"]
+        for link in self.links:
+            data_arcs[link.to_operation][link.from_operation]\
+                    [link.to_property] = link.from_property
 
-        if (xml.tag == "operation" and
-                type_class != "Workflow::OperationType::Model"):
-            first_operation = self._add_operation_from_xml(xml)
-            self.add_edge(self.input_connector, first_operation)
-            self.add_edge(first_operation, self.output_connector)
-
-            first_operation_id = first_operation.operation_id
-            input_operation_id = self.input_connector.operation_id
-            self.data_arcs[first_operation_id][input_operation_id] = {}
-        else:
-            for operation_node in xml.findall("operation"):
-                self._add_operation(operation_node)
-            self._parse_links()
-
-        #self.edges = transitive_reduction(self.edges)
-
-    def _add_operation_from_xml(self, operation_xml):
-        operation = self.adapter_factory.create_from_xml(xml=operation_xml,
-                log_dir=self.log_dir,
-                parent=self)
-        self._add_operation(operation)
-
-    def _add_operation(self, operation):
-        self.operations[operation.name] = operation
-
-    def add_edge(self, src_op, dst_op):
-        if src_op == dst_op:
-            raise RuntimeError("Attempted to create self cycle with node %s" %
-                               src_op.name)
-        self.edges[src_op].add(dst_op)
-
-    def _parse_links(self):
-        operations = self.operations
-        for link in self.xml.findall("link"):
-            src = link.attrib["fromOperation"]
-            dst = link.attrib["toOperation"]
-
-            src_op = operations[src]
-            dst_op = operations[dst]
-
-            src_prop = link.attrib["fromProperty"]
-            dst_prop = link.attrib["toProperty"]
-
-            LOG.info("Model %s processing link (%s:%d:%s) -> (%s:%d:%s)",
-                    self.name, src, src_op.operation_id, src_prop, dst,
-                    dst_op.operation_id, dst_prop)
-
-            msg = "Model %s processing link (%s:%s) -> (%s:%s)" % (
-                    self.name, src, src_prop, dst, dst_prop)
-
-            self.add_edge(src_op, dst_op)
-
-            dst_id = dst_op.operation_id
-            src_id = src_op.operation_id
-            self.data_arcs[dst_id][src_id][dst_prop] = src_prop
-
-    def _get_output_properties(self, operation_id):
-        input_connections = self.data_arcs[operation_id]
-        output_properties = set()
-        for mapping in input_connections.values():
-            output_properties.update(mapping.keys())
-        return output_properties
+        return data_arcs
 
     @property
     def children(self):
-        result = []
-        for op in self.operations.values():
-            result.append(op)
-            result.extend(op.children)
+        return self._children
+
+    def child_operation_id(self, child_name):
+        return self._child_operation_ids[child_name]
+
+    @property
+    def operations(self):
+        result = [self]
+        for child in self.children:
+            result.extend(child.operations)
         return result
 
-    def net(self, super_net=None, input_connections=None,
-            output_properties=None, resources=None):
-
-        # generate the model_net
-        model_net_kwargs = {
-                'name':self.name,
-                'operation_id':self.operation_id,
-                'parent_operation_id':self.parent.operation_id,
-                }
-        if super_net is None:
-            model_net = GenomeNetBase(**model_net_kwargs)
+    def child_input_connections(self, child_name, input_connections):
+        if child_name == 'input connector':
+            return input_connections
         else:
-            model_net = super_net.add_subnet(GenomeNetBase,
-                    **model_net_kwargs)
+            return self._calculated_child_input_connections(child_name)
 
-        # generate the subnets
-        subnets = {}
-        for name, operation in self.operations.iteritems():
-            operation_id = operation.operation_id
-            if operation is self.input_connector:
-                op_input_connections = input_connections
-            else:
-                op_input_connections = self.data_arcs.get(operation_id)
-            op_resources = resources.get(name, {})
-            op_output_properties = self._get_output_properties(operation_id)
-            subnets[operation] = operation.net(super_net=model_net,
-                    input_connections=op_input_connections,
-                    output_properties=op_output_properties,
-                    resources=op_resources)
+    def _calculated_child_input_connections(self, child_name):
+        input_connections = defaultdict(dict)
+        for link in self.links:
+            if link.to_operation == child_name:
+                src = self.child_operation_id(link.from_operation)
+                input_connections[src][link.to_property] = link.from_property
 
-        # model_net(start) -> input_connector(start)
-        ic_net = subnets[self.input_connector]
-        model_net.starting_place = model_net.bridge_transitions(
-                model_net.internal_start_transition,
-                ic_net.start_transition,
-                name='starting')
+        return input_connections
 
-        # output_connector(success) -> model_net(success)
-        oc_net = subnets[self.output_connector]
-        model_net.succeeding_place = model_net.bridge_transitions(
-                oc_net.success_transition,
-                model_net.internal_success_transition,
-                name='succeeding')
+    def child_output_properties(self, child_name, output_properties):
+        if child_name == 'output connector':
+            return output_properties
+        else:
+            return self._calculated_child_output_properties(child_name)
 
-        for src_op, dst_set in self.edges.iteritems():
-            src_net = subnets[src_op]
+    def _calculated_child_output_properties(self, child_name):
+        output_properties = []
+        for link in self.links:
+            if link.from_operation == child_name:
+                output_properties.append(link.from_property)
 
-            for dst_op in dst_set:
-                dst_net = subnets[dst_op]
+        return output_properties
 
-                # operator(success) -> next_operator(start)
-                model_net.bridge_transitions(src_net.success_transition,
-                        dst_net.start_transition)
+    def subnets(self, input_connections, output_properties, resources):
+        child_nets = {}
+        for child in self.children:
+            child_op = self.child_output_properties(child.name,
+                    output_properties)
 
-                # operator(failure) -> model_net(failure)
-                src_net.failure_transition.add_arc_out(
-                        model_net.internal_failure_place)
+            child_nets[child.name] = child.net(
+                    input_connections=self.child_input_connections(
+                        child.name, input_connections),
+                    output_properties=self.child_output_properties(
+                        child.name, output_properties),
+                    resources=resources.get(child.name, {}))
 
-        return model_net
+        return child_nets
+
+    def net(self, input_connections, output_properties, resources):
+        subnets = self.subnets(input_connections, output_properties,
+                resources.get('children', {}))
+        return future_nets.ModelNet(subnets=subnets,
+                edges=self.edges, name=self.name,
+                operation_id=self.operation_id,
+                input_connections=input_connections,
+                parent_operation_id=self.parent.operation_id)

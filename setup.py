@@ -8,6 +8,16 @@ workflow-wrapper = flow_workflow.commands.workflow_wrapper:WorkflowWrapperComman
 
 [flow.services]
 workflow_historian = flow_workflow.historian.service_interface:WorkflowHistorianServiceInterface
+
+[flow_workflow.operation_types]
+Block = flow_workflow.operations.block.adapter:BlockAdapter
+Command = flow_workflow.operations.command.adapter:CommandAdapter
+Converge = flow_workflow.operations.converge.adapter:ConvergeAdapter
+Event = flow_workflow.operations.event.adapter:EventAdapter
+Model = flow_workflow.operations.model.adapter:ModelAdapter
+input_connector = flow_workflow.operations.connectors.adapter:InputConnector
+output_connector = flow_workflow.operations.connectors.adapter:OutputConnector
+null = flow_workflow.operations.base:NullOperation
 '''
 
 setup(

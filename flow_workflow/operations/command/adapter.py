@@ -1,0 +1,13 @@
+from flow_workflow.operations.perl_action import adapter_base
+
+
+class CommandAdapter(adapter_base.PerlActionAdapterBase):
+    action_type = 'command'
+
+    @property
+    def action_id(self):
+        return self.command_class
+
+    @property
+    def command_class(self):
+        return self.operation_type_attributes['commandClass']
