@@ -109,8 +109,10 @@ class ExecuteWorkflowCommand(CommandBase):
     @property
     def constants(self):
         return {
+            'environment': os.environ.data,
+            'group_id': os.getgid(),
             'user_id': os.getuid(),
-            'group_id': os.getgid()
+            'working_directory': os.getcwd(),
         }
 
 
