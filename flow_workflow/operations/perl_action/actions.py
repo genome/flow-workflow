@@ -38,7 +38,7 @@ class PerlAction(object):
                         json.dumps(self.args['input_connections'])]
         )
 
-        parallel_id = workflow_data.get('parallel_id')
+        parallel_id = token_data.get('workflow_data', {}).get('parallel_id')
         if parallel_id:
             cmd_line.extend(['--parallel-id', json.dumps(parallel_id)])
 
