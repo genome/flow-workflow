@@ -57,38 +57,38 @@ class WorkflowWrapperCommand(CommandBase):
 
     @defer.inlineCallbacks
     def _execute(self, parsed_arguments):
-        net = rom.get_object(self.storage, parsed_arguments.net_key)
+        try:
+            net = rom.get_object(self.storage, parsed_arguments.net_key)
 
-        with NamedTemporaryFile() as inputs_file:
-            with NamedTemporaryFile() as outputs_file:
-                write_inputs(inputs_file, net=net,
-                        parallel_id=parsed_arguments.parallel_id,
-                        input_connections=parsed_arguments.input_connections)
+            with NamedTemporaryFile() as inputs_file:
+                with NamedTemporaryFile() as outputs_file:
+                    write_inputs(inputs_file, net=net,
+                            parallel_id=parsed_arguments.parallel_id,
+                            input_connections=parsed_arguments.input_connections)
 
-                cmdline = copy.copy(self.perl_wrapper)
-                cmdline_builder = CMDLINE_BUILDERS[parsed_arguments.action_type]
-                cmdline.extend(cmdline_builder(parsed_arguments.method,
-                    parsed_arguments.action_id, inputs_file, outputs_file))
+                    cmdline = copy.copy(self.perl_wrapper)
+                    cmdline_builder = CMDLINE_BUILDERS[parsed_arguments.action_type]
+                    cmdline.extend(cmdline_builder(parsed_arguments.method,
+                        parsed_arguments.action_id, inputs_file, outputs_file))
 
 
-                LOG.debug('Executing (%s): %s', socket.gethostname(),
-                        " ".join(cmdline))
-                logannotator = LogAnnotator(cmdline)
-                try:
+                    LOG.debug('Executing (%s): %s', socket.gethostname(),
+                            " ".join(cmdline))
+                    logannotator = LogAnnotator(cmdline)
                     self.exit_code = yield logannotator.start()
-                except:
-                    LOG.exception('Error while launching annotated command')
-                    raise
 
-                if self.exit_code == 0:
-                    read_and_store_outputs(outputs_file, net=net,
-                            operation_id=parsed_arguments.operation_id,
-                            parallel_id=parsed_arguments.parallel_id)
+                    if self.exit_code == 0:
+                        read_and_store_outputs(outputs_file, net=net,
+                                operation_id=parsed_arguments.operation_id,
+                                parallel_id=parsed_arguments.parallel_id)
 
-                else:
-                    LOG.info("Non-zero exit-code: %s from perl_wrapper.",
-                            self.exit_code)
+                    else:
+                        LOG.info("Non-zero exit-code: %s from perl_wrapper.",
+                                self.exit_code)
 
+        except:
+            LOG.exception('Error in workflow-wrapper')
+            raise
 
 def write_inputs(file_object, net, parallel_id, input_connections):
     parsed_input_connections = json.loads(input_connections)
