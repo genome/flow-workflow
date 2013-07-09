@@ -39,7 +39,7 @@ class PerlActionTest(unittest.TestCase):
 
     def test_command_line_no_parallel_index(self):
         expected_value = [
-            'flow', 'workflow-wrapper',
+            actions.FLOW_PATH, 'workflow-wrapper',
             '--method', 'method',
             '--action-type', 'action_type',
             '--action-id', 'action_id',
@@ -54,7 +54,7 @@ class PerlActionTest(unittest.TestCase):
 
     def test_command_line_parallel_index(self):
         expected_value = [
-            'flow', 'workflow-wrapper',
+            actions.FLOW_PATH, 'workflow-wrapper',
             '--method', 'method',
             '--action-type', 'action_type',
             '--action-id', 'action_id',
