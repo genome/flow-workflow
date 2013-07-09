@@ -5,10 +5,11 @@ from flow_workflow.operations import factory
 
 
 class Workflow(object):
-    def __init__(self, xml, inputs, resources):
+    def __init__(self, xml, inputs, resources, local_workflow=False):
         self.xml = xml
         self.inputs = inputs
         self.resources = resources
+        self.local_workflow = local_workflow
 
         self.dummy_operation = factory.operation('null')
         self._future_net = None
@@ -30,7 +31,8 @@ class Workflow(object):
     @property
     def operation(self):
         return factory.operation_from_xml(self.xml,
-                parent=factory.operation('null'))
+                parent=factory.operation('null'),
+                local_workflow=self.local_workflow)
 
     @property
     def operation_future_net(self):

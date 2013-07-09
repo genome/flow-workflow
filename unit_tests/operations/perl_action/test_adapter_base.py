@@ -63,11 +63,12 @@ class NormalPerlActionAdapterBaseTest(unittest.TestCase):
 
     def test_execute_action_class_remote(self):
         self.assertEqual(actions.LSFAction,
-                self.adapter.execute_action_class(True))
+                self.adapter.execute_action_class)
 
     def test_execute_action_class_local(self):
+        self.adapter.local_workflow = True
         self.assertEqual(actions.ForkAction,
-                self.adapter.execute_action_class(False))
+                self.adapter.execute_action_class)
 
     def test_net(self):
         net = self.adapter.net(

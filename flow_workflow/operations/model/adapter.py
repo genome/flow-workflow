@@ -41,7 +41,8 @@ class ModelAdapter(base.AdapterBase):
 
         for operation_xml in self.xml.findall('operation'):
             child = factory.operation_from_xml(operation_xml,
-                    log_dir=self.log_dir, parent=self)
+                    log_dir=self.log_dir, parent=self,
+                    local_workflow=self.local_workflow)
             self._add_child(child)
 
         self.links = map(LinkAdapter, self.xml.findall('link'))

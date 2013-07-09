@@ -58,11 +58,12 @@ class PerlActionAdapterBase(base.AdapterBase):
     def parallel_by(self):
         return self.xml.attrib.get('parallelBy')
 
-    def execute_action_class(self, remote_execute):
-        if remote_execute:
-            return actions.LSFAction
-        else:
+    @property
+    def execute_action_class(self):
+        if self.local_workflow:
             return actions.ForkAction
+        else:
+            return actions.LSFAction
 
     @property
     def shortcut_action_class(self):
@@ -85,5 +86,4 @@ class PerlActionAdapterBase(base.AdapterBase):
                 action_type=self.action_type,
                 action_id=self.action_id,
                 shortcut_action_class=self.shortcut_action_class,
-                execute_action_class=self.execute_action_class(remote_execute=True),
-                )
+                execute_action_class=self.execute_action_class)

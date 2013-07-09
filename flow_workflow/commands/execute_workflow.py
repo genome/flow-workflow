@@ -97,7 +97,7 @@ class ExecuteWorkflowCommand(CommandBase):
         inputs = load_inputs(inputs_filename)
         resources = load_resources(resources_filename)
 
-        workflow = Workflow(xml, inputs, resources)
+        workflow = Workflow(xml, inputs, resources, local_workflow=True)
 
         future_net = workflow.future_net
 
