@@ -37,14 +37,14 @@ class IOTests(TestCase):
 
         return_value = io.load_input(net=self.net,
                 input_connections=input_connections,
-                name='a',
+                property_name='a',
                 parallel_id=parallel_id)
         expected_return_value = '_wf_outp_0_b|54:9|99:4'
         self.assertEqual(return_value, expected_return_value)
 
         return_value = io.load_input(net=self.net,
                 input_connections=input_connections,
-                name=None,
+                property_name=None,
                 parallel_id=parallel_id)
         expected_return_value = {
                 'a':'_wf_outp_0_b|54:9|99:4',
@@ -65,7 +65,7 @@ class IOTests(TestCase):
             # test single
             return_value = io.load_input(net=self.net,
                     input_connections=input_connections,
-                    name='a',
+                    property_name='a',
                     parallel_id=parallel_id)
             self.assertIs(return_value, test_load_output.return_value)
             test_load_output.assert_called_once_with(net=self.net,
@@ -73,17 +73,17 @@ class IOTests(TestCase):
                     property_name='b',
                     parallel_id=parallel_id)
 
-            # should error if input name not in input_connections
+            # should error if input property_name not in input_connections
             with self.assertRaises(KeyError):
                 io.load_input(net=self.net,
                     input_connections=input_connections,
-                    name='not_there',
+                    property_name='not_there',
                     parallel_id=parallel_id)
 
             # test multiple
             return_value = io.load_input(net=self.net,
                     input_connections=input_connections,
-                    name=None,
+                    property_name=None,
                     parallel_id=parallel_id)
             expected_return_value = {
                     'a':test_load_output.return_value,

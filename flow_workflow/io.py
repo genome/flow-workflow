@@ -13,30 +13,30 @@ def extract_workflow_data(net, token_indices):
     return outputs
 
 
-def load_input(net, input_connections, name=None, parallel_id=None):
+def load_input(net, input_connections, property_name=None, parallel_id=None):
     """
-    Return the input <name>d from the <net> for an operation when given its
-    <input_connections> and <parallel_id>.  If name is None then all
-    inputs are returned as a dictionary keyed on name.
+    Return the input <property_name>d from the <net> for an operation when given
+    its <input_connections> and <parallel_id>.  If property_name is None then
+    all inputs are returned as a dictionary keyed on property_name.
 
     input_connections[src_operation_id][property_name] = src_property
     """
     inputs = {}
     for src_id, prop_hash in input_connections.iteritems():
         for dst_prop, src_prop in prop_hash.iteritems():
-            if name is None or name == dst_prop:
+            if property_name is None or property_name == dst_prop:
                 value = load_output(
                         net=net,
                         operation_id=src_id,
                         property_name=src_prop,
                         parallel_id=parallel_id)
-                if name == dst_prop:
+                if property_name == dst_prop:
                     return value
                 inputs[dst_prop] = value
 
-    if name is not None:
+    if property_name is not None:
         raise KeyError("Input %s not found in input_connections (%s)" %
-                (name, input_connections))
+                (property_name, input_connections))
     else:
         return inputs
 
