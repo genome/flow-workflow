@@ -9,6 +9,7 @@ workflow-wrapper = flow_workflow.commands.workflow_wrapper:WorkflowWrapperComman
 
 [flow.services]
 workflow_historian = flow_workflow.historian.service_interface:WorkflowHistorianServiceInterface
+workflow_completion = flow_workflow.completion:WorkflowCompletionServiceInterface
 
 [flow_workflow.operation_types]
 Block = flow_workflow.operations.block.adapter:BlockAdapter

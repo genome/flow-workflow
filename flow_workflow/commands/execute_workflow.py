@@ -9,6 +9,7 @@ from flow.orchestrator.handlers import PetriNotifyTransitionHandler
 from flow.petri_net.builder import Builder
 from flow.service_locator import ServiceLocator
 from flow.shell_command.fork.handler import ForkShellCommandMessageHandler
+from flow_workflow.completion import ExittingCompletionHandler
 from flow_workflow.workflow import Workflow
 from lxml import etree
 
@@ -29,9 +30,11 @@ class ExecuteWorkflowCommand(CommandBase):
             ServiceLocatorConfiguration,
     ]
 
-    def setup_services(self):
+    def setup_services(self, net):
         self.setup_shell_command_handlers()
         self.setup_orchestrator_handlers()
+
+        self.setup_completion_handler(net)
 
     def setup_shell_command_handlers(self):
         self.broker.register_handler(
@@ -44,6 +47,11 @@ class ExecuteWorkflowCommand(CommandBase):
                 self.injector.get(PetriNotifyPlaceHandler))
         self.broker.register_handler(
                 self.injector.get(PetriNotifyTransitionHandler))
+
+    def setup_completion_handler(self, net):
+        self.broker.declare_queue(net.key, durable=False, exclusive=True)
+        self.broker.register_handler(
+                ExittingCompletionHandler(queue_name=net.key))
 
     @staticmethod
     def annotate_parser(parser):
@@ -73,7 +81,7 @@ class ExecuteWorkflowCommand(CommandBase):
         net, start_place = self.construct_net(parsed_arguments.xml,
                 parsed_arguments.inputs_file, parsed_arguments.resource_file)
 
-        self.setup_services()
+        self.setup_services(net)
 
         self.start_net(net, start_place)
 
