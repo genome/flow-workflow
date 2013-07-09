@@ -1,5 +1,6 @@
 from flow.petri_net.actions.base import BasicActionBase, BarrierActionBase
 from flow.shell_command.petri_net import actions
+from twisted.python.procutils import which
 from flow_workflow import io
 from twisted.internet import defer
 
@@ -10,6 +11,9 @@ import sys
 
 
 LOG = logging.getLogger(__name__)
+
+
+FLOW_PATH = which('flow')[0]
 
 
 class PerlAction(object):
@@ -28,7 +32,7 @@ class PerlAction(object):
         return env
 
     def command_line(self, net, token_data):
-        cmd_line = map(str, ['flow', 'workflow-wrapper',
+        cmd_line = [FLOW_PATH, 'workflow-wrapper',
                 '--method', self.args['method'],
                 '--action-type', self.args['action_type'],
                 '--action-id', self.args['action_id'],
@@ -36,13 +40,12 @@ class PerlAction(object):
                 '--operation-id', self.args['operation_id'],
                 '--input-connections',
                         json.dumps(self.args['input_connections'])]
-        )
 
         parallel_id = token_data.get('workflow_data', {}).get('parallel_id')
         if parallel_id:
             cmd_line.extend(['--parallel-id', json.dumps(parallel_id)])
 
-        return cmd_line
+        return map(str, cmd_line)
 
 
 class ForkAction(PerlAction, actions.ForkDispatchAction):
