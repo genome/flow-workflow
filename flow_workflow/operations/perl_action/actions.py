@@ -102,7 +102,7 @@ class ParallelBySplit(BasicActionBase):
     def _create_tokens(self, num_tokens, color_descriptor, workflow_data, net):
         new_color_group = net.add_color_group(size=num_tokens,
                 parent_color=color_descriptor.color,
-                parent_color_group=color_descriptor.group.idx)
+                parent_color_group_idx=color_descriptor.group.idx)
 
         operation_id = self.args['operation_id']
 
