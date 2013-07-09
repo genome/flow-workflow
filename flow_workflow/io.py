@@ -2,10 +2,11 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
-def extract_workflow_data(tokens):
+def extract_workflow_data(net, token_indices):
     outputs = {}
 
-    for token in tokens:
+    for token_index in token_indices:
+        token = net.token(token_index)
         tok_outputs = token.data.get('workflow_data', {})
         outputs.update(tok_outputs)
 

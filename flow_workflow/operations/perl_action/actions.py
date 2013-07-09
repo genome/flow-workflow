@@ -57,7 +57,7 @@ class ParallelBySplit(BasicActionBase):
             'operation_id']
 
     def execute(self, net, color_descriptor, active_tokens, service_interfaces):
-        workflow_data = io.extract_workflow_data(active_tokens)
+        workflow_data = io.extract_workflow_data(net, active_tokens)
 
         parallel_id = workflow_data.get('parallel_id', {})
         parallel_input = io.load_input(net=net,
@@ -126,7 +126,7 @@ class ParallelByJoin(BarrierActionBase):
         operation_id = self.args['operation_id']
         parallel_size = color_descriptor.group.size
 
-        workflow_data = io.extract_workflow_data(active_tokens)
+        workflow_data = io.extract_workflow_data(net, active_tokens)
         parallel_id = workflow_data.get('parallel_id', {})
 
         for property_name in self.args['output_properties']:
@@ -168,7 +168,7 @@ class ParallelByFail(BasicActionBase):
     def execute(self, net, color_descriptor, active_tokens, service_interfaces):
         # created token should have workflow_data on it so observers can
         # know what parallel_id failed.
-        workflow_data = io.extract_workflow_data(active_tokens)
+        workflow_data = io.extract_workflow_data(net, active_tokens)
         data = {'workflow_data': workflow_data}
         token = net.create_token(color=color_descriptor.group.parent_color,
             color_group_idx=color_descriptor.group.parent_color_group_idx,

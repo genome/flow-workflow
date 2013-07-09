@@ -6,7 +6,10 @@ from flow_workflow import io
 class TokenTest(TestCase):
     def setUp(self):
         self.num_tokens = 3
+        self.net = Mock()
+        self.token_keys = [str(x) for x in xrange(self.num_tokens)]
         self.tokens = [Mock() for x in xrange(self.num_tokens)]
+        self.net.token.side_effect = self.tokens
 
         for i, t in enumerate(self.tokens):
             t.data.get.return_value = {
@@ -14,7 +17,7 @@ class TokenTest(TestCase):
             }
 
     def test_extract_data_from_tokens(self):
-        results = io.extract_workflow_data(self.tokens)
+        results = io.extract_workflow_data(self.net, self.token_keys)
         expected_results = {str(i): 'val_%d' % i
                 for i in xrange(self.num_tokens)}
         self.assertEqual(expected_results, results)

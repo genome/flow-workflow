@@ -18,7 +18,7 @@ class ConvergeAction(BasicActionBase):
             "input_property_order", "output_properties"]
 
     def execute(self, net, color_descriptor, active_tokens, service_interfaces):
-        workflow_data = io.extract_workflow_data(active_tokens)
+        workflow_data = io.extract_workflow_data(net, active_tokens)
         parallel_id = workflow_data['parallel_id']
 
         outputs = self.converge_inputs(net=net, parallel_id=parallel_id)

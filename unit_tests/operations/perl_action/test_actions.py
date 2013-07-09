@@ -115,7 +115,8 @@ class ParallelBySplitTest(unittest.TestCase):
                     active_tokens=active_tokens,
                     service_interfaces=service_interfaces)
 
-            m_io.extract_workflow_data.assert_called_once_with(active_tokens)
+            m_io.extract_workflow_data.assert_called_once_with(net,
+                    active_tokens)
             m_io.load_input.assert_called_once_with(net=net,
                     input_connections=self.input_connections,
                     property_name=self.parallel_property,
@@ -204,7 +205,8 @@ class ParallelByJoinTest(unittest.TestCase):
                     color_descriptor=color_descriptor,
                     active_tokens=active_tokens,
                     service_interfaces=service_interfaces)
-            m_io.extract_workflow_data.assert_called_once_with(active_tokens)
+            m_io.extract_workflow_data.assert_called_once_with(self.net,
+                    active_tokens)
             m_io.store_output.assert_called_once_with(net=self.net,
                     operation_id=self.operation_id, property_name='bar',
                     value=mock.ANY, parallel_id=mock.ANY)
@@ -253,7 +255,7 @@ class ParallelByFailTest(unittest.TestCase):
                     color_descriptor=color_descriptor,
                     active_tokens=active_tokens,
                     service_interfaces=service_interfaces)
-            wf_data.assert_called_once_with(active_tokens)
+            wf_data.assert_called_once_with(net, active_tokens)
 
         net.create_token.assert_called_once_with(
                 color=color_descriptor.group.parent_color,

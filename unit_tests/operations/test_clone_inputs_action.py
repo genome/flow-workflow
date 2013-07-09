@@ -46,7 +46,7 @@ class CloneInputsActionTest(unittest.TestCase):
                     self.assertIsInstance(deferred, Deferred)
                     self.assertItemsEqual(tokens, expected_tokens)
 
-                    extract.assert_called_once_with(active_tokens)
+                    extract.assert_called_once_with(net, active_tokens)
                     load.assert_called_once_with(net=net,
                             input_connections=self.input_connections,
                             parallel_id=parallel_id)
