@@ -27,7 +27,7 @@ class PerlAction(object):
 
         return env
 
-    def command_line(self, net, workflow_data):
+    def command_line(self, net, token_data):
         cmd_line = map(str, ['flow', 'workflow-wrapper',
                 '--method', self.args['method'],
                 '--action-type', self.args['action_type'],

@@ -48,9 +48,9 @@ class PerlActionTest(unittest.TestCase):
             '--input-connections', '{"a": {"b": "c"}}',
         ]
 
-        workflow_data = {}
+        token_data = {}
         self.assertEqual(expected_value, self.action.command_line(
-            self.net, workflow_data))
+            self.net, token_data))
 
     def test_command_line_parallel_index(self):
         expected_value = [
@@ -64,9 +64,9 @@ class PerlActionTest(unittest.TestCase):
             '--parallel-id', '{"3": 4}',
         ]
 
-        workflow_data = {'parallel_id': {3: 4}}
+        token_data = {'workflow_data': {'parallel_id': {3: 4}}}
         self.assertEqual(expected_value, self.action.command_line(
-            self.net, workflow_data))
+            self.net, token_data))
 
 
 class ParallelBySplitTest(unittest.TestCase):
