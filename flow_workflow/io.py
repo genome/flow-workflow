@@ -92,6 +92,9 @@ def _output_variable_name(operation_id, property_name, parallel_id=None):
     """
     base = "_wf_outp_%s_%s" % (int(operation_id), property_name)
 
+    LOG.debug("_output_variable_name(%r, %r, %r)", operation_id, property_name,
+            parallel_id)
+
     if parallel_id:
         parallel_part = '|' + '|'.join('%s:%s' % (op_id, par_idx)
                 for op_id, par_idx in parallel_id)

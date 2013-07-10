@@ -162,7 +162,7 @@ sub run_workflow {
 
 # a convenient way to write out files which are suitable as --inputs-file for
 # the workflow-wrapper
-sub _write_outputs {
+sub write_outputs {
     my ($outputs_path, $outputs_hash) = @_;
 
     my $json = new JSON->allow_nonref;

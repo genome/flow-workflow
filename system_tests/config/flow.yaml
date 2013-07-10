@@ -98,16 +98,16 @@ logging:
             format: '%(asctime)s %(levelname)s %(name)s %(funcName)s %(lineno)d: %(message)s'
 
     root:
-        level: INFO
+        level: DEBUG
         handlers: [console]
 
     loggers:
         pika:
-            level: INFO
+            level: DEBUG
         flow:
-            level: INFO
+            level: DEBUG
         flow_workflow:
-            level: INFO
+            level: DEBUG
 
     handlers:
         console:
