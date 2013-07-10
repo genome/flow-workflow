@@ -9,7 +9,9 @@ from flow.orchestrator.handlers import PetriNotifyTransitionHandler
 from flow.petri_net.builder import Builder
 from flow.service_locator import ServiceLocator
 from flow.shell_command.fork.handler import ForkShellCommandMessageHandler
-from flow_workflow.completion import ExittingCompletionHandler
+from flow.util.exit import exit_process
+from flow_workflow import io
+from flow_workflow.completion import MonitoringCompletionHandler
 from flow_workflow.workflow import Workflow
 from lxml import etree
 
@@ -50,8 +52,9 @@ class ExecuteWorkflowCommand(CommandBase):
 
     def setup_completion_handler(self, net):
         self.broker.declare_queue(net.key, durable=False, exclusive=True)
-        self.broker.register_handler(
-                ExittingCompletionHandler(queue_name=net.key))
+        self.completion_handler = MonitoringCompletionHandler(
+                queue_name=net.key)
+        self.broker.register_handler(self.completion_handler)
 
     @staticmethod
     def annotate_parser(parser):
@@ -78,12 +81,24 @@ class ExecuteWorkflowCommand(CommandBase):
 
 
     def _execute(self, parsed_arguments):
-        net, start_place = self.construct_net(parsed_arguments.xml,
+        workflow, net, start_place = self.construct_net(parsed_arguments.xml,
                 parsed_arguments.inputs_file, parsed_arguments.resource_file)
 
         self.setup_services(net)
 
         self.start_net(net, start_place)
+
+        if self.complete():
+            self.write_outputs(net, workflow.operation.operation_id,
+                    workflow.output_properties, parsed_arguments.outputs_file)
+        else:
+            LOG.info('Workflow execution failed.')
+            exit_process(exit_codes.EXECUTE_FAILURE)
+
+
+    def complete(self):
+        return self.completion_handler.status == 'success'
+
 
     def start_net(self, net, start_place):
         cg = net.add_color_group(1)
@@ -108,7 +123,15 @@ class ExecuteWorkflowCommand(CommandBase):
 
         start_place_index = builder.future_places[future_net.start_place]
 
-        return stored_net, start_place_index
+        return workflow, stored_net, start_place_index
+
+    def write_outputs(self, net, operation_id, output_properties, outputs_file):
+        if outputs_file:
+            outputs = io.load_outputs(net=net, operation_id=operation_id,
+                    property_names=output_properties)
+            with open(outputs_file, 'w') as f:
+                json.dump(outputs, f)
+
 
     @property
     def variables(self):
