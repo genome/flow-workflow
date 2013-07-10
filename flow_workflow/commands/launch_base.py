@@ -13,6 +13,9 @@ import injector
 import json
 import os
 
+import logging
+
+LOG = logging.getLogger(__name__)
 
 @injector.inject(storage=flow.interfaces.IStorage,
         broker=flow.interfaces.IBroker,
