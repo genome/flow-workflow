@@ -13,6 +13,7 @@ class Workflow(object):
 
         self.dummy_operation = factory.operation('null')
         self._future_net = None
+        self._operation = None
 
     def store_inputs(self, net):
         io.store_outputs(net, self.dummy_operation.operation_id, self.inputs)
@@ -30,9 +31,11 @@ class Workflow(object):
 
     @property
     def operation(self):
-        return factory.operation_from_xml(self.xml,
+        if not self._operation:
+            self._operation = factory.operation_from_xml(self.xml,
                 parent=factory.operation('null'),
                 local_workflow=self.local_workflow)
+        return self._operation
 
     @property
     def operation_future_net(self):
