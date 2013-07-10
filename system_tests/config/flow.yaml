@@ -1,0 +1,115 @@
+bindings:
+    flow:
+        fork_submit:
+            - shell_command.fork.submit
+
+        lsf_submit:
+            - shell_command.lsf.submit
+
+        petri_create_token:
+            - petri.place.create_token
+
+        petri_notify_place:
+            - petri.place.notify
+
+        petri_notify_transition:
+            - petri.transition.notify
+
+        workflow_historian_update:
+            - workflow_historian.update
+
+
+orchestrator:
+    create_token_exchange: flow
+    create_token_routing_key: petri.place.create_token
+    create_token_queue: petri_create_token
+
+    notify_place_exchange: flow
+    notify_place_routing_key: petri.place.notify
+    notify_place_queue: petri_notify_place
+
+    notify_transition_exchange: flow
+    notify_transition_routing_key: petri.transition.notify
+    notify_transition_queue: petri_notify_transition
+
+
+shell_command:
+    resource_types:
+        cores:
+            class: IntegerResource
+
+        cpu_time:
+            class: TimeResource
+            units: s
+
+        open_files:
+            class: IntegerResource
+
+        memory:
+            class: StorageResource
+            units: GiB
+
+        processes:
+            class: IntegerResource
+
+        stack_size:
+            class: StorageResource
+            units: MiB
+
+        temp_space:
+            class: StorageResource
+            units: GiB
+
+        threads:
+            class: IntegerResource
+
+        virtual_memory:
+            class: StorageResource
+            units: GiB
+
+    fork:
+        exchange: flow
+        submit_routing_key: shell_command.fork.submit
+        queue: fork_submit
+
+        response_routing_key: petri.place.create_token
+
+
+workflow:
+    python_wrapper: [flow, workflow-wrapper]
+    perl_wrapper: ['workflow-wrapper.pl']
+    historian:
+        exchange: flow
+        routing_key: workflow_historian.update
+        connection_string: "oracle://wrkflo_user:wfl0us3r@gscprod"
+        owner: WORKFLOW
+        queue: workflow_historian_update
+
+
+logging:
+    version: 1
+    disable_existing_loggers: true
+
+    formatters:
+        json:
+            '()': flow.util.log_formatters.JSONFormatter
+
+        plain:
+            format: '%(asctime)s %(levelname)s %(name)s %(funcName)s %(lineno)d: %(message)s'
+
+    root:
+        level: INFO
+        handlers: [console]
+
+    loggers:
+        pika:
+            level: INFO
+        flow:
+            level: INFO
+        flow_workflow:
+            level: INFO
+
+    handlers:
+        console:
+            class: logging.StreamHandler
+            formatter: plain
