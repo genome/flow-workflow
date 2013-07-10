@@ -48,9 +48,8 @@ class ConvergeActionTest(unittest.TestCase):
         self.action = ConvergeAction.create(
                 self.connection, self.key, args=args)
 
-
         self.net = mock.Mock()
-        self.parallel_id = {41: 7}
+        self.parallel_id = [[41, 7]]
 
     def tearDown(self):
         self.connection.flushall()
@@ -86,7 +85,7 @@ class ConvergeActionTest(unittest.TestCase):
             'foo': mock.Mock(),
             'bar': mock.Mock(),
         }
-        with mock.patch('flow_workflow.io.load_input') as load_input:
+        with mock.patch('flow_workflow.io.load_inputs') as load_input:
             load_input.return_value = inputs
 
             expected_outputs = [inputs[x] for x in self.input_property_order]
