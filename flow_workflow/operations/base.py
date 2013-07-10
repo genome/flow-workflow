@@ -7,7 +7,7 @@ _NULL_OPERATION = None
 class OperationBase(object):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, operation_id, log_dir='.', parent=_NULL_OPERATION,
+    def __init__(self, operation_id, log_dir=None, parent=_NULL_OPERATION,
             local_workflow=False):
         self.operation_id = operation_id
         self._log_dir = log_dir

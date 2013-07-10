@@ -1,3 +1,5 @@
+from flow.util.mkdir import make_path_to
+
 import abc
 import json
 import os
@@ -24,6 +26,10 @@ class BaseWorkflowTest(object):
 
     @abc.abstractproperty
     def config_directory(self):
+        pass
+
+    @abc.abstractproperty
+    def log_file(self):
         pass
 
     @property
@@ -104,7 +110,10 @@ class BaseWorkflowTest(object):
 
 
     def execute_workflow(self):
-        rv = subprocess.call(self.command_line)
+        make_path_to(self.log_file)
+        with open(self.log_file, 'a') as logfile:
+            rv = subprocess.call(self.command_line,
+                    stderr=logfile)
         self.assertEqual(0, rv)
 
     @property

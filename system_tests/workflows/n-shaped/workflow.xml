@@ -1,7 +1,7 @@
 <?xml version='1.0' standalone='yes'?>
 <workflow name="Mark likes the letter N"
     executor="Workflow::Executor::SerialDeferred"
-    logDir="/tmp">
+    logDir="test_logs/n-shaped">
 
     <link fromOperation="input connector" fromProperty="a"
         toOperation="A" toProperty="param" />

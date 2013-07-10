@@ -1,5 +1,6 @@
 <?xml version='1.0' standalone='yes'?>
-<workflow name="Parallel Model Test">
+<workflow name="Parallel Model Test"
+    logDir="test_logs/parallel-cmd">
     <link fromOperation="input connector" fromProperty="prefixes" toOperation="Appender" toProperty="prefix" />
     <link fromOperation="input connector" fromProperty="suffix" toOperation="Appender" toProperty="suffix" />
 
