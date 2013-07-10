@@ -57,6 +57,13 @@ def load_output(net, operation_id, property_name, parallel_id=None):
     return net.variables[varname]
 
 
+def load_outputs(net, operation_id, property_names, parallel_id=None):
+    outputs = {}
+    for output_name in property_names:
+        outputs[output_name] = load_output(net=net, operation_id=operation_id,
+                property_name=output_name, parallel_id=parallel_id)
+    return outputs
+
 
 def store_output(net, operation_id, property_name, value, parallel_id=None):
     varname = _output_variable_name(operation_id=operation_id,
