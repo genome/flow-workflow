@@ -92,7 +92,10 @@ class WorkflowWrapperCommand(CommandBase):
 
 def write_inputs(file_object, net, parallel_id, input_connections):
     parsed_input_connections = json.loads(input_connections)
-    parsed_parallel_id = json.loads(parallel_id)
+    if parallel_id:
+        parsed_parallel_id = json.loads(parallel_id)
+    else:
+        parsed_parallel_id = None
     inputs = io.load_inputs(net=net, input_connections=parsed_input_connections,
             parallel_id=parsed_parallel_id)
 
