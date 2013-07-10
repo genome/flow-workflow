@@ -152,7 +152,7 @@ sub run_workflow {
 
     if (-s $out_path) {
         print "Run_workflow got some outputs... returning them.\n";
-        return _read_outputs($out_path);
+        return read_outputs($out_path);
     }
     else {
         print "Run_workflow got no outputs... returning 1.\n";
@@ -170,7 +170,7 @@ sub _write_outputs {
     return write_file($outputs_path, $encoded_content);
 }
 
-sub _read_outputs {
+sub read_outputs {
     my $outputs_path = shift;
 
     my $outputs_str = read_file($outputs_path);
