@@ -133,6 +133,7 @@ class ParallelByJoin(BarrierActionBase):
 
         workflow_data = io.extract_workflow_data(net, active_tokens)
         parallel_id = workflow_data.get('parallel_id', [])
+        parent_parallel_id = parallel_id[:-1]
 
         for property_name in self.args['output_properties']:
             array_value = self.collect_array_output(net=net,
@@ -145,7 +146,7 @@ class ParallelByJoin(BarrierActionBase):
                     operation_id=operation_id,
                     property_name=property_name,
                     value=array_value,
-                    parallel_id=parallel_id)
+                    parallel_id=parent_parallel_id)
 
         token = net.create_token(color=color_descriptor.group.parent_color,
             color_group_idx=color_descriptor.group.parent_color_group_idx,
