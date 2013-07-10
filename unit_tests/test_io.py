@@ -1,14 +1,17 @@
-from unittest import TestCase, main
-from mock import Mock, patch
+from flow.petri_net.net import Net
 from flow_workflow import io
+from test_helpers.fakeredistest import FakeRedisTest
+
+import mock
+import unittest
 
 
-class TokenTest(TestCase):
+class ExtractWorkflowDataTest(unittest.TestCase):
     def setUp(self):
         self.num_tokens = 3
-        self.net = Mock()
+        self.net = mock.MagicMock()
         self.token_keys = [str(x) for x in xrange(self.num_tokens)]
-        self.tokens = [Mock() for x in xrange(self.num_tokens)]
+        self.tokens = [mock.Mock() for x in xrange(self.num_tokens)]
         self.net.token.side_effect = self.tokens
 
         for i, t in enumerate(self.tokens):
@@ -23,159 +26,125 @@ class TokenTest(TestCase):
         self.assertEqual(expected_results, results)
 
 
-class IOTests(TestCase):
-    def setUp(self):
-        self.net = Mock()
-        self.net.variable = lambda x:x
-
-    def test_load_without_patches(self):
-        input_connections = {
-                0:{'a':'b'},
-                1:{'c':'d'},
-        }
-        parallel_id = {99:4, 54:9}
-
-        return_value = io.load_input(net=self.net,
-                input_connections=input_connections,
-                property_name='a',
-                parallel_id=parallel_id)
-        expected_return_value = '_wf_outp_0_b|54:9|99:4'
-        self.assertEqual(return_value, expected_return_value)
-
-        return_value = io.load_input(net=self.net,
-                input_connections=input_connections,
-                property_name=None,
-                parallel_id=parallel_id)
-        expected_return_value = {
-                'a':'_wf_outp_0_b|54:9|99:4',
-                'c':'_wf_outp_1_d|54:9|99:4',
-        }
-        self.assertEqual(return_value, expected_return_value)
-
-    def test_load_input(self):
-        input_connections = {
-                0:{'a':'b'},
-                1:{'c':'d'},
-        }
-        parallel_id = object()
-
-        test_load_output = Mock()
-        test_load_output.return_value = object()
-        with patch('flow_workflow.io.load_output', new=test_load_output):
-            # test single
-            return_value = io.load_input(net=self.net,
-                    input_connections=input_connections,
-                    property_name='a',
-                    parallel_id=parallel_id)
-            self.assertIs(return_value, test_load_output.return_value)
-            test_load_output.assert_called_once_with(net=self.net,
-                    operation_id=0,
-                    property_name='b',
-                    parallel_id=parallel_id)
-
-            # should error if input property_name not in input_connections
-            with self.assertRaises(KeyError):
-                io.load_input(net=self.net,
-                    input_connections=input_connections,
-                    property_name='not_there',
-                    parallel_id=parallel_id)
-
-            # test multiple
-            return_value = io.load_input(net=self.net,
-                    input_connections=input_connections,
-                    property_name=None,
-                    parallel_id=parallel_id)
-            expected_return_value = {
-                    'a':test_load_output.return_value,
-                    'c':test_load_output.return_value,
-                    }
-            self.assertEqual(return_value, expected_return_value)
-
-
-    def test_load_output(self):
-        operation_id = object()
-        property_name = object()
-        parallel_id = object()
-
-        test_variable_name = Mock()
-        test_variable_name.return_value = object()
-        with patch('flow_workflow.io._output_variable_name',
-                new=test_variable_name):
-            return_value = io.load_output(net=self.net,
-                    operation_id=operation_id,
-                    property_name=property_name,
-                    parallel_id=parallel_id)
-            self.assertIs(return_value, test_variable_name.return_value)
-            test_variable_name.assert_called_once_with(
-                    operation_id=operation_id, property_name=property_name,
-                    parallel_id=parallel_id)
-
-    def test_store_output(self):
-        self.net.set_variable = Mock()
-        self.net.set_variable.return_value = object()
-
-        operation_id = 44
-        property_name = 'test_output_name'
-        value = object()
-        parallel_id = {1:2, 3:4}
-
-        return_value = io.store_output(net=self.net,
-                operation_id=operation_id,
-                property_name=property_name,
-                value=value,
-                parallel_id=parallel_id)
-        self.assertIs(return_value, None)
-
-        self.net.set_variable.assert_called_once_with(
-                '_wf_outp_44_test_output_name|1:2|3:4', value)
-
-    def test_store_outputs(self):
-        operation_id = object()
-        outputs = {0:1, 2:3}
-        parallel_id = object()
-
-        test_store_output = Mock()
-        with patch('flow_workflow.io.store_output', new=test_store_output):
-            return_value = io.store_outputs(net=self.net,
-                    operation_id=operation_id,
-                    outputs=None,
-                    parallel_id=parallel_id)
-            self.assertIs(return_value, None)
-            self.assertEqual(test_store_output.call_count, 0)
-
-            return_value = io.store_outputs(net=self.net,
-                    operation_id=operation_id,
-                    outputs=outputs,
-                    parallel_id=parallel_id)
-            self.assertIs(return_value, None)
-
-            test_store_output.assert_any_call(net=self.net,
-                    operation_id=operation_id,
-                    property_name=0,
-                    value=1,
-                    parallel_id=parallel_id)
-
-            test_store_output.assert_any_call(net=self.net,
-                    operation_id=operation_id,
-                    property_name=2,
-                    value=3,
-                    parallel_id=parallel_id)
-
-
+class VariableNameTest(unittest.TestCase):
     def test_private_output_variable_name(self):
         operation_id = 44
         property_name = 'test_property'
-        parallel_id = {1:2, 3:4, 5:6}
+        parallel_id = [[3, 4], [1, 2], [5, 6]]
 
         return_value = io._output_variable_name(operation_id=operation_id,
                 property_name=property_name,
                 parallel_id=parallel_id)
-        self.assertEqual(return_value, '_wf_outp_44_test_property|1:2|3:4|5:6')
+        self.assertEqual(return_value, '_wf_outp_44_test_property|3:4|1:2|5:6')
 
         return_value = io._output_variable_name(operation_id=operation_id,
                 property_name=property_name)
         self.assertEqual(return_value, '_wf_outp_44_test_property')
 
 
+class StoreLoadTest(FakeRedisTest):
+    def setUp(self):
+        FakeRedisTest.setUp(self)
+
+        self.net = Net.create(self.conn, key='netkey')
+
+        self.output_operation_id = 4
+        self.input_property_name = 'foo'
+        self.output_property_name = 'bar'
+        self.input_connections = {
+            4: {self.input_property_name: self.output_property_name}
+        }
+        self.value = 'awesome data'
+
+    def test_store_output(self):
+        parallel_id = []
+
+        io.store_output(net=self.net, operation_id=self.output_operation_id,
+                property_name=self.output_property_name, value=self.value,
+                parallel_id=parallel_id)
+
+        only_value = self.net.variables.value.values()[0]
+        self.assertEqual(self.value, only_value)
+
+
+    def store_output_then_load_output(self, parallel_id):
+        io.store_output(net=self.net, operation_id=self.output_operation_id,
+                property_name=self.output_property_name, value=self.value,
+                parallel_id=parallel_id)
+
+        self.assertEqual(self.value,
+                io.load_output(net=self.net,
+                    operation_id=self.output_operation_id,
+                    property_name=self.output_property_name,
+                    parallel_id=parallel_id))
+
+    def test_store_output_then_load_output_no_parallel_id(self):
+        self.store_output_then_load_output([])
+
+    def test_store_output_then_load_output_with_parallel_id(self):
+        self.store_output_then_load_output([[24, 17]])
+
+
+    def store_output_then_load_input(self, store_parallel_id, load_parllel_id):
+        io.store_output(net=self.net, operation_id=self.output_operation_id,
+                property_name=self.output_property_name, value=self.value,
+                parallel_id=store_parallel_id)
+
+        self.assertEqual(self.value,
+                io.load_input(net=self.net,
+                    input_connections=self.input_connections,
+                    property_name=self.input_property_name,
+                    parallel_id=load_parllel_id))
+
+    def test_store_output_load_input_no_parallel_id(self):
+        self.store_output_then_load_input([], [])
+
+    def test_store_output_load_input_same_parallel_id(self):
+        parallel_id = [[4, 7]]
+        self.store_output_then_load_input(parallel_id, parallel_id)
+
+    def test_store_output_load_input_different_parallel_id(self):
+        store_parallel_id = [[4, 7]]
+        load_parallel_id = store_parallel_id + [[12, 17]]
+        self.store_output_then_load_input(store_parallel_id, load_parallel_id)
+
+    def test_store_output_empty_id_load_input_with_id(self):
+        store_parallel_id = []
+        load_parallel_id = [[12, 17]]
+        self.store_output_then_load_input(store_parallel_id, load_parallel_id)
+
+
+    def store_outputs_then_load_inputs(self, store_parallel_id,
+            load_parallel_id):
+        outputs = {
+            'bar1': 'value A',
+            'bar2': 'value B'
+        }
+        input_connections = {
+            self.output_operation_id: {
+                'foo1': 'bar1',
+                'foo2': 'bar2',
+            }
+        }
+
+        io.store_outputs(net=self.net, operation_id=self.output_operation_id,
+                outputs=outputs, parallel_id=store_parallel_id)
+
+        expected_inputs = {
+            'foo1': 'value A',
+            'foo2': 'value B',
+        }
+        self.assertEqual(expected_inputs, io.load_inputs(net=self.net,
+            input_connections=input_connections, parallel_id=load_parallel_id))
+
+    def test_store_outptus_load_inputs_no_parallel_id(self):
+        self.store_outputs_then_load_inputs([], [])
+
+    def test_store_outptus_load_inputs_mismatched_parallel_id(self):
+        store_parallel_id = []
+        load_parallel_id = [[7, 24]]
+        self.store_outputs_then_load_inputs(store_parallel_id, load_parallel_id)
+
+
 if __name__ == "__main__":
-    main()
+    unittest.main()

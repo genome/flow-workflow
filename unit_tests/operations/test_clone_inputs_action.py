@@ -34,7 +34,7 @@ class CloneInputsActionTest(unittest.TestCase):
         expected_data = {'workflow_data': {'parallel_id': parallel_id}}
 
         with mock.patch('flow_workflow.io.extract_workflow_data') as extract:
-            with mock.patch('flow_workflow.io.load_input') as load:
+            with mock.patch('flow_workflow.io.load_inputs') as load:
                 with mock.patch('flow_workflow.io.store_outputs') as store:
                     extract.return_value = {'parallel_id': parallel_id}
 

@@ -33,7 +33,7 @@ class ConvergeAction(BasicActionBase):
         return [output_token], defer.succeed(None)
 
     def converge_inputs(self, net, parallel_id):
-        inputs = io.load_input(net=net,
+        inputs = io.load_inputs(net=net,
                 input_connections=self.args['input_connections'],
                 parallel_id=parallel_id)
 

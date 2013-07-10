@@ -61,10 +61,10 @@ class PerlActionTest(unittest.TestCase):
             '--net-key', 'netkey',
             '--operation-id', 'op_id',
             '--input-connections', '{"a": {"b": "c"}}',
-            '--parallel-id', '{"3": 4}',
+            '--parallel-id', '[[3, 4]]',
         ]
 
-        token_data = {'workflow_data': {'parallel_id': {3: 4}}}
+        token_data = {'workflow_data': {'parallel_id': [[3, 4]]}}
         self.assertEqual(expected_value, self.action.command_line(
             self.net, token_data))
 
@@ -88,7 +88,7 @@ class ParallelBySplitTest(unittest.TestCase):
                 connection=self.connection, key=self.key,
                 args=self.args)
 
-        self.parallel_id = {42: 3}
+        self.parallel_id = [[42, 3]]
 
         self.parent_color = 892
         self.parent_color_group = color.ColorGroup(
@@ -154,7 +154,7 @@ class ParallelBySplitTest(unittest.TestCase):
         color_group = color.ColorGroup(idx=27, parent_color=892,
                 parent_color_group_idx=21, begin=1022, end=1029)
         num_tokens = 7
-        workflow_data = {'parallel_id': {42: 3}}
+        workflow_data = {'parallel_id': [[42, 3]]}
 
         net = mock.Mock()
         net.add_color_group.return_value = color_group

@@ -13,7 +13,7 @@ class CloneInputsAction(BasicActionBase):
         workflow_data = io.extract_workflow_data(net, active_tokens)
         parallel_id = workflow_data.get('parallel_id', {})
 
-        inputs = io.load_input(net=net, input_connections=input_connections,
+        inputs = io.load_inputs(net=net, input_connections=input_connections,
                 parallel_id=parallel_id)
         io.store_outputs(net=net, operation_id=operation_id,
                 outputs=inputs, parallel_id=parallel_id)
