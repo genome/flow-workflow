@@ -66,7 +66,7 @@ class BaseWorkflowTest(object):
 
 
     def setup_flow_config_path(self):
-        self.old_flow_config_path = os.environ['FLOW_CONFIG_PATH']
+        self.old_flow_config_path = os.environ.get('FLOW_CONFIG_PATH')
         os.environ['FLOW_CONFIG_PATH'] = self.flow_config_path
 
     def teardown_flow_config_path(self):
