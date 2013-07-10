@@ -60,10 +60,11 @@ class WorkflowWrapperCommand(CommandBase):
         try:
             net = rom.get_object(self.storage, parsed_arguments.net_key)
 
+            parallel_id = parse_parallel_id(parsed_arguments.parallel_id)
+
             with NamedTemporaryFile() as inputs_file:
                 with NamedTemporaryFile() as outputs_file:
-                    write_inputs(inputs_file, net=net,
-                            parallel_id=parsed_arguments.parallel_id,
+                    write_inputs(inputs_file, net=net, parallel_id=parallel_id,
                             input_connections=parsed_arguments.input_connections)
 
                     cmdline = copy.copy(self.perl_wrapper)
@@ -80,7 +81,7 @@ class WorkflowWrapperCommand(CommandBase):
                     if self.exit_code == 0:
                         read_and_store_outputs(outputs_file, net=net,
                                 operation_id=parsed_arguments.operation_id,
-                                parallel_id=parsed_arguments.parallel_id)
+                                parallel_id=parallel_id)
 
                     else:
                         LOG.info("Non-zero exit-code: %s from perl_wrapper.",
@@ -90,14 +91,20 @@ class WorkflowWrapperCommand(CommandBase):
             LOG.exception('Error in workflow-wrapper')
             raise
 
+
+def parse_parallel_id(unparsed_parallel_id):
+    if unparsed_parallel_id:
+        parsed_parallel_id = json.loads(unparsed_parallel_id)
+    else:
+        parsed_parallel_id = []
+
+    return parsed_parallel_id
+
+
 def write_inputs(file_object, net, parallel_id, input_connections):
     parsed_input_connections = json.loads(input_connections)
-    if parallel_id:
-        parsed_parallel_id = json.loads(parallel_id)
-    else:
-        parsed_parallel_id = None
     inputs = io.load_inputs(net=net, input_connections=parsed_input_connections,
-            parallel_id=parsed_parallel_id)
+            parallel_id=parallel_id)
 
     LOG.debug('Inputs: %s', inputs)
 
