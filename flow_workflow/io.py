@@ -38,6 +38,8 @@ def load_inputs(net, input_connections, parallel_id=None):
 
 
 def load_output(net, operation_id, property_name, parallel_id=None):
+    LOG.debug('load_output(%r, %r, %r)',
+            operation_id, property_name, parallel_id)
     if parallel_id:
         iter_over_parallel_id = list(parallel_id)
     else:
@@ -66,10 +68,10 @@ def load_outputs(net, operation_id, property_names, parallel_id=None):
 
 
 def store_output(net, operation_id, property_name, value, parallel_id=None):
+    LOG.debug('store_output(%r, %r, %r, %r)',
+            operation_id, property_name, value, parallel_id)
     varname = _output_variable_name(operation_id=operation_id,
             property_name=property_name, parallel_id=parallel_id)
-    LOG.debug("Setting output (%s) from operation (%s) on net (%s) via %s = %s",
-            property_name, operation_id, net.key, varname, value)
 
     net.set_variable(varname, value)
 
@@ -91,9 +93,6 @@ def _output_variable_name(operation_id, property_name, parallel_id=None):
     the variable where they are stored.
     """
     base = "_wf_outp_%s_%s" % (int(operation_id), property_name)
-
-    LOG.debug("_output_variable_name(%r, %r, %r)", operation_id, property_name,
-            parallel_id)
 
     if parallel_id:
         parallel_part = '|' + '|'.join('%s:%s' % (op_id, par_idx)
