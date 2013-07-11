@@ -1,3 +1,4 @@
+from flow_workflow.parallel_id import ParallelIdentifier
 from flow.petri_net.net import Net
 from flow_workflow import io
 from test_helpers.fakeredistest import FakeRedisTest
@@ -30,7 +31,7 @@ class VariableNameTest(unittest.TestCase):
     def test_private_output_variable_name(self):
         operation_id = 44
         property_name = 'test_property'
-        parallel_id = [[3, 4], [1, 2], [5, 6]]
+        parallel_id = ParallelIdentifier([[3, 4], [1, 2], [5, 6]])
 
         return_value = io._output_variable_name(operation_id=operation_id,
                 property_name=property_name,
@@ -57,7 +58,7 @@ class StoreLoadTest(FakeRedisTest):
         self.value = 'awesome data'
 
     def test_store_output(self):
-        parallel_id = []
+        parallel_id = ParallelIdentifier([])
 
         io.store_output(net=self.net, operation_id=self.output_operation_id,
                 property_name=self.output_property_name, value=self.value,
@@ -68,15 +69,16 @@ class StoreLoadTest(FakeRedisTest):
 
 
     def store_output_then_load_output(self, parallel_id):
+        pi = ParallelIdentifier(parallel_id)
         io.store_output(net=self.net, operation_id=self.output_operation_id,
                 property_name=self.output_property_name, value=self.value,
-                parallel_id=parallel_id)
+                parallel_id=pi)
 
         self.assertEqual(self.value,
                 io.load_output(net=self.net,
                     operation_id=self.output_operation_id,
                     property_name=self.output_property_name,
-                    parallel_id=parallel_id))
+                    parallel_id=pi))
 
     def test_store_output_then_load_output_no_parallel_id(self):
         self.store_output_then_load_output([])
@@ -85,16 +87,19 @@ class StoreLoadTest(FakeRedisTest):
         self.store_output_then_load_output([[24, 17]])
 
 
-    def store_output_then_load_input(self, store_parallel_id, load_parllel_id):
+    def store_output_then_load_input(self, store_parallel_id, load_parallel_id):
+        spi = ParallelIdentifier(store_parallel_id)
+        lpi = ParallelIdentifier(load_parallel_id)
+
         io.store_output(net=self.net, operation_id=self.output_operation_id,
                 property_name=self.output_property_name, value=self.value,
-                parallel_id=store_parallel_id)
+                parallel_id=spi)
 
         self.assertEqual(self.value,
                 io.load_input(net=self.net,
                     input_connections=self.input_connections,
                     property_name=self.input_property_name,
-                    parallel_id=load_parllel_id))
+                    parallel_id=lpi))
 
     def test_store_output_load_input_no_parallel_id(self):
         self.store_output_then_load_input([], [])
@@ -116,6 +121,8 @@ class StoreLoadTest(FakeRedisTest):
 
     def store_outputs_then_load_inputs(self, store_parallel_id,
             load_parallel_id):
+        spi = ParallelIdentifier(store_parallel_id)
+        lpi = ParallelIdentifier(load_parallel_id)
         outputs = {
             'bar1': 'value A',
             'bar2': 'value B'
@@ -128,14 +135,14 @@ class StoreLoadTest(FakeRedisTest):
         }
 
         io.store_outputs(net=self.net, operation_id=self.output_operation_id,
-                outputs=outputs, parallel_id=store_parallel_id)
+                outputs=outputs, parallel_id=spi)
 
         expected_inputs = {
             'foo1': 'value A',
             'foo2': 'value B',
         }
         self.assertEqual(expected_inputs, io.load_inputs(net=self.net,
-            input_connections=input_connections, parallel_id=load_parallel_id))
+            input_connections=input_connections, parallel_id=lpi))
 
     def test_store_outptus_load_inputs_no_parallel_id(self):
         self.store_outputs_then_load_inputs([], [])

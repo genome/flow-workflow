@@ -15,19 +15,18 @@ def extract_workflow_data(net, token_indices):
     return outputs
 
 
-def load_input(net, input_connections, property_name, parallel_id=None):
+def load_input(net, input_connections, property_name, parallel_id):
     for src_id, prop_hash in input_connections.iteritems():
         if property_name in prop_hash:
             return load_output(net=net, operation_id=src_id,
                                property_name=prop_hash[property_name],
                                parallel_id=parallel_id)
 
-    # XXX I'm not sure we should raise a key error here, but the old code did.
     raise KeyError("Input %s not found in input_connections (%s)" %
             (property_name, input_connections))
 
 
-def load_inputs(net, input_connections, parallel_id=None):
+def load_inputs(net, input_connections, parallel_id):
     inputs = {}
     for src_id, prop_hash in input_connections.iteritems():
         for dest_prop_name, src_prop_name in prop_hash.iteritems():
@@ -37,29 +36,22 @@ def load_inputs(net, input_connections, parallel_id=None):
     return inputs
 
 
-def load_output(net, operation_id, property_name, parallel_id=None):
+def load_output(net, operation_id, property_name, parallel_id):
     LOG.debug('load_output(%r, %r, %r)',
             operation_id, property_name, parallel_id)
-    if parallel_id:
-        iter_over_parallel_id = list(parallel_id)
-    else:
-        iter_over_parallel_id = []
-
-    while iter_over_parallel_id:
+    for pid in parallel_id.stack_iterator:
         varname = _output_variable_name(operation_id=operation_id,
-                property_name=property_name, parallel_id=iter_over_parallel_id)
+                property_name=property_name, parallel_id=list(pid))
         try:
             return net.variables[varname]
         except KeyError:
-            iter_over_parallel_id.pop()
+            pass
 
-    varname = _output_variable_name(operation_id=operation_id,
-            property_name=property_name, parallel_id=iter_over_parallel_id)
-
-    return net.variables[varname]
+    raise KeyError("Output %s not found in on operation %r, parallel_id %r" %
+            (property_name, operation_id, parallel_id))
 
 
-def load_outputs(net, operation_id, property_names, parallel_id=None):
+def load_outputs(net, operation_id, property_names, parallel_id):
     outputs = {}
     for output_name in property_names:
         outputs[output_name] = load_output(net=net, operation_id=operation_id,
@@ -76,16 +68,14 @@ def store_output(net, operation_id, property_name, value, parallel_id=None):
     net.set_variable(varname, value)
 
 
-def store_outputs(net, operation_id, outputs, parallel_id=None):
-    if not outputs:
-        return
-
+def store_outputs(net, operation_id, outputs, parallel_id):
     for name, value in outputs.iteritems():
         store_output(net=net,
                 operation_id=operation_id,
                 property_name=name,
                 value=value,
                 parallel_id=parallel_id)
+
 
 def _output_variable_name(operation_id, property_name, parallel_id=None):
     """
