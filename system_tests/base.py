@@ -136,7 +136,7 @@ class BaseWorkflowTest(object):
 
     @property
     def read_outputs_command_line(self):
-        return ['perl', os.path.join(self.perl_directory, 'slurp_outputs.pl'),
+        return ['perl', os.path.join(self.perl_directory, 'decode_outputs.pl'),
                 self.outputs_path]
 
     @property
