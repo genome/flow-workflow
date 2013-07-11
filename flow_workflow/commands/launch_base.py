@@ -5,6 +5,7 @@ from flow.service_locator import ServiceLocator
 from flow.util.exit import exit_process
 from flow_workflow import io
 from flow_workflow.completion import MonitoringCompletionHandler
+from flow_workflow.parallel_id import ParallelIdentifier
 from flow_workflow.workflow import Workflow
 from lxml import etree
 
@@ -104,7 +105,8 @@ class LaunchWorkflowCommandBase(CommandBase):
     def write_outputs(self, net, operation_id, output_properties, outputs_file):
         if outputs_file:
             outputs = io.load_outputs(net=net, operation_id=operation_id,
-                    property_names=output_properties)
+                    property_names=output_properties,
+                    parallel_id=ParallelIdentifier())
             with open(outputs_file, 'w') as f:
                 json.dump(outputs, f)
 

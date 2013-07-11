@@ -4,6 +4,7 @@ from flow.configuration.inject.redis_conf import RedisConfiguration
 from flow.configuration.settings.injector import setting
 from flow.util.logannotator import LogAnnotator
 from flow_workflow import io
+from flow_workflow.parallel_id import ParallelIdentifier
 from injector import inject
 from tempfile import NamedTemporaryFile
 from twisted.internet import defer
@@ -94,11 +95,11 @@ class WorkflowWrapperCommand(CommandBase):
 
 def parse_parallel_id(unparsed_parallel_id):
     if unparsed_parallel_id:
-        parsed_parallel_id = json.loads(unparsed_parallel_id)
+        par_id_as_list = json.loads(unparsed_parallel_id)
     else:
-        parsed_parallel_id = []
+        par_id_as_list = []
 
-    return parsed_parallel_id
+    return ParallelIdentifier(par_id_as_list)
 
 
 def write_inputs(file_object, net, parallel_id, input_connections):

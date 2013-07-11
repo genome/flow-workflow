@@ -16,6 +16,8 @@ def extract_workflow_data(net, token_indices):
 
 
 def load_input(net, input_connections, property_name, parallel_id):
+    LOG.debug('load_input(netkey=%r, %r, %r, %r)',
+            net.key, input_connections, property_name, parallel_id)
     for src_id, prop_hash in input_connections.iteritems():
         if property_name in prop_hash:
             return load_output(net=net, operation_id=src_id,
@@ -27,6 +29,8 @@ def load_input(net, input_connections, property_name, parallel_id):
 
 
 def load_inputs(net, input_connections, parallel_id):
+    LOG.debug('load_inputs(netkey=%r, %r, %r)',
+            net.key, input_connections, parallel_id)
     inputs = {}
     for src_id, prop_hash in input_connections.iteritems():
         for dest_prop_name, src_prop_name in prop_hash.iteritems():
@@ -37,13 +41,14 @@ def load_inputs(net, input_connections, parallel_id):
 
 
 def load_output(net, operation_id, property_name, parallel_id):
-    LOG.debug('load_output(%r, %r, %r)',
-            operation_id, property_name, parallel_id)
     for pid in parallel_id.stack_iterator:
         varname = _output_variable_name(operation_id=operation_id,
                 property_name=property_name, parallel_id=list(pid))
         try:
-            return net.variables[varname]
+            value = net.variables[varname]
+            LOG.debug('load_output(netkey=%r, %r, %r, %r) = %r',
+                    net.key, operation_id, property_name, parallel_id, value)
+            return value
         except KeyError:
             pass
 
@@ -60,8 +65,8 @@ def load_outputs(net, operation_id, property_names, parallel_id):
 
 
 def store_output(net, operation_id, property_name, value, parallel_id=None):
-    LOG.debug('store_output(%r, %r, %r, %r)',
-            operation_id, property_name, value, parallel_id)
+    LOG.debug('store_output(netkey=%r, %r, %r, %r, %r)',
+            net.key, operation_id, property_name, value, parallel_id)
     varname = _output_variable_name(operation_id=operation_id,
             property_name=property_name, parallel_id=parallel_id)
 

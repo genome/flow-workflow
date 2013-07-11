@@ -1,9 +1,15 @@
 from collections import OrderedDict
 
+import logging
+
+
+LOG = logging.getLogger(__name__)
+
 
 class ParallelIdentifier(object):
     def __init__(self, parallel_id=[]):
-        self._entries = OrderedDict(parallel_id)
+        self._entries = OrderedDict([(int(op_id), int(par_idx))
+                for op_id, par_idx in parallel_id])
 
     @property
     def _parent_entries(self):
@@ -13,18 +19,20 @@ class ParallelIdentifier(object):
 
     @property
     def parent_identifier(self):
-        return ParallelIdentifier(self._parent_entries)
+        return ParallelIdentifier(self._parent_entries.iteritems())
 
     def _child_entries(self, operation_id, parallel_idx):
-        assert operation_id not in self._entries
+        if int(operation_id) in self._entries:
+            raise ValueError('operation_id already in ParallelIdentifier '
+                    'op_id (%r) in %r' % (operation_id, self._entries))
 
         child_entries = OrderedDict(self._entries)
-        child_entries[operation_id] = parallel_idx
+        child_entries[int(operation_id)] = int(parallel_idx)
         return child_entries
 
     def child_identifier(self, operation_id, parallel_idx):
         return ParallelIdentifier(self._child_entries(
-            operation_id, parallel_idx))
+            operation_id, parallel_idx).iteritems())
 
     @property
     def stack_iterator(self):

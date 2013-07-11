@@ -30,8 +30,6 @@ class PerlAction(object):
         env = net.constant('environment', {})
         parent_id = '%s %s' % (net.key, self.args['operation_id'])
 
-        LOG.debug('Setting environment variable FLOW_WORKFLOW_PARENT_ID="%s"',
-                parent_id)
         env['FLOW_WORKFLOW_PARENT_ID'] = parent_id
 
         return env
@@ -96,7 +94,7 @@ class ParallelBySplit(BasicActionBase):
                     property_name=source_property,
                     value=value,
                     parallel_id=parallel_id.child_identifier(
-                        source_operation_id, parallel_idx))
+                        operation_id, parallel_idx))
 
     def determine_input_source(self, name):
         for src_id, prop_hash in self.args['input_connections'].iteritems():
