@@ -1,0 +1,34 @@
+{
+    "outputs": [
+        [
+            [
+                "99 bottles of beer on the wall", 
+                "99 little birdies"
+            ], 
+            [
+                "98 bottles of beer on the wall", 
+                "98 little birdies"
+            ], 
+            [
+                "97 bottles of beer on the wall", 
+                "97 little birdies"
+            ]
+        ], 
+        [
+            [
+                "96 bottles of beer on the wall", 
+                "96 little birdies"
+            ], 
+            [
+                "95 bottles of beer on the wall", 
+                "95 little birdies"
+            ]
+        ], 
+        [
+            [
+                "94 bottles of beer on the wall", 
+                "94 little birdies"
+            ]
+        ]
+    ]
+}
