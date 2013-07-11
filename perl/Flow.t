@@ -1,10 +1,12 @@
 #!/usr/bin/env perl
 
+use Test::More;
+use Data::Dumper;
+
 use strict;
 use warnings;
 
 use above 'Flow';
-use Test::More;
 
 my $inputs = {
     a => [1, 2, 3],
@@ -25,4 +27,32 @@ is(ref($encoded->{a}), "ARRAY", "array values encoded as arrays");
 is(ref($encoded->{b}), "HASH", "hash values encoded as hashes");
 is_deeply($inputs, $decoded, 'decode(x) = encode^{-1}(x)');
 
-done_testing()
+my $nested_inputs = {
+    many_things => [
+        [1, 2, 3],
+        [4, 5],
+        [6],
+    ],
+};
+
+my $expected_encoded_inputs = {
+    many_things => [
+        [
+            Flow::_encode_scalar(1),
+            Flow::_encode_scalar(2),
+            Flow::_encode_scalar(3),
+        ],
+        [
+            Flow::_encode_scalar(4),
+            Flow::_encode_scalar(5),
+        ],
+        [
+            Flow::_encode_scalar(6),
+        ],
+    ],
+};
+my $encoded_inputs = Flow::encode_io_hash($nested_inputs);
+
+is_deeply($expected_encoded_inputs, $encoded_inputs, 'nested encoding wins');
+
+done_testing();

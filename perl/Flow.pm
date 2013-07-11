@@ -31,25 +31,25 @@ sub _decode_scalar {
 
 sub _encode_array {
     my $arrayref = shift;
-    my @encoded = map {_encode_scalar($_)} @$arrayref;
+    my @encoded = map {encode($_)} @$arrayref;
     return \@encoded;
 }
 
 sub _decode_array {
     my $arrayref = shift;
-    my @decoded = map {_decode_scalar($_)} @$arrayref;
+    my @decoded = map {decode($_)} @$arrayref;
     return \@decoded;
 }
 
 sub _encode_hash {
     my $hashref = shift;
-    my %encoded = map {_encode_scalar($_) => _encode_scalar($hashref->{$_})} keys %$hashref;
+    my %encoded = map {encode($_) => encode($hashref->{$_})} keys %$hashref;
     return \%encoded;
 }
 
 sub _decode_hash {
     my $hashref = shift;
-    my %decoded = map {_decode_scalar($_) => _decode_scalar($hashref->{$_})} keys %$hashref;
+    my %decoded = map {decode($_) => decode($hashref->{$_})} keys %$hashref;
     return \%decoded;
 }
 
