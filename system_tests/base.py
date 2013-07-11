@@ -1,6 +1,7 @@
 from flow.util.mkdir import make_path_to
 
 import abc
+import json
 import os
 import redis
 import subprocess
@@ -32,8 +33,17 @@ class BaseWorkflowTest(object):
         pass
 
     @abc.abstractproperty
-    def log_file(self):
+    def log_dir(self):
         pass
+
+
+    @property
+    def stderr_log_file(self):
+        return os.path.join(self.log_dir, 'log.err')
+
+    @property
+    def stdout_log_file(self):
+        return os.path.join(self.log_dir, 'log.out')
 
     @property
     def encoded_inputs_path(self):
@@ -42,6 +52,10 @@ class BaseWorkflowTest(object):
     @property
     def outputs_path(self):
         return os.path.join(self.tmp_dir, 'outputs_file.json')
+
+    @property
+    def converted_outputs_path(self):
+        return os.path.join(self.log_dir, 'outputs_file.json')
 
     @property
     def command_line(self):
@@ -128,10 +142,12 @@ class BaseWorkflowTest(object):
 
 
     def execute_workflow(self):
-        make_path_to(self.log_file)
-        with open(self.log_file, 'a') as logfile:
-            rv = subprocess.call(self.command_line,
-                    stderr=logfile)
+        make_path_to(self.stderr_log_file)
+        make_path_to(self.stdout_log_file)
+        with open(self.stderr_log_file, 'a') as stderr:
+            with open(self.stdout_log_file, 'a') as stdout:
+                rv = subprocess.call(self.command_line,
+                        stderr=stderr, stdout=stdout)
         self.assertEqual(0, rv)
 
     @property
@@ -148,7 +164,9 @@ class BaseWorkflowTest(object):
 
 
     def verify_outputs(self):
-        self.assertEqual(self.expected_outputs, self.actual_outputs)
+        actual_outputs = self.actual_outputs
+        json.dump(actual_outputs, open(self.converted_outputs_path, 'w'))
+        self.assertEqual(self.expected_outputs, actual_outputs)
 
 
     def test_workflow(self):

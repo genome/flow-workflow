@@ -37,7 +37,7 @@ class ParticularTestGenerator(object):
     def class_dict(self):
         result = {
             'base_command_line': self.base_command_line,
-            'log_file': self.log_file,
+            'log_dir': self.log_dir,
             'expected_outputs_path': self.expected_outputs_path,
             'inputs_path': self.inputs_path,
         }
@@ -52,8 +52,8 @@ class ParticularTestGenerator(object):
 
 
     @property
-    def log_file(self):
-        return os.path.join('test_logs', self.workflow_name, 'log.err')
+    def log_dir(self):
+        return os.path.join('test_logs', self.workflow_name)
 
     @property
     def sanitized_workflow_name(self):
