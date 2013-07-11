@@ -140,7 +140,7 @@ class ParallelByJoin(BarrierActionBase):
                     operation_id=operation_id,
                     parallel_size=parallel_size,
                     property_name=property_name,
-                    parallel_id=parallel_id)
+                    parallel_id=parent_parallel_id)
 
             io.store_output(net=net,
                     operation_id=operation_id,
