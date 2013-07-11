@@ -148,6 +148,7 @@ class ParallelByJoin(BarrierActionBase):
                     value=array_value,
                     parallel_id=parent_parallel_id)
 
+        workflow_data['parallel_id'] = parent_parallel_id
         token = net.create_token(color=color_descriptor.group.parent_color,
             color_group_idx=color_descriptor.group.parent_color_group_idx,
             data={'workflow_data': workflow_data})

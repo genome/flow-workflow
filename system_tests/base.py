@@ -1,7 +1,6 @@
 from flow.util.mkdir import make_path_to
 
 import abc
-import json
 import os
 import redis
 import subprocess
@@ -126,7 +125,7 @@ class BaseWorkflowTest(object):
         p = subprocess.Popen(self.read_outputs_command_line,
                 stdout=subprocess.PIPE)
         out, err = p.communicate()
-        return json.loads(out)
+        return yaml.load(out)
 
 
     def verify_outputs(self):
