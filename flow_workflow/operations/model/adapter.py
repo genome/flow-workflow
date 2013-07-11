@@ -2,6 +2,7 @@ from collections import defaultdict
 from flow_workflow.operations import base
 from flow_workflow.operations import factory
 from flow_workflow.operations.model import future_nets
+from flow_workflow.operations.perl_action.future_nets import ParallelByNet
 
 
 class LinkAdapter(object):
@@ -63,6 +64,10 @@ class ModelAdapter(base.AdapterBase):
     @property
     def log_dir(self):
         return self._log_dir or self.xml.attrib.get('logDir', '.')
+
+    @property
+    def parallel_by(self):
+        return self.xml.attrib.get('parallelBy')
 
     @property
     def edges(self):
@@ -144,6 +149,21 @@ class ModelAdapter(base.AdapterBase):
         return child_nets
 
     def net(self, input_connections, output_properties, resources):
+        if self.parallel_by:
+            return self._parallel_by_net(input_connections=input_connections,
+                    output_properties=output_properties, resources=resources)
+
+        else:
+            return self._normal_net(input_connections=input_connections,
+                    output_properties=output_properties, resources=resources)
+
+    def _parallel_by_net(self, input_connections, output_properties, resources):
+        target_net = self._normal_net(input_connections, output_properties,
+                resources)
+        return ParallelByNet(target_net, self.parallel_by,
+                output_properties=output_properties)
+
+    def _normal_net(self, input_connections, output_properties, resources):
         subnets = self.subnets(input_connections, output_properties,
                 resources.get('children', {}))
         return future_nets.ModelNet(subnets=subnets,
