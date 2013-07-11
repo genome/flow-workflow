@@ -1,5 +1,6 @@
 from flow.petri_net.actions.base import BasicActionBase
 from flow_workflow import io
+from flow_workflow.parallel_id import ParallelIdentifier
 from twisted.internet import defer
 
 
@@ -19,11 +20,11 @@ class ConvergeAction(BasicActionBase):
 
     def execute(self, net, color_descriptor, active_tokens, service_interfaces):
         workflow_data = io.extract_workflow_data(net, active_tokens)
-        parallel_id = workflow_data['parallel_id']
+        parallel_id = ParallelIdentifier(workflow_data.get('parallel_id', []))
 
         outputs = self.converge_inputs(net=net, parallel_id=parallel_id)
         io.store_outputs(net=net, operation_id=self.args['operation_id'],
-                outputs=outputs, parallel_id=workflow_data['parallel_id'])
+                outputs=outputs, parallel_id=list(parallel_id))
 
         # XXX We're throwing away token data here, is that what we want?
         output_token = net.create_token(color=color_descriptor.color,

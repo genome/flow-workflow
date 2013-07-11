@@ -1,5 +1,6 @@
 from flow.petri_net.actions.base import BasicActionBase
 from flow_workflow.operations.clone_inputs_action import CloneInputsAction
+from flow_workflow.parallel_id import ParallelIdentifier
 from twisted.internet.defer import Deferred
 
 import fakeredis
@@ -13,10 +14,10 @@ class CloneInputsActionTest(unittest.TestCase):
         self.connection.flushall()
 
         self.operation_id = 41
-        self.input_connections = {'1':2, '3':4}
+        self.input_connections = {u'1': 2, u'3': 4}
 
-        args = {'operation_id':self.operation_id,
-                'input_connections':self.input_connections}
+        args = {'operation_id': self.operation_id,
+                'input_connections': self.input_connections}
         self.key = 'test_action_key'
         self.action = CloneInputsAction.create(
                 self.connection, self.key, args=args)
@@ -28,7 +29,7 @@ class CloneInputsActionTest(unittest.TestCase):
         net = mock.Mock()
         color_descriptor = mock.Mock()
         active_tokens = mock.Mock()
-        parallel_id = mock.Mock()
+        parallel_id = ParallelIdentifier()
 
         expected_tokens = [net.create_token.return_value]
         expected_data = {'workflow_data': {'parallel_id': parallel_id}}

@@ -1,5 +1,6 @@
 from flow.petri_net.actions.base import BasicActionBase
 from flow_workflow import io
+from flow_workflow.parallel_id import ParallelIdentifier
 from twisted.internet import defer
 
 
@@ -11,7 +12,7 @@ class CloneInputsAction(BasicActionBase):
         input_connections = self.args["input_connections"]
 
         workflow_data = io.extract_workflow_data(net, active_tokens)
-        parallel_id = workflow_data.get('parallel_id', {})
+        parallel_id = ParallelIdentifier(workflow_data.get('parallel_id', []))
 
         inputs = io.load_inputs(net=net, input_connections=input_connections,
                 parallel_id=parallel_id)

@@ -66,5 +66,18 @@ class ParallelIdentifierIterationTest(unittest.TestCase):
         self.assertEqual(expected_outputs, map(list, pi.stack_iterator))
 
 
+    def test_cmp_equal(self):
+        a = ParallelIdentifier([[4, 7], [6, 2], [8, 3]])
+        b = ParallelIdentifier([[4, 7], [6, 2], [8, 3]])
+
+        self.assertEqual(a, b)
+
+    def test_cmp_not_equal(self):
+        a = ParallelIdentifier([[4, 7], [6, 2], [8, 3]])
+        b = ParallelIdentifier([[4, 7], [8, 3]])
+
+        self.assertNotEqual(a, b)
+
+
 if __name__ == "__main__":
     unittest.main()

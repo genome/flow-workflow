@@ -1,8 +1,9 @@
 from flow.petri_net.actions.base import BasicActionBase, BarrierActionBase
 from flow.shell_command.petri_net import actions
-from twisted.python.procutils import which
 from flow_workflow import io
+from flow_workflow.parallel_id import ParallelIdentifier
 from twisted.internet import defer
+from twisted.python.procutils import which
 
 import copy
 import json
@@ -14,6 +15,10 @@ LOG = logging.getLogger(__name__)
 
 
 FLOW_PATH = which('flow')[0]
+
+
+def _parallel_id_from_workflow_data(workflow_data):
+    return ParallelIdentifier(workflow_data.get('parallel_id', []))
 
 
 class PerlAction(object):
@@ -41,11 +46,15 @@ class PerlAction(object):
                 '--input-connections',
                         json.dumps(self.args['input_connections'])]
 
-        parallel_id = token_data.get('workflow_data', {}).get('parallel_id', [])
-        if parallel_id:
-            cmd_line.extend(['--parallel-id', json.dumps(parallel_id)])
+        parallel_id = self.get_parallel_id(token_data)
+        if len(parallel_id):
+            cmd_line.extend(['--parallel-id', json.dumps(list(parallel_id))])
 
         return map(str, cmd_line)
+
+    def get_parallel_id(self, token_data):
+        return _parallel_id_from_workflow_data(
+                token_data.get('workflow_data', {}))
 
 
 class ForkAction(PerlAction, actions.ForkDispatchAction):
@@ -62,7 +71,7 @@ class ParallelBySplit(BasicActionBase):
     def execute(self, net, color_descriptor, active_tokens, service_interfaces):
         workflow_data = io.extract_workflow_data(net, active_tokens)
 
-        parallel_id = workflow_data.get('parallel_id', [])
+        parallel_id = _parallel_id_from_workflow_data(workflow_data)
         parallel_input = io.load_input(net=net,
                 input_connections=self.args['input_connections'],
                 property_name=self.args['parallel_property'],
@@ -77,19 +86,17 @@ class ParallelBySplit(BasicActionBase):
 
     def store_parallel_input(self, net, parallel_input, parallel_id):
         operation_id = self.args['operation_id']
-        parallel_id = list(parallel_id)
 
         source_operation_id, source_property = self.determine_input_source(
                 name=self.args['parallel_property'])
 
         for parallel_idx, value in enumerate(parallel_input):
-            parallel_id.append((operation_id, parallel_idx))
             io.store_output(net=net,
                     operation_id=source_operation_id,
                     property_name=source_property,
                     value=value,
-                    parallel_id=parallel_id)
-            parallel_id.pop()
+                    parallel_id=parallel_id.child_identifier(
+                        source_operation_id, parallel_idx))
 
     def determine_input_source(self, name):
         for src_id, prop_hash in self.args['input_connections'].iteritems():
@@ -105,17 +112,17 @@ class ParallelBySplit(BasicActionBase):
                 parent_color=color_descriptor.color,
                 parent_color_group_idx=color_descriptor.group.idx)
 
+        this_workflow_data = copy.copy(workflow_data)
+        parallel_id = _parallel_id_from_workflow_data(workflow_data)
+
         operation_id = self.args['operation_id']
 
         tokens = []
         for parallel_idx in xrange(num_tokens):
             color = new_color_group.begin + parallel_idx
 
-            this_workflow_data = copy.copy(workflow_data)
-            this_workflow_data.setdefault('parallel_id', [])
-            this_workflow_data['parallel_id'].append(
-                    (operation_id, parallel_idx))
-
+            this_workflow_data['parallel_id'] = list(
+                    parallel_id.child_identifier(operation_id, parallel_idx))
             data = {'workflow_data': this_workflow_data}
 
             tokens.append(net.create_token(color=color,
@@ -132,8 +139,8 @@ class ParallelByJoin(BarrierActionBase):
         parallel_size = color_descriptor.group.size
 
         workflow_data = io.extract_workflow_data(net, active_tokens)
-        parallel_id = workflow_data.get('parallel_id', [])
-        parent_parallel_id = parallel_id[:-1]
+        parallel_id = _parallel_id_from_workflow_data(workflow_data)
+        parent_parallel_id = parallel_id.parent_identifier
 
         for property_name in self.args['output_properties']:
             array_value = self.collect_array_output(net=net,
@@ -148,7 +155,7 @@ class ParallelByJoin(BarrierActionBase):
                     value=array_value,
                     parallel_id=parent_parallel_id)
 
-        workflow_data['parallel_id'] = parent_parallel_id
+        workflow_data['parallel_id'] = list(parent_parallel_id)
         token = net.create_token(color=color_descriptor.group.parent_color,
             color_group_idx=color_descriptor.group.parent_color_group_idx,
             data={'workflow_data': workflow_data})
@@ -157,17 +164,14 @@ class ParallelByJoin(BarrierActionBase):
 
     def collect_array_output(self, net, property_name, parallel_size,
             operation_id, parallel_id):
-        parallel_id = list(parallel_id)
-
         result = []
         for parallel_idx in xrange(parallel_size):
-            parallel_id.append((operation_id, parallel_idx))
             result.append(io.load_output(
                     net=net,
                     operation_id=operation_id,
                     property_name=property_name,
-                    parallel_id=parallel_id))
-            parallel_id.pop()
+                    parallel_id=parallel_id.child_identifier(
+                        operation_id, parallel_idx)))
 
         return result
 

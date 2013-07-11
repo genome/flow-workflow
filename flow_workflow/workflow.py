@@ -2,6 +2,7 @@ from flow.petri_net import future
 from flow.petri_net.actions.base import BasicActionBase
 from flow_workflow import io
 from flow_workflow.operations import factory
+from flow_workflow.parallel_id import ParallelIdentifier
 
 
 class Workflow(object):
@@ -16,7 +17,8 @@ class Workflow(object):
         self._operation = None
 
     def store_inputs(self, net):
-        io.store_outputs(net, self.dummy_operation.operation_id, self.inputs)
+        io.store_outputs(net, self.dummy_operation.operation_id, self.inputs,
+                parallel_id=ParallelIdentifier())
 
     @property
     def input_connections(self):

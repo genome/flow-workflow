@@ -42,3 +42,6 @@ class ParallelIdentifier(object):
 
     def __repr__(self):
         return 'ParallelIdentifier(%r)' % list(self)
+
+    def __cmp__(self, other):
+        return cmp(self._entries, other._entries)

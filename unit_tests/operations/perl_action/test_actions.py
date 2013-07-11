@@ -1,5 +1,6 @@
 from flow.petri_net import color
 from flow_workflow.operations.perl_action import actions
+from flow_workflow.parallel_id import ParallelIdentifier
 
 import fakeredis
 import mock
@@ -88,7 +89,7 @@ class ParallelBySplitTest(unittest.TestCase):
                 connection=self.connection, key=self.key,
                 args=self.args)
 
-        self.parallel_id = [[42, 3]]
+        self.parallel_id = ParallelIdentifier([[42, 3]])
 
         self.parent_color = 892
         self.parent_color_group = color.ColorGroup(
@@ -197,10 +198,14 @@ class ParallelByJoinTest(unittest.TestCase):
         active_tokens = mock.Mock()
         service_interfaces = mock.MagicMock()
 
+        parallel_id = [(3, 2)]
+        workflow_data = {'parallel_id': parallel_id}
+
         self.action.collect_array_output = mock.Mock()
         self.action.collect_array_output.return_value = [mock.Mock()]
 
         with mock.patch('flow_workflow.operations.perl_action.actions.io') as m_io:
+            m_io.extract_workflow_data.return_value = workflow_data
             self.action.execute(net=self.net,
                     color_descriptor=color_descriptor,
                     active_tokens=active_tokens,
@@ -217,7 +222,7 @@ class ParallelByJoinTest(unittest.TestCase):
     def test_collect_array_output(self):
         property_name = 'bar'
         parallel_size = 3
-        parallel_id = {42: 7, self.operation_id: 1}
+        parallel_id = ParallelIdentifier([(42, 7)])
 
         with mock.patch('flow_workflow.io.load_output') as load:
             results = self.action.collect_array_output(net=self.net,

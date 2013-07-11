@@ -49,7 +49,7 @@ class ConvergeActionTest(unittest.TestCase):
                 self.connection, self.key, args=args)
 
         self.net = mock.Mock()
-        self.parallel_id = [[41, 7]]
+        self.parallel_id = [(41, 7)]
 
     def tearDown(self):
         self.connection.flushall()

@@ -1,4 +1,5 @@
 from flow_workflow import workflow
+from flow_workflow.parallel_id import ParallelIdentifier
 from lxml import etree
 
 import mock
@@ -60,7 +61,8 @@ class WorkflowTest(unittest.TestCase):
         net = mock.Mock()
         with mock.patch('flow_workflow.io.store_outputs') as store:
             self.workflow.store_inputs(net)
-            store.assert_called_once_with(net, mock.ANY, self.inputs)
+            store.assert_called_once_with(net, mock.ANY, self.inputs,
+                    parallel_id=ParallelIdentifier())
 
 
     def test_future_net(self):
