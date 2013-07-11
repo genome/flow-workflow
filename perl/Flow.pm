@@ -121,7 +121,30 @@ sub translate_workflow_resource {
     return \%f;
 }
 
+
 sub run_workflow {
+    my ($wf_path, $inp_path, $out_path, $res_path, $plan_id) = setup(@_);
+
+    my $cmd = "flow execute-workflow --xml $wf_path " .
+        "--inputs-file $inp_path --outputs-file $out_path " .
+        "--resource-file $res_path --plan-id $plan_id --block";
+
+    return run($cmd, $out_path);
+}
+
+
+sub run_workflow_lsf {
+    my ($wf_path, $inp_path, $out_path, $res_path, $plan_id) = setup(@_);
+
+    my $cmd = "flow submit-workflow --xml $wf_path " .
+        "--inputs-file $inp_path --outputs-file $out_path " .
+        "--resource-file $res_path --plan-id $plan_id --block";
+
+    return run($cmd, $out_path);
+}
+
+
+sub setup {
     my ($wf_string, $inputs, $resource_reqs, $plan_id) = @_;
     my $result;
 
@@ -138,9 +161,11 @@ sub run_workflow {
     write_file($inp_path, $js->encode(encode_io_hash($inputs)));
     write_file($res_path, $js->encode($resource_reqs));
 
-    my $cmd = "flow submit-workflow --xml $wf_path " .
-        "--inputs-file $inp_path --outputs-file $out_path " .
-        "--resource-file $res_path --plan-id $plan_id --block";
+    return ($wf_path, $inp_path, $out_path, $res_path, $plan_id);
+}
+
+sub run {
+    my ($cmd, $out_path) = @_;
 
     print "EXEC: $cmd\n";
 
@@ -159,6 +184,7 @@ sub run_workflow {
         return 1;
     }
 }
+
 
 # a convenient way to write out files which are suitable as --inputs-file for
 # the workflow-wrapper
