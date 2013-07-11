@@ -166,16 +166,20 @@ sub write_outputs {
     my ($outputs_path, $outputs_hash) = @_;
 
     my $json = new JSON->allow_nonref;
-    my $encoded_content = $json->encode(encode_io_hash($outputs_hash));
-    return write_file($outputs_path, $encoded_content);
+    my $encoded_content = $json->encode(encode_io_hash($outputs_hash))
+        || die "Failed to json encode outputs hash";
+    return write_file($outputs_path, $encoded_content)
+        || die "Failed to write outputs file";
 }
 
 sub read_outputs {
     my $outputs_path = shift;
 
-    my $outputs_str = read_file($outputs_path);
+    my $outputs_str = read_file($outputs_path)
+        || die "Failed to slurp file $outputs_path";
     my $json = new JSON->allow_nonref;
-    my $outputs = $json->decode($outputs_str);
+    my $outputs = $json->decode($outputs_str)
+        || die "Failed to json decode $outputs_str";
 
     return decode_io_hash($outputs);
 }

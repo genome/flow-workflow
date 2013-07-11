@@ -16,6 +16,10 @@ class BaseWorkflowTest(object):
         pass
 
     @abc.abstractproperty
+    def inputs_path(self):
+        pass
+
+    @abc.abstractproperty
     def expected_outputs_path(self):
         pass
 
@@ -32,12 +36,17 @@ class BaseWorkflowTest(object):
         pass
 
     @property
+    def encoded_inputs_path(self):
+        return os.path.join(self.tmp_dir, 'encoded_inputs_file.json')
+
+    @property
     def outputs_path(self):
         return os.path.join(self.tmp_dir, 'outputs_file.json')
 
     @property
     def command_line(self):
-        return self.base_command_line + ['--outputs', self.outputs_path]
+        return self.base_command_line + ['--outputs', self.outputs_path,
+                '--inputs', self.encoded_inputs_path]
 
     @property
     def expected_outputs(self):
@@ -59,6 +68,11 @@ class BaseWorkflowTest(object):
             }
         }
 
+    @property
+    def encode_inputs_command_line(self):
+        return ['perl', os.path.join(self.perl_directory, 'encode_inputs.pl'),
+                self.inputs_path, self.encoded_inputs_path]
+
     def setup_temporary_flow_config_file(self):
         yaml.dump(self.temporary_configuration,
                 open(self.temporary_config_path, 'w'))
@@ -68,6 +82,10 @@ class BaseWorkflowTest(object):
         conn = redis.Redis(
                 unix_socket_path=os.environ['FLOW_TEST_REDIS_SOCKET'])
         conn.flushall()
+
+
+    def setup_encoded_inputs_file(self):
+        subprocess.check_call(self.encode_inputs_command_line)
 
 
     def setup_flow_config_path(self):
@@ -101,6 +119,7 @@ class BaseWorkflowTest(object):
         self.setup_redis()
         self.setup_flow_config_path()
         self.setup_temporary_flow_config_file()
+        self.setup_encoded_inputs_file()
 
     def tearDown(self):
         self.teardown_flow_config_path()

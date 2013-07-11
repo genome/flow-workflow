@@ -39,6 +39,7 @@ class ParticularTestGenerator(object):
             'base_command_line': self.base_command_line,
             'log_file': self.log_file,
             'expected_outputs_path': self.expected_outputs_path,
+            'inputs_path': self.inputs_path,
         }
 
         result.update(self.pass_through_args)
@@ -47,8 +48,7 @@ class ParticularTestGenerator(object):
     @property
     def base_command_line(self):
         return ['flow', 'execute-workflow',
-                '--xml', self.xml_path,
-                '--inputs', self.inputs_path]
+                '--xml', self.xml_path]
 
 
     @property
