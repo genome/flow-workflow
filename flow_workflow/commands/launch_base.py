@@ -9,6 +9,7 @@ from flow_workflow.parallel_id import ParallelIdentifier
 from flow_workflow.workflow import Workflow
 from lxml import etree
 
+import abc
 import flow.interfaces
 import injector
 import json
@@ -54,6 +55,11 @@ class LaunchWorkflowCommandBase(CommandBase):
                 help="The project name to use for submitted jobs")
 
         parser.add_argument('--block', action='store_true')
+
+
+    @abc.abstractmethod
+    def setup_services(self, net):
+        pass
 
 
     def _execute(self, parsed_arguments):

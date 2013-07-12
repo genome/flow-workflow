@@ -8,7 +8,6 @@ from twisted.python.procutils import which
 import copy
 import json
 import logging
-import sys
 
 
 LOG = logging.getLogger(__name__)

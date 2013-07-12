@@ -66,10 +66,11 @@ class WorkflowWrapperCommand(CommandBase):
             with NamedTemporaryFile() as inputs_file:
                 with NamedTemporaryFile() as outputs_file:
                     write_inputs(inputs_file, net=net, parallel_id=parallel_id,
-                            input_connections=parsed_arguments.input_connections)
+                        input_connections=parsed_arguments.input_connections)
 
                     cmdline = copy.copy(self.perl_wrapper)
-                    cmdline_builder = CMDLINE_BUILDERS[parsed_arguments.action_type]
+                    cmdline_builder = CMDLINE_BUILDERS[
+                            parsed_arguments.action_type]
                     cmdline.extend(cmdline_builder(parsed_arguments.method,
                         parsed_arguments.action_id, inputs_file, outputs_file))
 
