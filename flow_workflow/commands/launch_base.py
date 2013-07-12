@@ -53,7 +53,7 @@ class LaunchWorkflowCommandBase(CommandBase):
         parser.add_argument('--project-name', '-N',
                 help="The project name to use for submitted jobs")
 
-        parser.add_argument('--block')
+        parser.add_argument('--block', action='store_true')
 
 
     def _execute(self, parsed_arguments):
