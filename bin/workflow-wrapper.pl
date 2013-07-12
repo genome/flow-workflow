@@ -1,75 +1,111 @@
 #!/usr/bin/env genome-perl
 
+use Data::Dumper;
+use File::Slurp qw/read_file/;
+use Flow;
+use IO::File;
+use JSON;
 use POSIX;
 use above 'Genome';
-use IO::File;
-use File::Slurp qw/read_file/;
-use Data::Dumper;
-use JSON;
-use Flow;
+
 use strict;
 use warnings;
+
 
 my $json = JSON->new->allow_nonref;
 $| = 1; # forces perl to not buffer output to pipes
 
+
+sub validate_arguments {
+    my $expected_arguments = shift;
+
+    if ($#_ != @$expected_arguments - 2) {
+        printf(STDERR "Usage: $0 %s\n", join(' ', @$expected_arguments));
+        exit 1;
+    }
+}
+
+
+sub validate_method {
+    my $method = shift;
+
+    if ($method ne "shortcut" && $method ne "execute") {
+        die "Invalid method '$method' -- must be 'shortcut' or 'execute'";
+    }
+}
+
+
 sub load_inputs {
     my $file = shift;
+
     my $inputs_str = read_file($file);
     return {} if $inputs_str eq "";
+
     my $inputs = $json->decode($inputs_str);
     $inputs = Flow::decode_io_hash($inputs);
     return $inputs;
 }
 
-sub run_event {
-    if ($#_ != 2) {
-        print STDERR "Usage: $0 event <shortcut|execute> <event_id> <outputs.json>\n";
-        exit 1;
+
+sub output_names {
+    my $pkg = shift;
+
+    return $pkg->__meta__->properties(is_output => 1);
+}
+
+
+sub get_command_outputs {
+    my ($cmd, $pkg) = @_;
+
+    my %outputs;
+    for my $prop (output_names($pkg)) {
+        my $prop_name = $prop->property_name;
+        my $value = $prop->is_many ? [$cmd->$prop_name] : $cmd->$prop_name;
+        $outputs{$prop_name} = $value;
     }
+
+    $outputs{result} = 1 unless exists $outputs{result};
+
+    return \%outputs;
+}
+
+
+sub run_event {
+    validate_arguments(["event", "<shortcut|execute>", "<event_id>",
+        "<outputs.json>"], @_);
 
     my ($method, $event_id, $outputs_file) = @_;
-    if ($method ne "shortcut" && $method ne "execute") {
-        die "Invalid method '$method' for command: $method";
-    }
 
-    my $cmd = Genome::Model::Event->get($event_id) || die "No event $event_id";
-    print "Attempt to execute event $event_id with method $method\n";
-    if (!$cmd->can($method)) {
-        print "Method '$method' not supported\n";
+    validate_method($method);
+
+    my $event = Genome::Model::Event->get($event_id)
+            || die "No event $event_id";
+
+    if (!$event->can($method)) {
+        print "Method '$method' not supported by event $event_id\n";
         exit(1);
     }
-    my $ret = $cmd->$method();
-
-    print "Return value: " . Dumper($ret);
+    my $ret = $event->$method();
 
     exit(1) unless $ret;
     UR::Context->commit();
 
-    my %outputs = (result => Flow::encode(1));
-    my $out_fh = new IO::File($outputs_file, "w");
-    $out_fh->write($json->encode(\%outputs));
+    Flow::write_outputs($outputs_file, { result => 1 });
 }
 
+
 sub run_command {
-    if ($#_ != 3) {
-        print STDERR "Usage: $0 command <shortcut|execute> <package> <inputs.json> <outputs.json>\n";
-        exit 1;
-    }
+    validate_arguments(["command", "<shortcut|execute>", "<package>",
+        "<inputs.json>", "<outputs.json>"], @_);
 
     my ($method, $pkg, $inputs_file, $outputs_file) = @_;
-    if ($method ne "shortcut" && $method ne "execute") {
-        die "Invalid method '$method' for command: $method";
-    }
+
+    validate_method($method);
 
     eval "use $pkg";
 
-    my @cmd_inputs = $pkg->__meta__->properties(is_input => 1);
-    my @cmd_outputs = $pkg->__meta__->properties(is_output => 1);
-    my %outputs;
     my $inputs = load_inputs($inputs_file);
 
-    print "Creating command $pkg with inputs ($method):\n" . Dumper($inputs);
     my $cmd = $pkg->create(%$inputs);
     if (!$pkg->can($method)) {
         print "$pkg does not support method '$method'\n";
@@ -77,25 +113,17 @@ sub run_command {
     }
 
     my $ret = $cmd->$method();
-    print "Return value: " . Dumper($ret);
 
     exit(1) unless $ret;
 
-    for my $prop (@cmd_outputs) {
-        my $prop_name = $prop->property_name;
-        my $value = $prop->is_many ? [$cmd->$prop_name] : $cmd->$prop_name;
-        $outputs{$prop_name} = $value;
-    }
-
-    $outputs{result} = 1 unless exists $outputs{result};
-    my $outputs = Flow::encode_io_hash(\%outputs);
-
     UR::Context->commit();
 
-    my $out_fh = new IO::File($outputs_file, "w");
-    $out_fh->write($json->encode($outputs));
+    my $outputs = get_command_outputs($cmd, $pkg);
+    Flow::write_outputs($outputs_file, $outputs);
 }
 
+
+# --- Main ---
 if (@ARGV == 0) {
     print STDERR "Usage: $0 <action> <args>\n";
     exit(1);
