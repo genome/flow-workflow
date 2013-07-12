@@ -1,5 +1,7 @@
 <?xml version='1.0' standalone='yes'?>
-<operation name="Simple Workflow">
-  <operationtype commandClass="ParamAppender"
-      typeClass="Workflow::OperationType::Command" />
+<operation name="Simple Workflow" logDir="test_logs/no-model">
+    <operationtype commandClass="ParamAppender"
+        typeClass="Workflow::OperationType::Command">
+        <outputproperty>output</outputproperty>
+    </operationtype>
 </operation>

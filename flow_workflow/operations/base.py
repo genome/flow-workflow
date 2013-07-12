@@ -39,6 +39,7 @@ class OperationBase(object):
     def output_properties(self):
         return []
 
+
 class NullOperation(OperationBase):
     def __init__(self, operation_id=None):
         OperationBase.__init__(self, operation_id)
@@ -81,3 +82,8 @@ class AdapterBase(OperationBase):
     @property
     def operation_type_attributes(self):
         return self.operation_type_node.attrib
+
+    @property
+    def output_properties(self):
+        return [o.text for o in
+                self.operation_type_node.findall('outputproperty')]

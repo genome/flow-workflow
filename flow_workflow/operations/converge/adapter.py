@@ -20,8 +20,3 @@ class ConvergeAdapter(base.AdapterBase):
                 "Wrong number of <inputproperty> tags (%d) in operation %s" %
                 (len(inputs), self.name))
         return [x.text for x in inputs]
-
-    @property
-    def output_properties(self):
-        return [o.text for o in
-                self.operation_type_node.findall('outputproperty')]
