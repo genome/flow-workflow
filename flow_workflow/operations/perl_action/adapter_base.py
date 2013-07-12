@@ -37,8 +37,8 @@ class PerlActionAdapterBase(base.AdapterBase):
 
 
     def _base_log_file_name(self):
-        base = re.sub("[^A-Za-z0-9_.-]+", "_", self.name)[:MAX_BASE_NAME_LEN]
-        return re.sub("^_*|_*$", "", base)
+        bname = re.sub("[^A-Za-z0-9_.-]+", "_", self.name)[:MAX_BASE_NAME_LEN]
+        return re.sub("^_*|_*$", "", bname)
 
     def _resolve_log_path(self, **kwargs):
         filename = LOG_NAME_TEMPLATE % kwargs

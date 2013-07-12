@@ -136,9 +136,6 @@ class ModelAdapter(base.AdapterBase):
     def subnets(self, input_connections, output_properties, resources):
         child_nets = {}
         for child in self.children:
-            child_op = self.child_output_properties(child.name,
-                    output_properties)
-
             child_nets[child.name] = child.net(
                     input_connections=self.child_input_connections(
                         child.name, input_connections),

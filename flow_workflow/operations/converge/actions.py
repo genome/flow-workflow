@@ -15,7 +15,7 @@ def order_outputs(inputs, input_property_order, output_properties):
 
 
 class ConvergeAction(BasicActionBase):
-    required_arguments =["operation_id", 'input_connections',
+    required_arguments = ["operation_id", 'input_connections',
             "input_property_order", "output_properties"]
 
     def execute(self, net, color_descriptor, active_tokens, service_interfaces):

@@ -41,7 +41,7 @@ class OperationBase(object):
 
 class NullOperation(OperationBase):
     def __init__(self, operation_id=None):
-        self.operation_id = operation_id
+        OperationBase.__init__(self, operation_id)
 
     def name(self):
         return 'NullOperation'

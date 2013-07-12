@@ -10,7 +10,7 @@ class ConnectorOperation(base.OperationBase):
 
 class InputConnector(ConnectorOperation):
     def __init__(self, name='input connector', *args, **kwargs):
-        base.OperationBase.__init__(self, *args, **kwargs)
+        base.ConnectorOperation.__init__(self, *args, **kwargs)
         self._name = name
 
     def net(self, input_connections, output_properties, resources):
@@ -21,7 +21,7 @@ class InputConnector(ConnectorOperation):
 
 class OutputConnector(ConnectorOperation):
     def __init__(self, name='output connector', *args, **kwargs):
-        base.OperationBase.__init__(self, *args, **kwargs)
+        base.ConnectorOperation.__init__(self, *args, **kwargs)
         self._name = name
 
     def net(self, input_connections, output_properties, resources):
