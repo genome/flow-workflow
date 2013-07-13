@@ -11,7 +11,7 @@ LOG_NAME_TEMPLATE = '%(base_name)s.%(operation_id)s.%(suffix)s'
 MAX_BASE_NAME_LEN = 256
 
 
-class PerlActionAdapterBase(base.AdapterBase):
+class PerlActionAdapterBase(base.XMLAdapterBase):
     # XXX action_type and action_id should be refactored into a data clump
     @abc.abstractproperty
     def action_type(self):

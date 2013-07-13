@@ -22,9 +22,9 @@ INVALID_XML = '''
 '''
 
 
-class FakeAdapter(base.AdapterBase):
+class FakeAdapter(base.XMLAdapterBase):
     def net(self, **kwargs):
-        return base.AdapterBase.net(self, **kwargs)
+        return base.XMLAdapterBase.net(self, **kwargs)
 
 
 class ValidAdapterBaseTest(unittest.TestCase):

@@ -55,7 +55,7 @@ class NullOperation(OperationBase):
 _NULL_OPERATION = NullOperation()
 
 
-class AdapterBase(OperationBase):
+class XMLAdapterBase(OperationBase):
     def __init__(self, xml, *args, **kwargs):
         OperationBase.__init__(self, *args, **kwargs)
         self.xml = xml

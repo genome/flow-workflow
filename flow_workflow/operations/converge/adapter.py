@@ -2,7 +2,7 @@ from flow_workflow.operations import base
 from flow_workflow.operations.converge.future_nets import ConvergeNet
 
 
-class ConvergeAdapter(base.AdapterBase):
+class ConvergeAdapter(base.XMLAdapterBase):
     def net(self, input_connections, output_properties, resources):
         return ConvergeNet(name=self.name,
                 operation_id=self.operation_id,

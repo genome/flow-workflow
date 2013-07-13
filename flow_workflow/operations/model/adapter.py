@@ -26,9 +26,9 @@ class LinkAdapter(object):
         return self.xml.attrib['toProperty']
 
 
-class ModelAdapter(base.AdapterBase):
+class ModelAdapter(base.XMLAdapterBase):
     def __init__(self, *args, **kwargs):
-        base.AdapterBase.__init__(self, *args, **kwargs)
+        base.XMLAdapterBase.__init__(self, *args, **kwargs)
 
         self._children = []
         self._child_operation_ids = {}
