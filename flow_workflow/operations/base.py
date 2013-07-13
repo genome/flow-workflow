@@ -4,7 +4,7 @@ import abc
 _NULL_OPERATION = None
 
 
-class OperationBase(object):
+class AdapterBase(object):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, operation_id, log_dir=None, parent=_NULL_OPERATION,
@@ -40,9 +40,9 @@ class OperationBase(object):
         return []
 
 
-class NullOperation(OperationBase):
+class NullOperation(AdapterBase):
     def __init__(self, operation_id=None):
-        OperationBase.__init__(self, operation_id)
+        AdapterBase.__init__(self, operation_id)
 
     def name(self):
         return 'NullOperation'
@@ -55,9 +55,9 @@ class NullOperation(OperationBase):
 _NULL_OPERATION = NullOperation()
 
 
-class XMLAdapterBase(OperationBase):
+class XMLAdapterBase(AdapterBase):
     def __init__(self, xml, *args, **kwargs):
-        OperationBase.__init__(self, *args, **kwargs)
+        AdapterBase.__init__(self, *args, **kwargs)
         self.xml = xml
 
     @property

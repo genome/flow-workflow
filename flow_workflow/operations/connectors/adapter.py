@@ -2,7 +2,7 @@ from flow_workflow.operations import base
 from flow_workflow.operations.clone_inputs_future_net import CloneInputsNet
 
 
-class ConnectorOperation(base.OperationBase):
+class ConnectorOperation(base.AdapterBase):
     @property
     def name(self):
         return self._name
