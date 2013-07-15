@@ -1,6 +1,6 @@
 from flow.petri_net.future import FutureAction
 from flow_workflow.entities.converge.actions import ConvergeAction
-from flow_workflow.entities.future_nets import WorkflowNetBase
+from flow_workflow.future_nets import WorkflowNetBase
 
 
 class ConvergeNet(WorkflowNetBase):

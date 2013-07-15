@@ -1,8 +1,8 @@
 from collections import defaultdict
-from flow_workflow.entities import adapter_base
-from flow_workflow.entities import factory
 from flow_workflow.entities.model import future_nets
 from flow_workflow.entities.perl_action.future_nets import ParallelByNet
+import flow_workflow.adapter_base
+import flow_workflow.factory
 
 
 class LinkAdapter(object):
@@ -26,22 +26,22 @@ class LinkAdapter(object):
         return self.xml.attrib['toProperty']
 
 
-class ModelAdapter(adapter_base.XMLAdapterBase):
+class ModelAdapter(flow_workflow.adapter_base.XMLAdapterBase):
     def __init__(self, *args, **kwargs):
-        adapter_base.XMLAdapterBase.__init__(self, *args, **kwargs)
+        flow_workflow.adapter_base.XMLAdapterBase.__init__(self, *args, **kwargs)
 
         self.children = []
         self._child_operation_ids = {}
 
-        self.input_connector = factory.adapter('input connector', parent=self)
-        self.output_connector = factory.adapter('output connector',
+        self.input_connector = flow_workflow.factory.adapter('input connector', parent=self)
+        self.output_connector = flow_workflow.factory.adapter('output connector',
                 parent=self)
 
         self._add_child(self.input_connector)
         self._add_child(self.output_connector)
 
         for operation_xml in self.xml.findall('operation'):
-            child = factory.adapter_from_xml(operation_xml,
+            child = flow_workflow.factory.adapter_from_xml(operation_xml,
                     log_dir=self.log_dir, parent=self,
                     local_workflow=self.local_workflow)
             self._add_child(child)

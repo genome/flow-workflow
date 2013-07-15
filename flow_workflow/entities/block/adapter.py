@@ -1,8 +1,8 @@
-from flow_workflow.entities import adapter_base
-from flow_workflow.entities.clone_inputs_future_net import CloneInputsNet
+from flow_workflow.clone_inputs_future_net import CloneInputsNet
+import flow_workflow.adapter_base
 
 
-class BlockAdapter(adapter_base.XMLAdapterBase):
+class BlockAdapter(flow_workflow.adapter_base.XMLAdapterBase):
     def net(self, input_connections, output_properties, resources):
         return CloneInputsNet(name=self.name, operation_id=self.operation_id,
                 input_connections=input_connections,

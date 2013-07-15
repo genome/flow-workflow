@@ -1,6 +1,6 @@
 from flow_workflow import io
-from flow_workflow.entities import factory
-from flow_workflow.entities import log_manager
+import flow_workflow.log_manager
+import flow_workflow.factory
 
 
 class Operation(object):
@@ -19,7 +19,7 @@ class Operation(object):
 
 
     def save(self):
-        factory.store_operation(self.net, self)
+        flow_workflow.factory.store_operation(self.net, self)
 
     @property
     def as_dict(self):
@@ -38,17 +38,17 @@ class Operation(object):
         return self.child_operation_ids[name]
 
     def child_named(self, name):
-        return factory.load_operation(net=self.net,
+        return flow_workflow.factory.load_operation(net=self.net,
                 operation_id=self._child_id_from(name))
 
     @property
     def parent(self):
-        return factory.load_operation(net=self.net,
+        return flow_workflow.factory.load_operation(net=self.net,
                 operation_id=self.parent_operation_id)
 
     @property
     def log_manager(self):
-        return log_manager.LogManager(operation_name=self.name,
+        return flow_workflow.log_manager.LogManager(operation_name=self.name,
                 operation_id=self.operation_id, log_dir=self.log_dir)
 
     @property

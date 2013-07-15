@@ -1,4 +1,4 @@
-from flow_workflow.entities.future_nets import WorkflowNetBase
+from flow_workflow.future_nets import WorkflowNetBase
 from flow_workflow.entities.perl_action import future_nets
 
 import mock

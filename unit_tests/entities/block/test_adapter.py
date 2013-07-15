@@ -1,5 +1,5 @@
 from flow_workflow.entities.block import adapter
-from flow_workflow.entities.clone_inputs_future_net import CloneInputsNet
+from flow_workflow.clone_inputs_future_net import CloneInputsNet
 from lxml import etree
 
 import mock

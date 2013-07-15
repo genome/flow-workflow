@@ -1,8 +1,8 @@
 from flow.petri_net import future
 from flow.petri_net.actions.base import BasicActionBase
 from flow_workflow import io
-from flow_workflow.entities import factory
 from flow_workflow.parallel_id import ParallelIdentifier
+import flow_workflow.factory
 
 
 class Workflow(object):
@@ -12,7 +12,7 @@ class Workflow(object):
         self.resources = resources
         self.local_workflow = local_workflow
 
-        self.dummy_adapter = factory.adapter('null')
+        self.dummy_adapter = flow_workflow.factory.adapter('null')
         self._future_net = None
         self._operation = None
 
@@ -34,8 +34,8 @@ class Workflow(object):
     @property
     def operation(self):
         if not self._operation:
-            self._operation = factory.adapter_from_xml(self.xml,
-                parent=factory.adapter('null'),
+            self._operation = flow_workflow.factory.adapter_from_xml(self.xml,
+                parent=flow_workflow.factory.adapter('null'),
                 local_workflow=self.local_workflow)
         return self._operation
 

@@ -1,8 +1,8 @@
-from flow_workflow.entities import adapter_base
 from lxml import etree
 
 import mock
 import unittest
+import flow_workflow.adapter_base
 
 
 VALID_XML = '''
@@ -22,9 +22,9 @@ INVALID_XML = '''
 '''
 
 
-class FakeAdapter(adapter_base.XMLAdapterBase):
+class FakeAdapter(flow_workflow.adapter_base.XMLAdapterBase):
     def net(self, **kwargs):
-        return adapter_base.XMLAdapterBase.net(self, **kwargs)
+        return flow_workflow.adapter_base.XMLAdapterBase.net(self, **kwargs)
 
 
 class ValidAdapterBaseTest(unittest.TestCase):

@@ -1,7 +1,7 @@
 from flow.petri_net.future import FutureAction
 from flow.shell_command.petri_net.future_nets import ShellCommandNet
 from flow_workflow.entities.perl_action import actions
-from flow_workflow.entities.future_nets import WorkflowNetBase
+from flow_workflow.future_nets import WorkflowNetBase
 
 
 class PerlActionNet(WorkflowNetBase):

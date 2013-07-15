@@ -58,14 +58,14 @@ class OperationTest(unittest.TestCase):
 
 
     def test_child_named(self):
-        with mock.patch('flow_workflow.operation_base.factory') as factory:
+        with mock.patch('flow_workflow.factory') as factory:
             child = self.operation.child_named('foo')
             factory.load_operation.assert_called_once_with(net=self.net,
                     operation_id=12)
             self.assertEqual(factory.load_operation.return_value, child)
 
     def test_parent(self):
-        with mock.patch('flow_workflow.operation_base.factory') as factory:
+        with mock.patch('flow_workflow.factory') as factory:
             parent = self.operation.parent
             factory.load_operation.assert_called_once_with(net=self.net,
                     operation_id=2)

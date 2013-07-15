@@ -1,11 +1,11 @@
-from flow_workflow.entities import adapter_base
-from flow_workflow.entities.clone_inputs_future_net import CloneInputsNet
+from flow_workflow.clone_inputs_future_net import CloneInputsNet
 from flow_workflow.entities.model import adapter
 from flow_workflow.entities.perl_action.future_nets import PerlActionNet
 from lxml import etree
 
 import mock
 import unittest
+import flow_workflow.adapter_base
 
 
 VALID_XML = '''
@@ -41,7 +41,7 @@ class ModelAdapterTest(unittest.TestCase):
         self.operation_id = 12345
         self.adapter = adapter.ModelAdapter(xml=etree.XML(VALID_XML),
                 operation_id=self.operation_id,
-                parent=adapter_base.NullAdapter())
+                parent=flow_workflow.adapter_base.NullAdapter())
 
     def test_children(self):
         self.assertItemsEqual(['input connector', 'output connector', 'A', 'B'],

@@ -1,8 +1,8 @@
-from flow_workflow.entities import adapter_base
 from flow_workflow.entities.converge.future_nets import ConvergeNet
+import flow_workflow.adapter_base
 
 
-class ConvergeAdapter(adapter_base.XMLAdapterBase):
+class ConvergeAdapter(flow_workflow.adapter_base.XMLAdapterBase):
     def net(self, input_connections, output_properties, resources):
         return ConvergeNet(name=self.name,
                 operation_id=self.operation_id,

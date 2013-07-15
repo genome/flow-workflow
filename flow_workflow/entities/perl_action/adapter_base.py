@@ -1,14 +1,14 @@
-from flow_workflow.entities import adapter_base
 from flow_workflow.entities.perl_action import actions
 from flow_workflow.entities.perl_action import future_nets
-from flow_workflow.entities.log_manager import LogManager
+from flow_workflow.log_manager import LogManager
 
 import abc
+import flow_workflow.adapter_base
 
 
-class PerlActionAdapterBase(adapter_base.XMLAdapterBase):
+class PerlActionAdapterBase(flow_workflow.adapter_base.XMLAdapterBase):
     def __init__(self, *args, **kwargs):
-        adapter_base.XMLAdapterBase.__init__(self, *args, **kwargs)
+        flow_workflow.adapter_base.XMLAdapterBase.__init__(self, *args, **kwargs)
         self.log_manager = LogManager(log_dir=self.log_dir,
                 operation_id=self.operation_id,
                 operation_name=self.name)

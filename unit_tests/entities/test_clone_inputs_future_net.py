@@ -1,4 +1,4 @@
-from flow_workflow.entities.clone_inputs_future_net import CloneInputsNet
+from flow_workflow.clone_inputs_future_net import CloneInputsNet
 
 import mock
 import unittest

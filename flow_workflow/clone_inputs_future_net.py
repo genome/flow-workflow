@@ -1,6 +1,6 @@
 from flow.petri_net.future import FutureAction
-from flow_workflow.entities.future_nets import WorkflowNetBase
-from flow_workflow.entities.clone_inputs_action import CloneInputsAction
+from flow_workflow.future_nets import WorkflowNetBase
+from flow_workflow.clone_inputs_action import CloneInputsAction
 
 
 class CloneInputsNet(WorkflowNetBase):

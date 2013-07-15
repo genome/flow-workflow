@@ -1,5 +1,5 @@
 from unittest import TestCase, main
-from flow_workflow.entities.log_manager import LogManager
+from flow_workflow.log_manager import LogManager
 
 class LogManagerTests(TestCase):
     def setUp(self):

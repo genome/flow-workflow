@@ -1,5 +1,5 @@
 from flow.petri_net.actions.base import BasicActionBase
-from flow_workflow.entities.clone_inputs_action import CloneInputsAction
+from flow_workflow.clone_inputs_action import CloneInputsAction
 from flow_workflow.parallel_id import ParallelIdentifier
 from twisted.internet.defer import Deferred
 

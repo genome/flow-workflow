@@ -1,8 +1,8 @@
-from flow_workflow.entities import adapter_base
-from flow_workflow.entities.clone_inputs_future_net import CloneInputsNet
+from flow_workflow.clone_inputs_future_net import CloneInputsNet
+import flow_workflow.adapter_base
 
 
-class ConnectorAdapter(adapter_base.AdapterBase):
+class ConnectorAdapter(flow_workflow.adapter_base.AdapterBase):
     @property
     def name(self):
         return self._name

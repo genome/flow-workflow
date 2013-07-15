@@ -1,8 +1,8 @@
-from flow_workflow.entities import factory
 from lxml import etree
 
 import mock
 import unittest
+import flow_workflow.factory
 
 
 VALID_XML = '''
@@ -17,7 +17,7 @@ class OperationTypeTest(unittest.TestCase):
     def test_get_operation_type_valid(self):
         xml = etree.XML(VALID_XML)
         self.assertEqual('Workflow::OperationType::Command',
-                factory.get_operation_type(xml))
+                flow_workflow.factory.get_operation_type(xml))
 
 
 if __name__ == '__main__':
