@@ -2,6 +2,9 @@ import pkg_resources
 import re
 
 
+MODULE = None
+
+
 _NEXT_OPERATION_ID = 0
 
 
@@ -30,3 +33,22 @@ def get_operation_type(xml):
 def sanitize_operation_type(operation_type_string):
     return re.sub(' ', '_',
             re.sub('^Workflow::OperationType::', '', operation_type_string))
+
+
+# XXX use pkg_resources
+def load_operation(net, operation_id):
+    if operation_id is None:
+        # XXX Is this the behavior we want?
+        return NullOperation()
+
+    operation_dict = net.variables[operation_variable_name(operation_id)]
+    cls = getattr(MODULE, operation_dict.pop('_class'))
+    return cls(**operation_dict)
+
+
+def store_operation(net, operation):
+    net.variables[operation.variable_name] = operation.as_dict
+
+
+def operation_variable_name(operation_id):
+    return '_wf_op_%operation_dict' % operation_id
