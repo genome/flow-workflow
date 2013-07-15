@@ -19,7 +19,7 @@ Event = flow_workflow.operations.event.adapter:EventAdapter
 Model = flow_workflow.operations.model.adapter:ModelAdapter
 input_connector = flow_workflow.operations.connectors.adapter:InputConnector
 output_connector = flow_workflow.operations.connectors.adapter:OutputConnector
-null = flow_workflow.operations.base:NullOperation
+null = flow_workflow.operations.base:NullAdapter
 '''
 
 setup(

@@ -1,13 +1,13 @@
 import abc
 
 
-_NULL_OPERATION = None
+_NULL_ADAPTER = None
 
 
 class AdapterBase(object):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, operation_id, log_dir=None, parent=_NULL_OPERATION,
+    def __init__(self, operation_id, log_dir=None, parent=_NULL_ADAPTER,
             local_workflow=False):
         self.operation_id = operation_id
         self._log_dir = log_dir
@@ -40,19 +40,19 @@ class AdapterBase(object):
         return []
 
 
-class NullOperation(AdapterBase):
+class NullAdapter(AdapterBase):
     def __init__(self, operation_id=None):
         AdapterBase.__init__(self, operation_id)
 
     def name(self):
-        return 'NullOperation'
+        return 'NullAdapter'
 
     def net(self, input_connections, output_properties, resources):
         # XXX Should return a null net?
         pass
 
 
-_NULL_OPERATION = NullOperation()
+_NULL_ADAPTER = NullAdapter()
 
 
 class XMLAdapterBase(AdapterBase):

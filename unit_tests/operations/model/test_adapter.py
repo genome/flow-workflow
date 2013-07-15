@@ -41,7 +41,7 @@ class ModelAdapterTest(unittest.TestCase):
         self.operation_id = 12345
         self.adapter = adapter.ModelAdapter(xml=etree.XML(VALID_XML),
                 operation_id=self.operation_id,
-                parent=base.NullOperation())
+                parent=base.NullAdapter())
 
     def test_children(self):
         self.assertItemsEqual(['input connector', 'output connector', 'A', 'B'],
