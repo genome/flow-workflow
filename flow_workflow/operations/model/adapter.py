@@ -30,7 +30,7 @@ class ModelAdapter(base.XMLAdapterBase):
     def __init__(self, *args, **kwargs):
         base.XMLAdapterBase.__init__(self, *args, **kwargs)
 
-        self._children = []
+        self.children = []
         self._child_operation_ids = {}
 
         self.input_connector = factory.adapter('input connector', parent=self)
@@ -49,7 +49,7 @@ class ModelAdapter(base.XMLAdapterBase):
         self.links = map(LinkAdapter, self.xml.findall('link'))
 
     def _add_child(self, child):
-        self._children.append(child)
+        self.children.append(child)
         self._child_operation_ids[child.name] = child.operation_id
 
     @property
@@ -89,10 +89,6 @@ class ModelAdapter(base.XMLAdapterBase):
                     [link.to_property] = link.from_property
 
         return data_arcs
-
-    @property
-    def children(self):
-        return self._children
 
     def child_operation_id(self, child_name):
         return self._child_operation_ids[child_name]

@@ -27,10 +27,6 @@ class AdapterBase(object):
     # Optional overrides
     # ------------------
     @property
-    def children(self):
-        return []
-
-    @property
     def output_properties(self):
         return []
 

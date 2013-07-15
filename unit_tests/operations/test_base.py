@@ -49,9 +49,6 @@ class ValidAdapterBaseTest(unittest.TestCase):
             'typeClass': 'Workflow::OperationType::Command'},
             self.adapter.operation_type_attributes)
 
-    def test_default_children(self):
-        self.assertEqual([], self.adapter.children)
-
     def test_default_net(self):
         with self.assertRaises(NotImplementedError):
             self.adapter.net(
