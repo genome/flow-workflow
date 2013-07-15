@@ -52,6 +52,10 @@ class AdapterBase(object):
     def output_properties(self):
         return []
 
+    @property
+    def log_dir(self):
+        return self._log_dir
+
 
 class NullAdapter(AdapterBase):
     def __init__(self, operation_id=None):
@@ -81,6 +85,10 @@ class XMLAdapterBase(AdapterBase):
     @property
     def operation_attributes(self):
         return self.xml.attrib
+
+    @property
+    def log_dir(self):
+        return self._log_dir or self.xml.attrib.get('logDir', '.')
 
     @property
     def operation_type_node(self):

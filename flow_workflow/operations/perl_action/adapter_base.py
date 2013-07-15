@@ -22,11 +22,6 @@ class PerlActionAdapterBase(base.XMLAdapterBase):
     def action_id(self):
         pass
 
-    @property
-    def log_dir(self):
-        return self._log_dir or self.xml.attrib.get('logDir', '.')
-
-
     def net(self, input_connections, output_properties, resources):
         if self.parallel_by:
             return self._parallel_by_net(input_connections=input_connections,

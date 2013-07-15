@@ -60,11 +60,6 @@ class ModelAdapter(base.XMLAdapterBase):
                 results.append(link.to_property)
         return results
 
-    # XXX fix log dir
-    @property
-    def log_dir(self):
-        return self._log_dir or self.xml.attrib.get('logDir', '.')
-
     @property
     def parallel_by(self):
         return self.xml.attrib.get('parallelBy')
