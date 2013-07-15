@@ -3,8 +3,6 @@ import abc
 
 # XXX Possible data clumps/small objects:
 #       - input_connections + output_properties
-#       - stderr + stdout (+ log_dir) -- this might need some real behavior
-#           - how about: some_object.stderr(parallel_id)
 
 
 # XXX Questions

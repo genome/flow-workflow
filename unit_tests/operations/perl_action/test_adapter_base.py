@@ -46,14 +46,6 @@ class NormalPerlActionAdapterBaseTest(unittest.TestCase):
                 operation_id=self.operation_id,
                 log_dir=self.log_dir, parent=self.parent)
 
-    def test_stderr_log_path(self):
-        self.assertEqual('/exciting/log/dir/test_op_name.12345.err',
-                self.adapter.stderr_log_path(self.operation_id))
-
-    def test_stdout_log_path(self):
-        self.assertEqual('/exciting/log/dir/test_op_name.12345.out',
-                self.adapter.stdout_log_path(self.operation_id))
-
     def test_parallel_by(self):
         self.assertEqual(None, self.adapter.parallel_by)
 

@@ -1,17 +1,18 @@
 from flow_workflow.operations import base
 from flow_workflow.operations.perl_action import actions
 from flow_workflow.operations.perl_action import future_nets
+from flow_workflow.operations.log_manager import LogManager
 
 import abc
-import os
-import re
-
-
-LOG_NAME_TEMPLATE = '%(base_name)s.%(operation_id)s.%(suffix)s'
-MAX_BASE_NAME_LEN = 256
 
 
 class PerlActionAdapterBase(base.XMLAdapterBase):
+    def __init__(self, *args, **kwargs):
+        base.XMLAdapterBase.__init__(self, *args, **kwargs)
+        self.log_manager = LogManager(log_dir=self.log_dir,
+                operation_id=self.operation_id,
+                operation_name=self.name)
+
     # XXX action_type and action_id should be refactored into a data clump
     @abc.abstractproperty
     def action_type(self):
@@ -24,25 +25,6 @@ class PerlActionAdapterBase(base.XMLAdapterBase):
     @property
     def log_dir(self):
         return self._log_dir or self.xml.attrib.get('logDir', '.')
-
-    def stderr_log_path(self, operation_id):
-        return self._resolve_log_path(suffix='err',
-                base_name=self._base_log_file_name(),
-                operation_id=operation_id)
-
-    def stdout_log_path(self, operation_id):
-        return self._resolve_log_path(suffix='out',
-                base_name=self._base_log_file_name(),
-                operation_id=operation_id)
-
-
-    def _base_log_file_name(self):
-        bname = re.sub("[^A-Za-z0-9_.-]+", "_", self.name)[:MAX_BASE_NAME_LEN]
-        return re.sub("^_*|_*$", "", bname)
-
-    def _resolve_log_path(self, **kwargs):
-        filename = LOG_NAME_TEMPLATE % kwargs
-        return os.path.join(self.log_dir, filename)
 
 
     def net(self, input_connections, output_properties, resources):
@@ -81,8 +63,8 @@ class PerlActionAdapterBase(base.XMLAdapterBase):
                 parent_operation_id=self.parent.operation_id,
                 input_connections=input_connections,
                 resources=resources,
-                stderr=self.stderr_log_path(self.operation_id),
-                stdout=self.stdout_log_path(self.operation_id),
+                stderr=self.log_manager.stderr_log_path,
+                stdout=self.log_manager.stdout_log_path,
                 action_type=self.action_type,
                 action_id=self.action_id,
                 shortcut_action_class=self.shortcut_action_class,
