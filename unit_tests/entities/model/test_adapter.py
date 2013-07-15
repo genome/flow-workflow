@@ -1,6 +1,6 @@
 from flow_workflow.clone_inputs_future_net import CloneInputsNet
 from flow_workflow.entities.model import adapter
-from flow_workflow.entities.perl_action.future_nets import PerlActionNet
+from flow_workflow.perl_action.future_nets import PerlActionNet
 from lxml import etree
 
 import mock

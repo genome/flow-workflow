@@ -1,5 +1,5 @@
-from flow_workflow.entities.perl_action import actions
-from flow_workflow.entities.perl_action import future_nets
+from flow_workflow.perl_action import actions
+from flow_workflow.perl_action import future_nets
 from flow_workflow.log_manager import LogManager
 
 import abc

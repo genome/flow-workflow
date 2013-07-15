@@ -1,6 +1,6 @@
 from collections import defaultdict
 from flow_workflow.entities.model import future_nets
-from flow_workflow.entities.perl_action.future_nets import ParallelByNet
+from flow_workflow.perl_action.future_nets import ParallelByNet
 import flow_workflow.adapter_base
 import flow_workflow.factory
 

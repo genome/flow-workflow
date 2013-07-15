@@ -1,4 +1,4 @@
-from flow_workflow.entities.perl_action import adapter_base
+from flow_workflow.perl_action import adapter_base
 
 
 class EventAdapter(adapter_base.PerlActionAdapterBase):

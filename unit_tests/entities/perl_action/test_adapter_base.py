@@ -1,6 +1,6 @@
-from flow_workflow.entities.perl_action import actions
-from flow_workflow.entities.perl_action import adapter_base
-from flow_workflow.entities.perl_action import future_nets
+from flow_workflow.perl_action import actions
+from flow_workflow.perl_action import adapter_base
+from flow_workflow.perl_action import future_nets
 from lxml import etree
 
 import mock

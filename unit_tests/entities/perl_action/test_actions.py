@@ -1,5 +1,5 @@
 from flow.petri_net import color
-from flow_workflow.entities.perl_action import actions
+from flow_workflow.perl_action import actions
 from flow_workflow.parallel_id import ParallelIdentifier
 
 import fakeredis
@@ -108,7 +108,7 @@ class ParallelBySplitTest(unittest.TestCase):
 
         self.action.store_parallel_input = mock.Mock()
         self.action._create_tokens = mock.Mock()
-        with mock.patch('flow_workflow.entities.perl_action.actions.io') as m_io:
+        with mock.patch('flow_workflow.perl_action.actions.io') as m_io:
             parallel_input = ['a', 'b', 'c']
             m_io.load_input.return_value = parallel_input
             self.action.execute(net=net,
@@ -204,7 +204,7 @@ class ParallelByJoinTest(unittest.TestCase):
         self.action.collect_array_output = mock.Mock()
         self.action.collect_array_output.return_value = [mock.Mock()]
 
-        with mock.patch('flow_workflow.entities.perl_action.actions.io') as m_io:
+        with mock.patch('flow_workflow.perl_action.actions.io') as m_io:
             m_io.extract_workflow_data.return_value = workflow_data
             self.action.execute(net=self.net,
                     color_descriptor=color_descriptor,
