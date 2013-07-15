@@ -2,15 +2,15 @@ from flow_workflow.operations import base
 from flow_workflow.operations.clone_inputs_future_net import CloneInputsNet
 
 
-class ConnectorOperation(base.AdapterBase):
+class ConnectorAdapter(base.AdapterBase):
     @property
     def name(self):
         return self._name
 
 
-class InputConnector(ConnectorOperation):
+class InputConnector(ConnectorAdapter):
     def __init__(self, name='input connector', *args, **kwargs):
-        ConnectorOperation.__init__(self, *args, **kwargs)
+        ConnectorAdapter.__init__(self, *args, **kwargs)
         self._name = name
 
     def net(self, input_connections, output_properties, resources):
@@ -19,9 +19,9 @@ class InputConnector(ConnectorOperation):
                 input_connections=input_connections)
 
 
-class OutputConnector(ConnectorOperation):
+class OutputConnector(ConnectorAdapter):
     def __init__(self, name='output connector', *args, **kwargs):
-        ConnectorOperation.__init__(self, *args, **kwargs)
+        ConnectorAdapter.__init__(self, *args, **kwargs)
         self._name = name
 
     def net(self, input_connections, output_properties, resources):
