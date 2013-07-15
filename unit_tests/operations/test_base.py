@@ -52,9 +52,6 @@ class ValidAdapterBaseTest(unittest.TestCase):
     def test_default_children(self):
         self.assertEqual([], self.adapter.children)
 
-    def test_default_operations(self):
-        self.assertEqual([self.adapter], self.adapter.operations)
-
     def test_default_net(self):
         with self.assertRaises(NotImplementedError):
             self.adapter.net(

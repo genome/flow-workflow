@@ -26,11 +26,6 @@ class AdapterBase(object):
 
     # Optional overrides
     # ------------------
-    # Are children and operations needed?
-    @property
-    def operations(self):
-        return [self]
-
     @property
     def children(self):
         return []

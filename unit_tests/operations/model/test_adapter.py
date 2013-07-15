@@ -47,11 +47,6 @@ class ModelAdapterTest(unittest.TestCase):
         self.assertItemsEqual(['input connector', 'output connector', 'A', 'B'],
                 [c.name for c in self.adapter.children])
 
-    def test_operations(self):
-        self.assertItemsEqual(['test_model', 'input connector',
-            'output connector', 'A', 'B'],
-            [o.name for o in self.adapter.operations])
-
     def test_links(self):
         self.assertItemsEqual(['A', 'B', 'input connector', 'input connector'],
                 [l.from_operation for l in self.adapter.links])

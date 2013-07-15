@@ -97,13 +97,6 @@ class ModelAdapter(base.XMLAdapterBase):
     def child_operation_id(self, child_name):
         return self._child_operation_ids[child_name]
 
-    @property
-    def operations(self):
-        result = [self]
-        for child in self.children:
-            result.extend(child.operations)
-        return result
-
     def child_input_connections(self, child_name, input_connections):
         if child_name == 'input connector':
             return input_connections
