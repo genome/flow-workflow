@@ -1,7 +1,7 @@
 from flow.petri_net import future
 from flow.petri_net.actions.base import BasicActionBase
 from flow_workflow import io
-from flow_workflow.operations import factory
+from flow_workflow.entities import factory
 from flow_workflow.parallel_id import ParallelIdentifier
 
 

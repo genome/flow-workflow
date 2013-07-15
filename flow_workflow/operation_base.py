@@ -1,6 +1,6 @@
 from flow_workflow import io
-from flow_workflow.operations import factory
-from flow_workflow.operations import log_manager
+from flow_workflow.entities import factory
+from flow_workflow.entities import log_manager
 
 
 class Operation(object):
