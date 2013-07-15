@@ -1,3 +1,6 @@
+from flow_workflow.operation_base import NullOperation
+
+
 class FutureOperation(object):
     def __init__(self, operation_class, name, operation_id, input_connections,
             output_properties, log_dir, parent):
@@ -30,3 +33,18 @@ class FutureOperation(object):
     @property
     def children_ids(self):
         return {name: c.operation_id for name, c in self._children.iteritems()}
+
+
+class NullFutureOperation(FutureOperation):
+    def __init__(self):
+        pass
+
+    def _add_child(self, child):
+        pass
+
+    @property
+    def operation_id(self):
+        return None
+
+    def operation(self, net):
+        return NullOperation()
