@@ -12,7 +12,7 @@ class Workflow(object):
         self.resources = resources
         self.local_workflow = local_workflow
 
-        self.dummy_operation = factory.operation('null')
+        self.dummy_operation = factory.adapter('null')
         self._future_net = None
         self._operation = None
 
@@ -34,8 +34,8 @@ class Workflow(object):
     @property
     def operation(self):
         if not self._operation:
-            self._operation = factory.operation_from_xml(self.xml,
-                parent=factory.operation('null'),
+            self._operation = factory.adapter_from_xml(self.xml,
+                parent=factory.adapter('null'),
                 local_workflow=self.local_workflow)
         return self._operation
 

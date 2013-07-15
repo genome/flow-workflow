@@ -5,9 +5,9 @@ import re
 _NEXT_OPERATION_ID = 0
 
 
-def operation(operation_type, *args, **kwargs):
+def adapter(operation_type, *args, **kwargs):
     global _NEXT_OPERATION_ID
-    for ep in pkg_resources.iter_entry_points('flow_workflow.operation_types',
+    for ep in pkg_resources.iter_entry_points('flow_workflow.adapters',
             sanitize_operation_type(operation_type)):
         cls = ep.load()
         obj = cls(operation_id=_NEXT_OPERATION_ID, *args, **kwargs)
@@ -18,8 +18,8 @@ def operation(operation_type, *args, **kwargs):
                 % (operation_type, sanitize_operation_type(operation_type)))
 
 
-def operation_from_xml(xml, *args, **kwargs):
-    return operation(get_operation_type(xml), *args, xml=xml, **kwargs)
+def adapter_from_xml(xml, *args, **kwargs):
+    return adapter(get_operation_type(xml), *args, xml=xml, **kwargs)
 
 
 def get_operation_type(xml):

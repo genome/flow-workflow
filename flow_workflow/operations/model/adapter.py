@@ -33,15 +33,15 @@ class ModelAdapter(base.XMLAdapterBase):
         self._children = []
         self._child_operation_ids = {}
 
-        self.input_connector = factory.operation('input connector', parent=self)
-        self.output_connector = factory.operation('output connector',
+        self.input_connector = factory.adapter('input connector', parent=self)
+        self.output_connector = factory.adapter('output connector',
                 parent=self)
 
         self._add_child(self.input_connector)
         self._add_child(self.output_connector)
 
         for operation_xml in self.xml.findall('operation'):
-            child = factory.operation_from_xml(operation_xml,
+            child = factory.adapter_from_xml(operation_xml,
                     log_dir=self.log_dir, parent=self,
                     local_workflow=self.local_workflow)
             self._add_child(child)

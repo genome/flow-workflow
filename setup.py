@@ -11,7 +11,7 @@ workflow-wrapper = flow_workflow.commands.workflow_wrapper:WorkflowWrapperComman
 workflow_historian = flow_workflow.historian.service_interface:WorkflowHistorianServiceInterface
 workflow_completion = flow_workflow.completion:WorkflowCompletionServiceInterface
 
-[flow_workflow.operation_types]
+[flow_workflow.adapters]
 Block = flow_workflow.operations.block.adapter:BlockAdapter
 Command = flow_workflow.operations.command.adapter:CommandAdapter
 Converge = flow_workflow.operations.converge.adapter:ConvergeAdapter
