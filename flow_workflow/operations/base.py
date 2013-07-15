@@ -1,6 +1,30 @@
 import abc
 
 
+# XXX Possible data clumps/small objects:
+#       - input_connections + output_properties
+#       - stderr + stdout (+ log_dir) -- this might need some real behavior
+#           - how about: some_object.stderr(parallel_id)
+
+
+# XXX Questions
+#       - does the operation know enough to create the future_net?
+#           - if so, should the operation be responsible for creating it?
+#           - would it waste storage to keep all this information in redis?
+
+
+class IAdapter(object):
+    __metaclass__ = abc.ABCMeta
+
+    @abc.abstractmethod
+    def future_net(self, input_connections, output_properties, resources):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def operation(self, input_connections, output_properties):
+        raise NotImplementedError()
+
+
 _NULL_ADAPTER = None
 
 
