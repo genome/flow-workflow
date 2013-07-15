@@ -59,6 +59,7 @@ class NullAdapter(AdapterBase):
     def __init__(self, operation_id=None):
         AdapterBase.__init__(self, operation_id)
 
+    @property
     def name(self):
         return 'NullAdapter'
 
@@ -77,7 +78,6 @@ class XMLAdapterBase(AdapterBase):
 
     @property
     def name(self):
-        # XXX We should sanitize this, since it's used in redis keys
         return self.xml.attrib['name']
 
     @property
