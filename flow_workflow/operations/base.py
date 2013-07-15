@@ -19,7 +19,7 @@ class IAdapter(object):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def operation(self, input_connections, output_properties):
+    def future_operation(self, input_connections, output_properties):
         raise NotImplementedError()
 
 
