@@ -12,18 +12,18 @@ class Workflow(object):
         self.resources = resources
         self.local_workflow = local_workflow
 
-        self.dummy_operation = factory.adapter('null')
+        self.dummy_adapter = factory.adapter('null')
         self._future_net = None
         self._operation = None
 
     def store_inputs(self, net):
-        io.store_outputs(net, self.dummy_operation.operation_id, self.inputs,
+        io.store_outputs(net, self.dummy_adapter.operation_id, self.inputs,
                 parallel_id=ParallelIdentifier())
 
     @property
     def input_connections(self):
         return {
-            self.dummy_operation.operation_id:
+            self.dummy_adapter.operation_id:
                 {name: name for name, value in self.inputs.iteritems()}
         }
 

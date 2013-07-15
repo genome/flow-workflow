@@ -48,7 +48,7 @@ class WorkflowTest(unittest.TestCase):
 
     def test_input_connections(self):
         expected_ics = {
-            self.workflow.dummy_operation.operation_id:
+            self.workflow.dummy_adapter.operation_id:
                 {'a': 'a', 'b': 'b'}
         }
         self.assertEqual(expected_ics, self.workflow.input_connections)
