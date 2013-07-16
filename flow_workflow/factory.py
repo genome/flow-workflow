@@ -1,3 +1,4 @@
+from flow.util.containers import head
 import pkg_resources
 import re
 
@@ -10,15 +11,13 @@ _NEXT_OPERATION_ID = 0
 
 def adapter(operation_type, *args, **kwargs):
     global _NEXT_OPERATION_ID
-    for ep in pkg_resources.iter_entry_points('flow_workflow.adapters',
-            sanitize_operation_type(operation_type)):
-        cls = ep.load()
-        obj = cls(operation_id=_NEXT_OPERATION_ID, *args, **kwargs)
-        _NEXT_OPERATION_ID += 1
-        return obj
-    else:
-        raise RuntimeError('Could not find adapter for operation type: %s (%s)'
-                % (operation_type, sanitize_operation_type(operation_type)))
+    ep = head(pkg_resources.iter_entry_points('flow_workflow.adapters',
+        sanitize_operation_type(operation_type)))
+    cls = ep.load()
+    obj = cls(operation_id=_NEXT_OPERATION_ID, *args, **kwargs)
+    _NEXT_OPERATION_ID += 1
+
+    return obj
 
 
 def adapter_from_xml(xml, *args, **kwargs):
@@ -38,10 +37,10 @@ def sanitize_operation_type(operation_type_string):
 def load_operation(net, operation_id):
     operation_dict = net.variables[operation_variable_name(operation_id)]
 
-    for ep in pkg_resources.iter_entry_points('flow_workflow.operations',
-            operation_dict.pop('_class')):
-        cls = ep.load()
-        return cls(**operation_dict)
+    ep = head(pkg_resources.iter_entry_points(
+        'flow_workflow.operations', operation_dict.pop('_class')))
+    cls = ep.load()
+    return cls(**operation_dict)
 
 
 def operation_variable_name(operation_id):
