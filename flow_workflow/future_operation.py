@@ -36,7 +36,7 @@ class FutureOperation(object):
 
 
 class NullFutureOperation(FutureOperation):
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         pass
 
     def _add_child(self, child):

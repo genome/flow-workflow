@@ -9,6 +9,8 @@ class ConnectorAdapter(flow_workflow.adapter_base.AdapterBase):
 
 
 class InputConnector(ConnectorAdapter):
+    operation_class = 'input_connector'
+
     def __init__(self, name='input connector', *args, **kwargs):
         ConnectorAdapter.__init__(self, *args, **kwargs)
         self._name = name
@@ -20,6 +22,8 @@ class InputConnector(ConnectorAdapter):
 
 
 class OutputConnector(ConnectorAdapter):
+    operation_class = 'output_connector'
+
     def __init__(self, name='output connector', *args, **kwargs):
         ConnectorAdapter.__init__(self, *args, **kwargs)
         self._name = name

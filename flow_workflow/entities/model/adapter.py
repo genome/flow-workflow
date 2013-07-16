@@ -1,7 +1,7 @@
 from collections import defaultdict
 from flow_workflow.entities.model import future_nets
 from flow_workflow.perl_action.future_nets import ParallelByNet
-import flow_workflow.adapter_base
+from flow_workflow.adapter_base import XMLAdapterBase
 import flow_workflow.factory
 
 
@@ -26,16 +26,19 @@ class LinkAdapter(object):
         return self.xml.attrib['toProperty']
 
 
-class ModelAdapter(flow_workflow.adapter_base.XMLAdapterBase):
+class ModelAdapter(XMLAdapterBase):
+    operation_class = 'model'
+
     def __init__(self, *args, **kwargs):
-        flow_workflow.adapter_base.XMLAdapterBase.__init__(self, *args, **kwargs)
+        XMLAdapterBase.__init__(self, *args, **kwargs)
 
         self.children = []
         self._child_operation_ids = {}
 
-        self.input_connector = flow_workflow.factory.adapter('input connector', parent=self)
-        self.output_connector = flow_workflow.factory.adapter('output connector',
+        self.input_connector = flow_workflow.factory.adapter('input connector',
                 parent=self)
+        self.output_connector = flow_workflow.factory.adapter(
+                'output connector', parent=self)
 
         self._add_child(self.input_connector)
         self._add_child(self.output_connector)
@@ -152,3 +155,16 @@ class ModelAdapter(flow_workflow.adapter_base.XMLAdapterBase):
                 operation_id=self.operation_id,
                 input_connections=input_connections,
                 parent_operation_id=self.parent.operation_id)
+
+    def future_operations(self, parent_future_operation,
+            input_connections, output_properties):
+        model_future_operation = self.future_operation(parent_future_operation,
+                input_connections, output_properties)
+
+        result = [model_future_operation]
+        for child in self.children:
+            result.extend(child.future_operations(model_future_operation,
+                self.child_input_connections(child.name, input_connections),
+                self.child_output_properties(child.name, output_properties)))
+
+        return result

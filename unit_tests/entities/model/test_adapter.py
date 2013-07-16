@@ -1,5 +1,6 @@
 from flow_workflow.clone_inputs_future_net import CloneInputsNet
 from flow_workflow.entities.model import adapter
+from flow_workflow.future_operation import NullFutureOperation
 from flow_workflow.perl_action.future_nets import PerlActionNet
 from lxml import etree
 
@@ -154,6 +155,12 @@ class ModelAdapterTest(unittest.TestCase):
         self.ensure_singly_connected(ic, b)
         self.ensure_singly_connected(a, oc)
         self.ensure_singly_connected(b, oc)
+
+    def test_future_operations(self):
+        future_ops = self.adapter.future_operations(NullFutureOperation(),
+                input_connections=mock.Mock(),
+                output_properties=mock.Mock())
+        self.assertEqual(5, len(future_ops))
 
 
 if __name__ == "__main__":

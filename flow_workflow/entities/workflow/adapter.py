@@ -1,11 +1,14 @@
 from flow_workflow import io
 from flow_workflow.entities.workflow.action import NotificationAction
 from flow_workflow.entities.workflow.future_nets import WorkflowNet
+from flow_workflow.future_operation import NullFutureOperation
 from flow_workflow.parallel_id import ParallelIdentifier
 import flow_workflow.factory
 
 
 class Workflow(object):
+    operation_class = 'null'
+
     def __init__(self, xml, inputs, resources, local_workflow=False):
         self.xml = xml
         self.inputs = inputs
@@ -34,8 +37,8 @@ class Workflow(object):
     @property
     def child_adapter(self):
         if not self._child_adapter:
-            self._child_adapter = flow_workflow.factory.adapter_from_xml(self.xml,
-                parent=flow_workflow.factory.adapter('null'),
+            self._child_adapter = flow_workflow.factory.adapter_from_xml(
+                    self.xml, parent=flow_workflow.factory.adapter('null'),
                 local_workflow=self.local_workflow)
         return self._child_adapter
 
@@ -49,3 +52,16 @@ class Workflow(object):
         if not self._future_net:
             self._future_net = WorkflowNet(self.child_adapter_future_net)
         return self._future_net
+
+    def future_operation(self, parent_future_operation, input_connections,
+            output_properties):
+        return NullFutureOperation()
+
+    def future_operations(self, parent_future_operation,
+            input_connections, output_properties):
+        return self.dummy_adapter.future_operations(NullFutureOperation(),
+                    input_connections, output_properties
+                    ) + self.child_adapter.future_operations(
+                            NullFutureOperation(),
+                            self.input_connections,
+                            self.output_properties)

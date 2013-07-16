@@ -1,3 +1,4 @@
+from flow_workflow.future_operation import FutureOperation
 import abc
 
 
@@ -19,7 +20,8 @@ class IAdapter(object):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def future_operations(self, input_connections, output_properties):
+    def future_operations(self, parent_future_operation,
+            input_connections, output_properties):
         raise NotImplementedError()
 
 
@@ -46,6 +48,10 @@ class AdapterBase(object):
     def net(self, input_connections, output_properties, resources):
         raise NotImplementedError()
 
+    @abc.abstractproperty
+    def operation_class(self):
+        raise NotImplementedError()
+
     # Optional overrides
     # ------------------
     @property
@@ -57,7 +63,26 @@ class AdapterBase(object):
         return self._log_dir
 
 
+    def future_operation(self, parent_future_operation, input_connections,
+            output_properties):
+        return FutureOperation(
+            operation_class=self.operation_class,
+            input_connections=input_connections,
+            log_dir=self.log_dir,
+            name=self.name,
+            operation_id=self.operation_id,
+            output_properties=output_properties,
+            parent=parent_future_operation)
+
+    def future_operations(self, parent_future_operation, input_connections,
+            output_properties):
+        return [self.future_operation(parent_future_operation,
+            input_connections, output_properties)]
+
+
 class NullAdapter(AdapterBase):
+    operation_class = 'null'
+
     def __init__(self, operation_id=None):
         AdapterBase.__init__(self, operation_id)
 

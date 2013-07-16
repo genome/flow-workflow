@@ -23,6 +23,8 @@ INVALID_XML = '''
 
 
 class FakeAdapter(flow_workflow.adapter_base.XMLAdapterBase):
+    operation_class = 'fake'
+
     def net(self, **kwargs):
         return flow_workflow.adapter_base.XMLAdapterBase.net(self, **kwargs)
 

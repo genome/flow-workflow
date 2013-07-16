@@ -1,3 +1,4 @@
+from flow_workflow.future_operation import NullFutureOperation
 from flow_workflow.parallel_id import ParallelIdentifier
 from lxml import etree
 
@@ -67,7 +68,15 @@ class WorkflowTest(unittest.TestCase):
 
     def test_future_net(self):
         net = self.workflow.future_net
-        self.assertIsInstance(net, flow_workflow.entities.workflow.adapter.WorkflowNet)
+        self.assertIsInstance(net,
+                flow_workflow.entities.workflow.adapter.WorkflowNet)
+
+    def test_future_operations(self):
+        future_ops = self.workflow.future_operations(NullFutureOperation(),
+                input_connections=mock.Mock(),
+                output_properties=mock.Mock())
+        self.assertEqual(6, len(future_ops))
+
 
 
 if __name__ == '__main__':

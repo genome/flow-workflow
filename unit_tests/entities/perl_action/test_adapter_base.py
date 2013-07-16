@@ -24,6 +24,8 @@ NORMAL_XML = '''
 
 
 class FakeAdapter(adapter_base.PerlActionAdapterBase):
+    operation_class = 'fake'
+
     def net(self, **kwargs):
         return adapter_base.PerlActionAdapterBase.net(self, **kwargs)
 
