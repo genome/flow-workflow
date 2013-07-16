@@ -19,11 +19,11 @@ class BlockAdapterTest(unittest.TestCase):
                 operation_id=self.operation_id,
                 parent=self.parent)
 
-    def test_net(self):
+    def test_future_net(self):
         input_connections = mock.Mock()
         resources = mock.Mock()
 
-        self.assertIsInstance(self.adapter.net(
+        self.assertIsInstance(self.adapter.future_net(
                 input_connections=input_connections,
                 output_properties=mock.Mock(),
                 resources=resources),

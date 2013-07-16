@@ -41,7 +41,7 @@ class AdapterBase(object):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def net(self, input_connections, output_properties, resources):
+    def future_net(self, input_connections, output_properties, resources):
         raise NotImplementedError()
 
     @abc.abstractproperty
@@ -86,7 +86,7 @@ class NullAdapter(AdapterBase):
     def name(self):
         return 'NullAdapter'
 
-    def net(self, input_connections, output_properties, resources):
+    def future_net(self, input_connections, output_properties, resources):
         # XXX Should return a null net?
         pass
 

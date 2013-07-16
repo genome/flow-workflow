@@ -25,8 +25,9 @@ INVALID_XML = '''
 class FakeAdapter(flow_workflow.adapter_base.XMLAdapterBase):
     operation_class = 'fake'
 
-    def net(self, **kwargs):
-        return flow_workflow.adapter_base.XMLAdapterBase.net(self, **kwargs)
+    def future_net(self, **kwargs):
+        return flow_workflow.adapter_base.XMLAdapterBase.future_net(self,
+                **kwargs)
 
 
 class ValidAdapterBaseTest(unittest.TestCase):
@@ -51,9 +52,9 @@ class ValidAdapterBaseTest(unittest.TestCase):
             'typeClass': 'Workflow::OperationType::Command'},
             self.adapter.operation_type_attributes)
 
-    def test_default_net(self):
+    def test_default_future_net(self):
         with self.assertRaises(NotImplementedError):
-            self.adapter.net(
+            self.adapter.future_net(
                     input_connections=mock.Mock(),
                     output_properties=mock.Mock(),
                     resources=mock.MagicMock())

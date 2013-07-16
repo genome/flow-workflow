@@ -125,11 +125,12 @@ class ModelAdapterTest(unittest.TestCase):
 
         self.assertIn(dest.start_transition, all_connections)
 
-    def test_net(self):
+    def test_future_net(self):
         resources = {}
         output_properties = []
         input_connections = {}
-        net = self.adapter.net(input_connections, output_properties, resources)
+        net = self.adapter.future_net(input_connections, output_properties,
+                resources)
 
         ic = self.get_subnet(net, 'input connector')
         oc = self.get_subnet(net, 'output connector')

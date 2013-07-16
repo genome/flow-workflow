@@ -26,8 +26,8 @@ NORMAL_XML = '''
 class FakeAdapter(adapter_base.PerlActionAdapterBase):
     operation_class = 'fake'
 
-    def net(self, **kwargs):
-        return adapter_base.PerlActionAdapterBase.net(self, **kwargs)
+    def future_net(self, **kwargs):
+        return adapter_base.PerlActionAdapterBase.future_net(self, **kwargs)
 
     @property
     def action_type(self):
@@ -64,8 +64,8 @@ class NormalPerlActionAdapterBaseTest(unittest.TestCase):
         self.assertEqual(actions.ForkAction,
                 self.adapter.execute_action_class)
 
-    def test_net(self):
-        net = self.adapter.net(
+    def test_future_net(self):
+        net = self.adapter.future_net(
                 input_connections=mock.Mock(),
                 output_properties=mock.Mock(),
                 resources=mock.Mock())
@@ -85,8 +85,8 @@ class ParallelByPerlActionAdapterBaseTest(unittest.TestCase):
     def test_parallel_by(self):
         self.assertEqual('foo', self.adapter.parallel_by)
 
-    def test_net(self):
-        net = self.adapter.net(
+    def test_future_net(self):
+        net = self.adapter.future_net(
                 input_connections=mock.Mock(),
                 output_properties=mock.Mock(),
                 resources=mock.Mock())

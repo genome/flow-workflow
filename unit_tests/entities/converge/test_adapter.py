@@ -38,7 +38,7 @@ class ConvergeAdapterTest(unittest.TestCase):
                 operation_id=self.operation_id, parent=self.parent)
 
     def test_init(self):
-        self.assertIsInstance(self.adapter.net(
+        self.assertIsInstance(self.adapter.future_net(
                 input_connections=self.input_connections,
                 output_properties=mock.Mock(),
                 resources=self.resources),
@@ -65,7 +65,7 @@ class InvalidConvergeAdapterTest(unittest.TestCase):
 
     def test_init_raises(self):
         with self.assertRaises(ValueError):
-            self.adapter.net(
+            self.adapter.future_net(
                     input_connections=self.input_connections,
                     output_properties=mock.Mock(),
                     resources=self.resources)

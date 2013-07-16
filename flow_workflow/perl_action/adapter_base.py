@@ -22,7 +22,7 @@ class PerlActionAdapterBase(flow_workflow.adapter_base.XMLAdapterBase):
     def action_id(self):
         pass
 
-    def net(self, input_connections, output_properties, resources):
+    def future_net(self, input_connections, output_properties, resources):
         if self.parallel_by:
             return self._parallel_by_net(input_connections=input_connections,
                     output_properties=output_properties, resources=resources)

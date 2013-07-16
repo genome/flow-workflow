@@ -15,7 +15,7 @@ class InputConnector(ConnectorAdapter):
         ConnectorAdapter.__init__(self, *args, **kwargs)
         self._name = name
 
-    def net(self, input_connections, output_properties, resources):
+    def future_net(self, input_connections, output_properties, resources):
         return CloneInputsNet(name=self.name,
                 operation_id=self.operation_id,
                 input_connections=input_connections)
@@ -28,7 +28,7 @@ class OutputConnector(ConnectorAdapter):
         ConnectorAdapter.__init__(self, *args, **kwargs)
         self._name = name
 
-    def net(self, input_connections, output_properties, resources):
+    def future_net(self, input_connections, output_properties, resources):
         return CloneInputsNet(name=self.name,
                 operation_id=self.parent.operation_id,
                 input_connections=input_connections)

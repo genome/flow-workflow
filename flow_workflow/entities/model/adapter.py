@@ -123,7 +123,7 @@ class ModelAdapter(XMLAdapterBase):
     def subnets(self, input_connections, output_properties, resources):
         child_nets = {}
         for child in self.children:
-            child_nets[child.name] = child.net(
+            child_nets[child.name] = child.future_net(
                     input_connections=self.child_input_connections(
                         child.name, input_connections),
                     output_properties=self.child_output_properties(
@@ -132,7 +132,7 @@ class ModelAdapter(XMLAdapterBase):
 
         return child_nets
 
-    def net(self, input_connections, output_properties, resources):
+    def future_net(self, input_connections, output_properties, resources):
         if self.parallel_by:
             return self._parallel_by_net(input_connections=input_connections,
                     output_properties=output_properties, resources=resources)

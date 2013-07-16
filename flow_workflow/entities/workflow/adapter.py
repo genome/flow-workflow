@@ -44,7 +44,7 @@ class Workflow(object):
 
     @property
     def child_adapter_future_net(self):
-        return self.child_adapter.net(self.input_connections,
+        return self.child_adapter.future_net(self.input_connections,
                 self.output_properties, self.resources)
 
     @property
