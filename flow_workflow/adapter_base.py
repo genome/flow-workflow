@@ -24,9 +24,7 @@ class IAdapter(object):
 _NULL_ADAPTER = None
 
 
-class AdapterBase(object):
-    __metaclass__ = abc.ABCMeta
-
+class AdapterBase(IAdapter):
     def __init__(self, operation_id, log_dir=None, parent=_NULL_ADAPTER,
             local_workflow=False):
         self.operation_id = operation_id
@@ -38,10 +36,6 @@ class AdapterBase(object):
     # -------------------
     @abc.abstractproperty
     def name(self):
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def future_net(self, input_connections, output_properties, resources):
         raise NotImplementedError()
 
     @abc.abstractproperty

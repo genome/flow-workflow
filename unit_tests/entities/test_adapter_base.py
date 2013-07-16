@@ -52,13 +52,6 @@ class ValidAdapterBaseTest(unittest.TestCase):
             'typeClass': 'Workflow::OperationType::Command'},
             self.adapter.operation_type_attributes)
 
-    def test_default_future_net(self):
-        with self.assertRaises(NotImplementedError):
-            self.adapter.future_net(
-                    input_connections=mock.Mock(),
-                    output_properties=mock.Mock(),
-                    resources=mock.MagicMock())
-
 
 class InvalidAdapterBaseTest(unittest.TestCase):
     def setUp(self):
