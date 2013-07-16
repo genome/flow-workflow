@@ -14,7 +14,7 @@ class Workflow(object):
 
         self.dummy_adapter = flow_workflow.factory.adapter('null')
         self._future_net = None
-        self._operation = None
+        self._child_adapter = None
 
     def store_inputs(self, net):
         io.store_outputs(net, self.dummy_adapter.operation_id, self.inputs,
@@ -29,25 +29,25 @@ class Workflow(object):
 
     @property
     def output_properties(self):
-        return self.operation.output_properties
+        return self.child_adapter.output_properties
 
     @property
-    def operation(self):
-        if not self._operation:
-            self._operation = flow_workflow.factory.adapter_from_xml(self.xml,
+    def child_adapter(self):
+        if not self._child_adapter:
+            self._child_adapter = flow_workflow.factory.adapter_from_xml(self.xml,
                 parent=flow_workflow.factory.adapter('null'),
                 local_workflow=self.local_workflow)
-        return self._operation
+        return self._child_adapter
 
     @property
-    def operation_future_net(self):
-        return self.operation.net(self.input_connections,
+    def child_adapter_future_net(self):
+        return self.child_adapter.net(self.input_connections,
                 self.output_properties, self.resources)
 
     @property
     def future_net(self):
         if not self._future_net:
-            self._future_net = WorkflowNet(self.operation_future_net)
+            self._future_net = WorkflowNet(self.child_adapter_future_net)
         return self._future_net
 
 
@@ -61,14 +61,14 @@ class NotificationAction(BasicActionBase):
 
 
 class WorkflowNet(future.FutureNet):
-    def __init__(self, operation_net):
+    def __init__(self, child_net):
         future.FutureNet.__init__(self)
-        self.operation_net = operation_net
+        self.child_net = child_net
 
         self.start_place = self.add_place('start')
-        self.subnets.add(operation_net)
+        self.subnets.add(child_net)
 
-        self.start_place.add_arc_out(operation_net.start_transition)
+        self.start_place.add_arc_out(child_net.start_transition)
 
         self.notify_success_transition = self.add_basic_transition(
                 name='notify_success_transition',
@@ -80,10 +80,10 @@ class WorkflowNet(future.FutureNet):
                 action=future.FutureAction(
                     cls=NotificationAction, status='failure'))
 
-        self.bridge_transitions(operation_net.success_transition,
+        self.bridge_transitions(child_net.success_transition,
                 self.notify_success_transition,
                 name='notify_success_place')
 
-        self.bridge_transitions(operation_net.failure_transition,
+        self.bridge_transitions(child_net.failure_transition,
                 self.notify_failure_transition,
                 name='notify_failure_place')

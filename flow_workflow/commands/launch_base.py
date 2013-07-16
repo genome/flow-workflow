@@ -71,7 +71,7 @@ class LaunchWorkflowCommandBase(CommandBase):
         self.start_net(net, start_place)
 
         if self.complete():
-            self.write_outputs(net, workflow.operation.operation_id,
+            self.write_outputs(net, workflow.child_adapter.operation_id,
                     workflow.output_properties, parsed_arguments.outputs_file)
         else:
             LOG.info('Workflow execution failed.')
