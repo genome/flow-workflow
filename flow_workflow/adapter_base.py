@@ -2,10 +2,6 @@ from flow_workflow.future_operation import FutureOperation
 import abc
 
 
-# XXX Possible data clumps/small objects:
-#       - input_connections + output_properties
-
-
 # XXX Questions
 #       - does the operation know enough to create the future_net?
 #           - if so, should the operation be responsible for creating it?
