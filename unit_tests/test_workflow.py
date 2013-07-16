@@ -3,7 +3,7 @@ from lxml import etree
 
 import mock
 import unittest
-import flow_workflow.entities.workflow.workflow
+import flow_workflow.entities.workflow.adapter
 
 
 VALID_XML = '''
@@ -41,7 +41,7 @@ class WorkflowTest(unittest.TestCase):
             'b': 'value of b',
         }
         self.resources = {}
-        self.workflow = flow_workflow.entities.workflow.workflow.Workflow(
+        self.workflow = flow_workflow.entities.workflow.adapter.Workflow(
                 xml=etree.XML(VALID_XML),
                 inputs=self.inputs,
                 resources=self.resources)
@@ -67,7 +67,7 @@ class WorkflowTest(unittest.TestCase):
 
     def test_future_net(self):
         net = self.workflow.future_net
-        self.assertIsInstance(net, flow_workflow.entities.workflow.workflow.WorkflowNet)
+        self.assertIsInstance(net, flow_workflow.entities.workflow.adapter.WorkflowNet)
 
 
 if __name__ == '__main__':
