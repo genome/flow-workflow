@@ -46,9 +46,5 @@ def load_operation(net, operation_id):
     return cls(**operation_dict)
 
 
-def store_operation(net, operation):
-    net.variables[operation.variable_name] = operation.as_dict
-
-
 def operation_variable_name(operation_id):
-    return '_wf_op_%operation_dict' % operation_id
+    return '_wf_op_%d' % operation_id

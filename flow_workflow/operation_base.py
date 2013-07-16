@@ -17,23 +17,6 @@ class Operation(object):
         self.output_properties = output_properties
         self.parent_operation_id = parent_operation_id
 
-
-    def save(self):
-        flow_workflow.factory.store_operation(self.net, self)
-
-    @property
-    def as_dict(self):
-        return {
-            '_class': self.__class__.__name__,
-            'child_operation_ids': self.child_operation_ids,
-            'input_connections': self.input_connections,
-            'log_dir': self.log_dir,
-            'name': self.name,
-            'operation_id': self.operation_id,
-            'output_properties': self.output_properties,
-            'parent_operation_id': self.parent_operation_id,
-        }
-
     def _child_id_from(self, name):
         return self.child_operation_ids[name]
 

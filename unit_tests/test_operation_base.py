@@ -37,18 +37,6 @@ class OperationTest(unittest.TestCase):
                 parent_operation_id=self.parent_operation_id,
         )
 
-    def test_as_dict(self):
-        self.assertEqual({
-            '_class': 'Operation',
-            'child_operation_ids': self.child_operation_ids,
-            'input_connections': self.input_connections,
-            'log_dir': self.log_dir,
-            'name': self.name,
-            'operation_id': self.operation_id,
-            'output_properties': self.output_properties,
-            'parent_operation_id': self.parent_operation_id,
-        }, self.operation.as_dict)
-
     def test_child_id_from_exists(self):
         self.assertEqual(12, self.operation._child_id_from('foo'))
 

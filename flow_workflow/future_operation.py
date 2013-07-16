@@ -1,4 +1,5 @@
 from flow_workflow.operation_base import NullOperation
+from flow_workflow.factory import operation_variable_name
 
 
 class FutureOperation(object):
@@ -20,19 +21,29 @@ class FutureOperation(object):
     def _add_child(self, child):
         self._children[child.name] = child
 
-    def operation(self, net):
-        return self.operation_class(child_operation_ids=self.children_ids,
-                input_connections=self.input_connections,
-                log_dir=self.log_dir,
-                name=self.name,
-                net=net,
-                operation_id=self.operation_id,
-                output_properties=self.output_properties,
-                parent_operation_id=self.parent.operation_id)
+    @property
+    def child_operation_ids(self):
+        return {name: c.operation_id for name, c in self._children.iteritems()}
 
     @property
-    def children_ids(self):
-        return {name: c.operation_id for name, c in self._children.iteritems()}
+    def _operation_variable_name(self):
+        return operation_variable_name(self.operation_id)
+
+    def save(self, net):
+        net.variables[self._operation_variable_name] = self.as_dict
+
+    @property
+    def as_dict(self):
+        return {
+            '_class': self.operation_class,
+            'child_operation_ids': self.child_operation_ids,
+            'input_connections': self.input_connections,
+            'log_dir': self.log_dir,
+            'name': self.name,
+            'operation_id': self.operation_id,
+            'output_properties': self.output_properties,
+            'parent_operation_id': self.parent_operation_id,
+        }
 
 
 class NullFutureOperation(FutureOperation):
@@ -45,6 +56,3 @@ class NullFutureOperation(FutureOperation):
     @property
     def operation_id(self):
         return None
-
-    def operation(self, net):
-        return NullOperation()

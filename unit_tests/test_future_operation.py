@@ -24,26 +24,10 @@ class FutureOperationTest(unittest.TestCase):
                 log_dir=self.log_dir)
 
 
+    def test_child_operation_ids_no_children(self):
+        self.assertEqual({}, self.future_operation.child_operation_ids)
 
-    def test_operation(self):
-        net = mock.Mock()
-        self.assertEqual(self.operation_class.return_value,
-                self.future_operation.operation(net))
-        self.operation_class.assert_called_once_with(
-                net=net,
-                name=self.name,
-                operation_id=self.operation_id,
-                input_connections=self.input_connections,
-                output_properties=self.output_properties,
-                parent_operation_id=self.parent.operation_id,
-                log_dir=self.log_dir,
-                child_operation_ids=mock.ANY)
-
-
-    def test_children_ids_no_children(self):
-        self.assertEqual({}, self.future_operation.children_ids)
-
-    def test_children_ids_one_child(self):
+    def test_child_operation_ids_one_child(self):
         child = FutureOperation(
                 name='my child name',
                 operation_id=12346,
@@ -54,7 +38,7 @@ class FutureOperationTest(unittest.TestCase):
                 log_dir=self.log_dir)
 
         self.assertEqual({'my child name': 12346},
-                self.future_operation.children_ids)
+                self.future_operation.child_operation_ids)
 
     def test_init_adds_parent(self):
         self.parent._add_child.assert_called_once_with(self.future_operation)
