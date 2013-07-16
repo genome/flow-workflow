@@ -15,11 +15,11 @@ class IAdapter(object):
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
-    def future_net(self, input_connections, output_properties, resources):
+    def future_net(self, resources):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def future_operation(self, input_connections, output_properties):
+    def future_operations(self, input_connections, output_properties):
         raise NotImplementedError()
 
 
