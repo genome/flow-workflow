@@ -35,15 +35,13 @@ def sanitize_operation_type(operation_type_string):
             re.sub('^Workflow::OperationType::', '', operation_type_string))
 
 
-# XXX use pkg_resources
 def load_operation(net, operation_id):
-    if operation_id is None:
-        # XXX Is this the behavior we want?
-        return NullOperation()
-
     operation_dict = net.variables[operation_variable_name(operation_id)]
-    cls = getattr(MODULE, operation_dict.pop('_class'))
-    return cls(**operation_dict)
+
+    for ep in pkg_resources.iter_entry_points('flow_workflow.operations',
+            operation_dict.pop('_class')):
+        cls = ep.load()
+        return cls(**operation_dict)
 
 
 def operation_variable_name(operation_id):
