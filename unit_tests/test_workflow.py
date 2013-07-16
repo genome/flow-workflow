@@ -1,9 +1,9 @@
-from flow_workflow import workflow
 from flow_workflow.parallel_id import ParallelIdentifier
 from lxml import etree
 
 import mock
 import unittest
+import flow_workflow.entities.workflow.workflow
 
 
 VALID_XML = '''
@@ -41,7 +41,7 @@ class WorkflowTest(unittest.TestCase):
             'b': 'value of b',
         }
         self.resources = {}
-        self.workflow = workflow.Workflow(
+        self.workflow = flow_workflow.entities.workflow.workflow.Workflow(
                 xml=etree.XML(VALID_XML),
                 inputs=self.inputs,
                 resources=self.resources)
@@ -67,7 +67,7 @@ class WorkflowTest(unittest.TestCase):
 
     def test_future_net(self):
         net = self.workflow.future_net
-        self.assertIsInstance(net, workflow.WorkflowNet)
+        self.assertIsInstance(net, flow_workflow.entities.workflow.workflow.WorkflowNet)
 
 
 if __name__ == '__main__':

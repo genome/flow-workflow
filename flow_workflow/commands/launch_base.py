@@ -6,7 +6,7 @@ from flow.util.exit import exit_process
 from flow_workflow import io
 from flow_workflow.completion import MonitoringCompletionHandler
 from flow_workflow.parallel_id import ParallelIdentifier
-from flow_workflow.workflow import Workflow
+from flow_workflow.entities.workflow.workflow import Workflow
 from lxml import etree
 
 import abc
