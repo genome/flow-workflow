@@ -1,6 +1,6 @@
-from flow.petri_net import future
-from flow.petri_net.actions.base import BasicActionBase
 from flow_workflow import io
+from flow_workflow.entities.workflow.action import NotificationAction
+from flow_workflow.entities.workflow.future_nets import WorkflowNet
 from flow_workflow.parallel_id import ParallelIdentifier
 import flow_workflow.factory
 
@@ -49,41 +49,3 @@ class Workflow(object):
         if not self._future_net:
             self._future_net = WorkflowNet(self.child_adapter_future_net)
         return self._future_net
-
-
-class NotificationAction(BasicActionBase):
-    required_args = ['status']
-
-    def execute(self, net, color_descriptor, active_tokens, service_interfaces):
-        deferred = service_interfaces['workflow_completion'].notify(
-                net, status=self.args['status'])
-        return [], deferred
-
-
-class WorkflowNet(future.FutureNet):
-    def __init__(self, child_net):
-        future.FutureNet.__init__(self)
-        self.child_net = child_net
-
-        self.start_place = self.add_place('start')
-        self.subnets.add(child_net)
-
-        self.start_place.add_arc_out(child_net.start_transition)
-
-        self.notify_success_transition = self.add_basic_transition(
-                name='notify_success_transition',
-                action=future.FutureAction(
-                    cls=NotificationAction, status='success'))
-
-        self.notify_failure_transition = self.add_basic_transition(
-                name='notify_failure_transition',
-                action=future.FutureAction(
-                    cls=NotificationAction, status='failure'))
-
-        self.bridge_transitions(child_net.success_transition,
-                self.notify_success_transition,
-                name='notify_success_place')
-
-        self.bridge_transitions(child_net.failure_transition,
-                self.notify_failure_transition,
-                name='notify_failure_place')
