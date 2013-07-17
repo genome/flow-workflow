@@ -2,12 +2,6 @@ from flow_workflow.future_operation import FutureOperation
 import abc
 
 
-# XXX Questions
-#       - does the operation know enough to create the future_net?
-#           - if so, should the operation be responsible for creating it?
-#           - would it waste storage to keep all this information in redis?
-
-
 class IAdapter(object):
     __metaclass__ = abc.ABCMeta
 
