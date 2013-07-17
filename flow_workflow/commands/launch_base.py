@@ -56,6 +56,9 @@ class LaunchWorkflowCommandBase(CommandBase):
 
         parser.add_argument('--block', action='store_true')
 
+    @abc.abstractproperty
+    def local_workflow(self):
+        raise NotImplementedError
 
     @abc.abstractmethod
     def setup_services(self, net):
