@@ -4,7 +4,7 @@ from flow_workflow.parallel_by import adapter_base
 import flow_workflow.factory
 
 
-class LinkAdapter(object):
+class Link(object):
     def __init__(self, xml):
         self.xml = xml
 
@@ -48,7 +48,7 @@ class ModelAdapter(adapter_base.ParallelXMLAdapterBase):
                     local_workflow=self.local_workflow)
             self._add_child(child)
 
-        self.links = map(LinkAdapter, self.xml.findall('link'))
+        self.links = map(Link, self.xml.findall('link'))
 
     def _add_child(self, child):
         self.children.append(child)
