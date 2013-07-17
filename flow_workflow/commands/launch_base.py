@@ -7,6 +7,7 @@ from flow_workflow import io
 from flow_workflow.completion import MonitoringCompletionHandler
 from flow_workflow.parallel_id import ParallelIdentifier
 from flow_workflow.entities.workflow.adapter import WorkflowAdapter
+from flow_workflow.future_operation import NullFutureOperation
 from lxml import etree
 
 import abc
@@ -106,6 +107,11 @@ class LaunchWorkflowCommandBase(CommandBase):
         builder = Builder(self.storage)
         stored_net = builder.store(future_net, self.variables, self.constants)
         workflow.store_inputs(stored_net)
+
+        future_operations = workflow.future_operations(NullFutureOperation(),
+                input_connections=None, output_properties=None)
+        for future_operation in future_operations:
+            future_operation.save(stored_net)
 
         start_place_index = builder.future_places[future_net.start_place]
 
