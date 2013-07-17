@@ -42,7 +42,7 @@ class FutureOperation(object):
             'name': self.name,
             'operation_id': self.operation_id,
             'output_properties': self.output_properties,
-            'parent_operation_id': self.parent_operation_id,
+            'parent_operation_id': self.parent.operation_id,
         }
 
 
