@@ -71,18 +71,6 @@ class ModelAdapter(adapter_base.ParallelXMLAdapterBase):
         #return transitive_reduction(edges)
         return edges
 
-    @property
-    def data_arcs(self):
-        # self.data_arcs[dst_id][src_id][dst_prop] = src_prop
-        # -aka- self.data_arcs[dst_id] = input_connections
-        data_arcs = defaultdict(lambda: defaultdict(dict))
-
-        for link in self.links:
-            data_arcs[link.to_operation][link.from_operation]\
-                    [link.to_property] = link.from_property
-
-        return data_arcs
-
     def child_operation_id(self, child_name):
         return self._child_operation_ids[child_name]
 

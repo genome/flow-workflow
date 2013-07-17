@@ -54,17 +54,6 @@ class ModelAdapterTest(unittest.TestCase):
         self.assertItemsEqual(['A', 'B', 'output connector',
             'output connector'], [l.to_operation for l in self.adapter.links])
 
-    def test_data_arcs(self):
-        expected_data_arcs = {
-            'A': {'input connector': {'param': 'a'}},
-            'B': {'input connector': {'param': 'b'}},
-            'output connector': {
-                'A': {'out_a': 'result'},
-                'B': {'out_b': 'result'},
-            }
-        }
-        self.assertEqual(expected_data_arcs, self.adapter.data_arcs)
-
     def test_edges(self):
         expected_edges = {
             'input connector': {'A', 'B'},
