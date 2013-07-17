@@ -1,0 +1,36 @@
+{
+    "children": {
+        "A": {
+            "queue": "short",
+            "resources": {
+                "limit": {
+                    "max_virtual_memory": 204800
+                },
+                "require": {
+                    "min_proc": "4",
+                    "temp_space": "5"
+                },
+                "reserve": {
+                    "memory": "200",
+                    "temp_space": "5"
+                }
+            }
+        },
+        "B": {
+            "queue": "short",
+            "resources": {
+                "limit": {
+                    "max_virtual_memory": 204800
+                },
+                "require": {
+                    "min_proc": "4",
+                    "temp_space": "5"
+                },
+                "reserve": {
+                    "memory": "200",
+                    "temp_space": "5"
+                }
+            }
+        }
+    }
+}

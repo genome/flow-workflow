@@ -1,0 +1,29 @@
+<?xml version='1.0' standalone='yes'?>
+<workflow name="Build Some Converges" executor="Workflow::Executor::SerialDeferred">
+  <link fromOperation="input connector" fromProperty="a_prefix" toOperation="A" toProperty="prefix" />
+  <link fromOperation="input connector" fromProperty="suffix" toOperation="A" toProperty="suffix" />
+  <link fromOperation="input connector" fromProperty="b_prefix" toOperation="B" toProperty="prefix" />
+  <link fromOperation="input connector" fromProperty="suffix" toOperation="B" toProperty="suffix" />
+  <link fromOperation="A" fromProperty="output" toOperation="convergeer" toProperty="a_result" />
+  <link fromOperation="B" fromProperty="output" toOperation="convergeer" toProperty="b_result" />
+  <link fromOperation="convergeer" fromProperty="converged_results" toOperation="output connector" toProperty="converged_results" />
+  <operation name="convergeer">
+    <operationtype typeClass="Workflow::OperationType::Converge">
+      <inputproperty>a_result</inputproperty>
+      <inputproperty>b_result</inputproperty>
+      <outputproperty>converged_results</outputproperty>
+    </operationtype>
+  </operation>
+  <operation name="A">
+    <operationtype commandClass="ParamAppender" typeClass="Workflow::OperationType::Command" />
+  </operation>
+  <operation name="B">
+    <operationtype commandClass="ParamAppender" typeClass="Workflow::OperationType::Command" />
+  </operation>
+  <operationtype typeClass="Workflow::OperationType::Model">
+    <inputproperty>a_prefix</inputproperty>
+    <inputproperty>b_prefix</inputproperty>
+    <inputproperty>suffix</inputproperty>
+    <outputproperty>converged_results</outputproperty>
+  </operationtype>
+</workflow>
