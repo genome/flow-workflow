@@ -21,13 +21,11 @@ class Operation(object):
         return self.child_operation_ids[name]
 
     def child_named(self, name):
-        return flow_workflow.factory.load_operation(net=self.net,
-                operation_id=self._child_id_from(name))
+        return self._load_operation(self._child_id_from(name))
 
     @property
     def parent(self):
-        return flow_workflow.factory.load_operation(net=self.net,
-                operation_id=self.parent_operation_id)
+        return self._load_operation(self.parent_operation_id)
 
     @property
     def log_manager(self):
@@ -40,6 +38,10 @@ class Operation(object):
         for props in self.input_connections.itervalues():
             result.extend(props.keys())
         return result
+
+    def _load_operation(self, operation_id):
+        return flow_workflow.factory.load_operation(net=self.net,
+                operation_id=operation_id)
 
     def load_inputs(self, parallel_id):
         return {name: self.load_input(name, parallel_id)
