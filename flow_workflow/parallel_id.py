@@ -1,5 +1,6 @@
 from collections import OrderedDict
 
+import json
 import logging
 
 
@@ -53,3 +54,10 @@ class ParallelIdentifier(object):
 
     def __cmp__(self, other):
         return cmp(self._entries, other._entries)
+
+    def serialize(self):
+        return json.dumps(list(self))
+
+    @classmethod
+    def deserialize(cls, data='[]'):
+        return cls(json.loads(data))

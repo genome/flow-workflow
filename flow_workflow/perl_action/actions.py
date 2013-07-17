@@ -42,7 +42,7 @@ class PerlAction(object):
 
         parallel_id = self.get_parallel_id(token_data)
         if len(parallel_id):
-            cmd_line.extend(['--parallel-id', json.dumps(list(parallel_id))])
+            cmd_line.extend(['--parallel-id', parallel_id.serialize()])
 
         return map(str, cmd_line)
 

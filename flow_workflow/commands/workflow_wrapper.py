@@ -52,7 +52,7 @@ class WorkflowWrapperCommand(CommandBase):
         parser.add_argument('--input-connections', required=True,
                 help='used to look up inputs')
 
-        parser.add_argument('--parallel-id', default=None,
+        parser.add_argument('--parallel-id', default='[]',
                 help='used to look up inputs')
 
 
@@ -61,7 +61,8 @@ class WorkflowWrapperCommand(CommandBase):
         try:
             net = rom.get_object(self.storage, parsed_arguments.net_key)
 
-            parallel_id = parse_parallel_id(parsed_arguments.parallel_id)
+            parallel_id = ParallelIdentifier.deserialize(
+                    parsed_arguments.parallel_id)
 
             with NamedTemporaryFile() as inputs_file:
                 with NamedTemporaryFile() as outputs_file:
@@ -92,15 +93,6 @@ class WorkflowWrapperCommand(CommandBase):
         except:
             LOG.exception('Error in workflow-wrapper')
             raise
-
-
-def parse_parallel_id(unparsed_parallel_id):
-    if unparsed_parallel_id:
-        par_id_as_list = json.loads(unparsed_parallel_id)
-    else:
-        par_id_as_list = []
-
-    return ParallelIdentifier(par_id_as_list)
 
 
 def write_inputs(file_object, net, parallel_id, input_connections):
