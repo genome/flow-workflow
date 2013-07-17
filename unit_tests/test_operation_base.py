@@ -68,13 +68,14 @@ class OperationTest(unittest.TestCase):
 
     def test_load_inputs(self):
         parallel_id = mock.Mock()
-        with mock.patch('flow_workflow.operation_base.io') as io:
-            inputs = self.operation.load_inputs(parallel_id)
-            self.assertItemsEqual(['in1', 'in2'], inputs.keys())
-            self.assertEqual(2, io.load_input.call_count)
-            io.load_input.assert_any_call(
-                    input_connections=self.input_connections,
-                    net=self.net, parallel_id=parallel_id, property_name='in1')
+        load_input = mock.Mock()
+        self.operation.load_input = load_input
+
+        inputs = self.operation.load_inputs(parallel_id)
+        self.assertItemsEqual(['in1', 'in2'], inputs.keys())
+        self.assertEqual(2, load_input.call_count)
+        print load_input.mock_calls
+        load_input.assert_any_call(name='in1', parallel_id=parallel_id)
 
     def test_load_outputs(self):
         parallel_id = mock.Mock()

@@ -39,12 +39,20 @@ class Operation(object):
             result.extend(props.keys())
         return result
 
+    def _determine_input_source(self, name):
+        for source_op_id, property_dict in self.input_connections:
+            if name in property_dict:
+                source_name = property_dict[name]
+                return source_op_id, source_name
+        raise KeyError("Property (%s) not found on operation (%s)" %
+                (name, self.name))
+
     def _load_operation(self, operation_id):
         return flow_workflow.factory.load_operation(net=self.net,
                 operation_id=operation_id)
 
     def load_inputs(self, parallel_id):
-        return {name: self.load_input(name, parallel_id)
+        return {name: self.load_input(name=name, parallel_id=parallel_id)
                 for name in self.input_names}
 
     def load_outputs(self, parallel_id):
@@ -52,11 +60,9 @@ class Operation(object):
                 for name in self.output_properties}
 
     def load_input(self, name, parallel_id):
-        return io.load_input(
-                input_connections=self.input_connections,
-                net=self.net,
-                parallel_id=parallel_id,
-                property_name=name)
+        source_op_id, source_name = self._determine_input_source(name)
+        source_op = self._load_operation(source_op_id)
+        return source_op.load_output(source_name, parallel_id)
 
     def load_output(self, name, parallel_id):
         return io.load_output(
