@@ -6,7 +6,7 @@ from flow.util.exit import exit_process
 from flow_workflow import io
 from flow_workflow.completion import MonitoringCompletionHandler
 from flow_workflow.parallel_id import ParallelIdentifier
-from flow_workflow.entities.workflow.adapter import Workflow
+from flow_workflow.entities.workflow.adapter import WorkflowAdapter
 from lxml import etree
 
 import abc
@@ -94,10 +94,10 @@ class LaunchWorkflowCommandBase(CommandBase):
         inputs = load_inputs(inputs_filename)
         resources = load_resources(resources_filename)
 
-        workflow = Workflow(xml, inputs, resources,
+        workflow = WorkflowAdapter(xml, inputs,
                 local_workflow=self.local_workflow)
 
-        future_net = workflow.future_net
+        future_net = workflow.future_net(resources)
 
         # XXX Update builder to use injector
         builder = Builder(self.storage)

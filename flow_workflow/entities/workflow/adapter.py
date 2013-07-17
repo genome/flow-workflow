@@ -3,21 +3,25 @@ from flow_workflow.entities.workflow.action import NotificationAction
 from flow_workflow.entities.workflow.future_nets import WorkflowNet
 from flow_workflow.future_operation import NullFutureOperation
 from flow_workflow.parallel_id import ParallelIdentifier
+from flow_workflow.adapter_base import AdapterBase
 import flow_workflow.factory
 
 
-class Workflow(object):
+class WorkflowAdapter(AdapterBase):
     operation_class = 'null'
 
-    def __init__(self, xml, inputs, resources, local_workflow=False):
+    def __init__(self, xml, inputs, local_workflow=False):
         self.xml = xml
         self.inputs = inputs
-        self.resources = resources
         self.local_workflow = local_workflow
 
         self.dummy_adapter = flow_workflow.factory.adapter('null')
         self._future_net = None
         self._child_adapter = None
+
+    @property
+    def name(self):
+        return 'Workflow'
 
     def store_inputs(self, net):
         io.store_outputs(net, self.dummy_adapter.operation_id, self.inputs,
@@ -42,16 +46,12 @@ class Workflow(object):
                 local_workflow=self.local_workflow)
         return self._child_adapter
 
-    @property
-    def child_adapter_future_net(self):
+    def child_adapter_future_net(self, resources):
         return self.child_adapter.future_net(self.input_connections,
-                self.output_properties, self.resources)
+                self.output_properties, resources)
 
-    @property
-    def future_net(self):
-        if not self._future_net:
-            self._future_net = WorkflowNet(self.child_adapter_future_net)
-        return self._future_net
+    def future_net(self, resources):
+        return WorkflowNet(self.child_adapter_future_net(resources))
 
     def future_operation(self, parent_future_operation, input_connections,
             output_properties):
