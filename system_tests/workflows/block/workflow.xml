@@ -1,0 +1,47 @@
+<?xml version='1.0' standalone='yes'?>
+<workflow name="Build Some Blocks"
+    executor="Workflow::Executor::SerialDeferred"
+    logDir="test_logs/block">
+
+    <link fromOperation="input connector" fromProperty="a_prefix"
+        toOperation="A" toProperty="prefix" />
+    <link fromOperation="input connector" fromProperty="suffix"
+        toOperation="A" toProperty="suffix" />
+    <link fromOperation="input connector" fromProperty="b_prefix"
+        toOperation="B" toProperty="prefix" />
+    <link fromOperation="input connector" fromProperty="suffix"
+        toOperation="B" toProperty="suffix" />
+
+    <link fromOperation="A" fromProperty="output"
+        toOperation="blocker" toProperty="a_result" />
+    <link fromOperation="B" fromProperty="output"
+        toOperation="blocker" toProperty="b_result" />
+    <link fromOperation="blocker" fromProperty="a_result"
+        toOperation="output connector" toProperty="out_a" />
+    <link fromOperation="blocker" fromProperty="b_result"
+        toOperation="output connector" toProperty="out_b" />
+
+    <operation name="A">
+        <operationtype commandClass="ParamAppender"
+            typeClass="Workflow::OperationType::Command" />
+    </operation>
+    <operation name="B">
+        <operationtype commandClass="ParamAppender"
+            typeClass="Workflow::OperationType::Command" />
+    </operation>
+
+    <operation name="blocker">
+        <operationtype typeClass="Workflow::OperationType::Block">
+            <property>a_result</property>
+            <property>b_result</property>
+        </operationtype>
+    </operation>
+
+    <operationtype typeClass="Workflow::OperationType::Model">
+        <inputproperty>a_prefix</inputproperty>
+        <inputproperty>b_prefix</inputproperty>
+        <inputproperty>suffix</inputproperty>
+        <outputproperty>out_a</outputproperty>
+        <outputproperty>out_b</outputproperty>
+    </operationtype>
+</workflow>
