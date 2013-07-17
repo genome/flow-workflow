@@ -1,19 +1,18 @@
 from flow_workflow.perl_action import actions
 from flow_workflow.perl_action import future_nets
 from flow_workflow.log_manager import LogManager
+from flow_workflow.parallel_by import adapter_base
 
 import abc
-import flow_workflow.adapter_base
 
 
-class PerlActionAdapterBase(flow_workflow.adapter_base.XMLAdapterBase):
+class PerlActionAdapterBase(adapter_base.ParallelXMLAdapterBase):
     def __init__(self, *args, **kwargs):
-        flow_workflow.adapter_base.XMLAdapterBase.__init__(self, *args, **kwargs)
+        adapter_base.ParallelXMLAdapterBase.__init__(self, *args, **kwargs)
         self.log_manager = LogManager(log_dir=self.log_dir,
                 operation_id=self.operation_id,
                 operation_name=self.name)
 
-    # XXX action_type and action_id should be refactored into a data clump
     @abc.abstractproperty
     def action_type(self):
         pass
@@ -21,19 +20,6 @@ class PerlActionAdapterBase(flow_workflow.adapter_base.XMLAdapterBase):
     @abc.abstractproperty
     def action_id(self):
         pass
-
-    def future_net(self, input_connections, output_properties, resources):
-        if self.parallel_by:
-            return self._parallel_by_net(input_connections=input_connections,
-                    output_properties=output_properties, resources=resources)
-
-        else:
-            return self._normal_net(input_connections=input_connections,
-                    resources=resources)
-
-    @property
-    def parallel_by(self):
-        return self.xml.attrib.get('parallelBy')
 
     @property
     def execute_action_class(self):
@@ -46,12 +32,8 @@ class PerlActionAdapterBase(flow_workflow.adapter_base.XMLAdapterBase):
     def shortcut_action_class(self):
         return actions.ForkAction
 
-    def _parallel_by_net(self, input_connections, output_properties, resources):
-        target_net = self._normal_net(input_connections, resources)
-        return future_nets.ParallelByNet(target_net, self.parallel_by,
-                output_properties=output_properties)
-
-    def _normal_net(self, input_connections, resources):
+    def single_future_net(self, input_connections, output_properties,
+            resources):
         return future_nets.PerlActionNet(
                 name=self.name,
                 operation_id=self.operation_id,

@@ -26,8 +26,9 @@ NORMAL_XML = '''
 class FakeAdapter(adapter_base.PerlActionAdapterBase):
     operation_class = 'fake'
 
-    def future_net(self, **kwargs):
-        return adapter_base.PerlActionAdapterBase.future_net(self, **kwargs)
+    def single_future_net(self, **kwargs):
+        return adapter_base.PerlActionAdapterBase.single_future_net(self,
+                **kwargs)
 
     @property
     def action_type(self):
@@ -70,27 +71,6 @@ class NormalPerlActionAdapterBaseTest(unittest.TestCase):
                 output_properties=mock.Mock(),
                 resources=mock.Mock())
         self.assertIsInstance(net, future_nets.PerlActionNet)
-
-
-class ParallelByPerlActionAdapterBaseTest(unittest.TestCase):
-    def setUp(self):
-        self.log_dir = '/exciting/log/dir'
-        self.operation_id = 12345
-        self.parent = mock.Mock()
-
-        self.adapter = FakeAdapter(xml=etree.XML(PARALLEL_BY_XML),
-                operation_id=self.operation_id,
-                log_dir=self.log_dir, parent=self.parent)
-
-    def test_parallel_by(self):
-        self.assertEqual('foo', self.adapter.parallel_by)
-
-    def test_future_net(self):
-        net = self.adapter.future_net(
-                input_connections=mock.Mock(),
-                output_properties=mock.Mock(),
-                resources=mock.Mock())
-        self.assertIsInstance(net, future_nets.ParallelByNet)
 
 
 if __name__ == '__main__':

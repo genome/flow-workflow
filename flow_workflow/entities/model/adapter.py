@@ -1,7 +1,6 @@
 from collections import defaultdict
 from flow_workflow.entities.model import future_nets
-from flow_workflow.perl_action.future_nets import ParallelByNet
-from flow_workflow.adapter_base import XMLAdapterBase
+from flow_workflow.parallel_by import adapter_base
 import flow_workflow.factory
 
 
@@ -26,11 +25,11 @@ class LinkAdapter(object):
         return self.xml.attrib['toProperty']
 
 
-class ModelAdapter(XMLAdapterBase):
+class ModelAdapter(adapter_base.ParallelXMLAdapterBase):
     operation_class = 'model'
 
     def __init__(self, *args, **kwargs):
-        XMLAdapterBase.__init__(self, *args, **kwargs)
+        adapter_base.ParallelXMLAdapterBase.__init__(self, *args, **kwargs)
 
         self.children = []
         self._child_operation_ids = {}
@@ -62,10 +61,6 @@ class ModelAdapter(XMLAdapterBase):
             if link.to_operation == 'output connector':
                 results.append(link.to_property)
         return results
-
-    @property
-    def parallel_by(self):
-        return self.xml.attrib.get('parallelBy')
 
     @property
     def edges(self):
@@ -132,22 +127,8 @@ class ModelAdapter(XMLAdapterBase):
 
         return child_nets
 
-    def future_net(self, input_connections, output_properties, resources):
-        if self.parallel_by:
-            return self._parallel_by_net(input_connections=input_connections,
-                    output_properties=output_properties, resources=resources)
-
-        else:
-            return self._normal_net(input_connections=input_connections,
-                    output_properties=output_properties, resources=resources)
-
-    def _parallel_by_net(self, input_connections, output_properties, resources):
-        target_net = self._normal_net(input_connections, output_properties,
-                resources)
-        return ParallelByNet(target_net, self.parallel_by,
-                output_properties=output_properties)
-
-    def _normal_net(self, input_connections, output_properties, resources):
+    def single_future_net(self, input_connections, output_properties,
+            resources):
         subnets = self.subnets(input_connections, output_properties,
                 resources.get('children', {}))
         return future_nets.ModelNet(subnets=subnets,
