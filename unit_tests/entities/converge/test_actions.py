@@ -1,3 +1,4 @@
+from test_helpers import fakeredistest
 from flow.petri_net.actions.base import BasicActionBase
 from flow_workflow.entities.converge.actions import ConvergeAction, order_outputs
 from twisted.internet.defer import Deferred
@@ -25,10 +26,9 @@ class OrderOutputsTest(unittest.TestCase):
             input_property_order, output_properties))
 
 
-class ConvergeActionTest(unittest.TestCase):
+class ConvergeActionTest(fakeredistest.FakeRedisTest):
     def setUp(self):
-        self.connection = fakeredis.FakeRedis()
-        self.connection.flushall()
+        fakeredistest.FakeRedisTest.setUp(self)
 
         self.operation_id = 41
         self.input_connections = {
@@ -46,13 +46,10 @@ class ConvergeActionTest(unittest.TestCase):
         }
         self.key = 'test_action_key'
         self.action = ConvergeAction.create(
-                self.connection, self.key, args=args)
+                self.conn, self.key, args=args)
 
-        self.net = mock.Mock()
+        self.net = mock.MagicMock()
         self.parallel_id = [(41, 7)]
-
-    def tearDown(self):
-        self.connection.flushall()
 
     def test_execute(self):
         active_tokens = mock.MagicMock()
@@ -85,17 +82,20 @@ class ConvergeActionTest(unittest.TestCase):
             'foo': mock.Mock(),
             'bar': mock.Mock(),
         }
-        with mock.patch('flow_workflow.io.load_inputs') as load_input:
-            load_input.return_value = inputs
+
+        operation = mock.Mock()
+        operation.load_inputs.return_value = inputs
+
+        with mock.patch('flow_workflow.factory.load_operation') as load_op:
+            load_op.return_value = operation
 
             expected_outputs = [inputs[x] for x in self.input_property_order]
             self.assertEqual({u'oprop': expected_outputs, 'result': 1},
                     self.action.converge_inputs(net=self.net,
                         parallel_id=self.parallel_id))
 
-            load_input.assert_called_once_with(net=self.net,
-                    input_connections=self.input_connections,
-                    parallel_id=self.parallel_id)
+            load_op.assert_called_once_with(self.net,
+                    self.operation_id)
 
 
 if __name__ == "__main__":

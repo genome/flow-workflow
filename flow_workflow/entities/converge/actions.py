@@ -1,3 +1,4 @@
+from flow_workflow import factory
 from flow.petri_net.actions.base import BasicActionBase
 from flow_workflow import io
 from flow_workflow.parallel_id import ParallelIdentifier
@@ -15,8 +16,8 @@ def order_outputs(inputs, input_property_order, output_properties):
 
 
 class ConvergeAction(BasicActionBase):
-    required_arguments = ["operation_id", 'input_connections',
-            "input_property_order", "output_properties"]
+    required_arguments = ["operation_id", "input_property_order",
+            "output_properties"]
 
     def execute(self, net, color_descriptor, active_tokens, service_interfaces):
         workflow_data = io.extract_workflow_data(net, active_tokens)
@@ -34,9 +35,8 @@ class ConvergeAction(BasicActionBase):
         return [output_token], defer.succeed(None)
 
     def converge_inputs(self, net, parallel_id):
-        inputs = io.load_inputs(net=net,
-                input_connections=self.args['input_connections'],
-                parallel_id=parallel_id)
+        operation = factory.load_operation(net, self.args['operation_id'])
+        inputs = operation.load_inputs(parallel_id=parallel_id)
 
         return order_outputs(inputs,
                 input_property_order=self.args['input_property_order'],

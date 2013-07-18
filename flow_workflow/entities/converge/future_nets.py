@@ -16,8 +16,7 @@ class ConvergeNet(WorkflowNetBase):
         self.converge_action = FutureAction(cls=ConvergeAction,
                 operation_id=self.operation_id,
                 input_property_order=input_property_order,
-                output_properties=output_properties,
-                input_connections=input_connections)
+                output_properties=output_properties)
         self.converge_transition = self.add_basic_transition(
                 name='converge(%s)' % self.operation_id,
                 action=self.converge_action)
