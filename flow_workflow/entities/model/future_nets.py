@@ -2,13 +2,8 @@ from flow_workflow.future_nets import WorkflowNetBase
 
 
 class ModelNet(WorkflowNetBase):
-    def __init__(self, name, operation_id, input_connections,
-            subnets, edges, parent_operation_id=None):
-        WorkflowNetBase.__init__(self, name=name,
-                operation_id=operation_id,
-                input_connections=input_connections,
-                resources=None,
-                parent_operation_id=parent_operation_id)
+    def __init__(self, name, operation_id, subnets, edges):
+        WorkflowNetBase.__init__(self, operation_id=operation_id, name=name)
 
         for name, subnet in subnets.iteritems():
             self.subnets.add(subnet)

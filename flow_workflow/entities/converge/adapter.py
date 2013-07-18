@@ -6,13 +6,9 @@ class ConvergeAdapter(flow_workflow.adapter_base.XMLAdapterBase):
     operation_class = 'direct_storage'
 
     def future_net(self, input_connections, output_properties, resources):
-        return ConvergeNet(name=self.name,
-                operation_id=self.operation_id,
-                input_connections=input_connections,
+        return ConvergeNet(name=self.name, operation_id=self.operation_id,
                 output_properties=self.output_properties,
-                resources=resources,
-                input_property_order=self.input_property_order,
-                parent_operation_id=self.parent.operation_id)
+                input_property_order=self.input_property_order)
 
     @property
     def input_property_order(self):

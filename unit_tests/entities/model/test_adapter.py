@@ -106,6 +106,7 @@ class ModelAdapterTest(unittest.TestCase):
         for subnet in net.subnets:
             if name == subnet.name:
                 return subnet
+        raise RuntimeError('No subnet found: %s - %s' % (net, name))
 
     def ensure_singly_connected(self, src, dest):
         all_connections = set()

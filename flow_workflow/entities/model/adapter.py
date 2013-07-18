@@ -131,9 +131,7 @@ class ModelAdapter(adapter_base.ParallelXMLAdapterBase):
                 resources.get('children', {}))
         return future_nets.ModelNet(subnets=subnets,
                 edges=self.edges, name=self.name,
-                operation_id=self.operation_id,
-                input_connections=input_connections,
-                parent_operation_id=self.parent.operation_id)
+                operation_id=self.operation_id)
 
     def future_operations(self, parent_future_operation,
             input_connections, output_properties):

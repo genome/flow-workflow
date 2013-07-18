@@ -4,20 +4,9 @@ import mock
 import unittest
 
 
-class CloneInputsNetTest(unittest.TestCase):
+class PassThroughNetTest(unittest.TestCase):
     def setUp(self):
-        self.source_id = 1
-
-        self.input_connections = {self.source_id: {'dst_name': 'src_name'}}
-        self.name = 'foo'
-        self.operation_id = 12345
-        self.parent_operation_id = 54321
-
-        self.net = PassThroughNet(
-                input_connections=self.input_connections,
-                name=self.name,
-                operation_id=self.operation_id,
-                parent_operation_id=self.parent_operation_id)
+        self.net = PassThroughNet(name=None, operation_id=None)
 
 
     def test_path(self):

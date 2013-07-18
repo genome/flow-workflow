@@ -4,21 +4,16 @@ from flow_workflow.future_nets import WorkflowNetBase
 
 
 class ConvergeNet(WorkflowNetBase):
-    def __init__(self, name, operation_id, input_connections,
-            input_property_order, output_properties,
-            resources, parent_operation_id=None):
-        WorkflowNetBase.__init__(self, name=name,
-                operation_id=operation_id,
-                input_connections=input_connections,
-                resources=resources,
-                parent_operation_id=parent_operation_id)
+    def __init__(self, operation_id, name, input_property_order,
+            output_properties):
+        WorkflowNetBase.__init__(self, operation_id=operation_id, name=name)
 
         self.converge_action = FutureAction(cls=ConvergeAction,
-                operation_id=self.operation_id,
+                operation_id=operation_id,
                 input_property_order=input_property_order,
                 output_properties=output_properties)
         self.converge_transition = self.add_basic_transition(
-                name='converge(%s)' % self.operation_id,
+                name='converge(%s)' % operation_id,
                 action=self.converge_action)
 
         self.starting_place = self.bridge_transitions(

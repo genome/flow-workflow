@@ -13,9 +13,7 @@ class PerlActionNetTest(unittest.TestCase):
 
         self.action_id = mock.Mock()
         self.action_type = mock.Mock()
-        self.input_connections = mock.MagicMock()
         self.operation_id = mock.Mock()
-        self.parent_operation_id = mock.Mock()
         self.project_name = mock.Mock()
         self.resources = mock.MagicMock()
         self.stderr = mock.Mock()
@@ -24,9 +22,7 @@ class PerlActionNetTest(unittest.TestCase):
         self.args = {
             'action_id': self.action_id,
             'action_type': self.action_type,
-            'input_connections': self.input_connections,
             'operation_id': self.operation_id,
-            'parent_operation_id': self.parent_operation_id,
             'resources': self.resources,
             'stderr': self.stderr,
             'stdout': self.stdout,

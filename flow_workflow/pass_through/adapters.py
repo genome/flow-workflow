@@ -19,5 +19,4 @@ class PassThroughAdapter(adapter_base.AdapterBase):
 
     def future_net(self, input_connections, output_properties, resources):
         return future_nets.PassThroughNet(name=self.name,
-                input_connections=input_connections,
                 operation_id=self.operation_id)

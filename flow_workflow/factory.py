@@ -13,7 +13,7 @@ def adapter(operation_type, *args, **kwargs):
     global _NEXT_OPERATION_ID
     _NEXT_OPERATION_ID += 1
     LOG.debug('Loading adapter for operation_type %s, '
-            'with:\nargs: %s\nkwargs: %s',
+            'with args: %s -- and kwargs: %s',
             operation_type, args, kwargs)
     ep = head(pkg_resources.iter_entry_points('flow_workflow.adapters',
         sanitize_operation_type(operation_type)))

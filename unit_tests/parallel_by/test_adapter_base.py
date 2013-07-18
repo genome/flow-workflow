@@ -28,8 +28,7 @@ class FakeAdapter(adapter_base.ParallelXMLAdapterBase):
     operation_class = 'fake'
 
     def single_future_net(self, **kwargs):
-        return WorkflowNetBase(name='fake', operation_id=54321,
-                input_connections={}, resources={})
+        return WorkflowNetBase(name=self.name, operation_id=54321)
 
     @property
     def action_type(self):

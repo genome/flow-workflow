@@ -10,15 +10,11 @@ class ParallelByNetTest(unittest.TestCase):
         self.name = mock.Mock()
         self.operation_id = '12345'
         self.parent_operation_id = '54321'
-        self.input_connections = mock.Mock()
         self.output_properties = mock.Mock()
         self.resources = mock.Mock()
 
-        self.target_net = WorkflowNetBase(name=self.name,
-                operation_id=self.operation_id,
-                input_connections=self.input_connections,
-                resources=self.resources,
-                parent_operation_id=self.parent_operation_id)
+        self.target_net = WorkflowNetBase(name='supernet',
+                operation_id=self.operation_id)
 
         self.parallel_property = 'foo'
 

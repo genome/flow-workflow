@@ -9,27 +9,20 @@ class ParallelByNet(WorkflowNetBase):
     The target_net must be a WorkflowNetBase net.
     """
     def __init__(self, target_net, parallel_property, output_properties):
-        # adopt values from the target_net
+
         self.target_net = target_net
+
         operation_id = target_net.operation_id
-        parent_operation_id = target_net.parent_operation_id
-        name = "%s (parallel_by harness)" % target_net.name
-        input_connections = target_net.input_connections
-        resources = target_net.resources
+        name = target_net.name
+        WorkflowNetBase.__init__(self, operation_id=operation_id, name=name)
 
-        WorkflowNetBase.__init__(self, name=name, operation_id=operation_id,
-                input_connections=input_connections,
-                resources=resources,
-                parent_operation_id=parent_operation_id)
 
-        # add target_net to self
         self.subnets.add(target_net)
 
         # split_transition
         split_action = FutureAction(cls=actions.ParallelBySplit,
-                operation_id=self.operation_id,
-                parallel_property=parallel_property,
-                input_connections=input_connections)
+                operation_id=operation_id,
+                parallel_property=parallel_property)
         self.split_transition = self.add_basic_transition(
                 name='ParallelBy(%s) split' % operation_id,
                 action=split_action)

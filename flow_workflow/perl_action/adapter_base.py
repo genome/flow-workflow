@@ -39,8 +39,6 @@ class PerlActionAdapterBase(adapter_base.ParallelXMLAdapterBase):
         return future_nets.PerlActionNet(
                 name=self.name,
                 operation_id=self.operation_id,
-                parent_operation_id=self.parent.operation_id,
-                input_connections=input_connections,
                 resources=resources,
                 stderr=self.log_manager.stderr_log_path,
                 stdout=self.log_manager.stdout_log_path,
