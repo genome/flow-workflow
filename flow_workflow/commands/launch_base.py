@@ -9,6 +9,7 @@ from flow_workflow.entities.workflow.adapter import WorkflowAdapter
 from flow_workflow.future_operation import NullFutureOperation
 from lxml import etree
 from flow_workflow import factory
+from twisted.internet import defer
 
 import abc
 import flow.interfaces
@@ -66,13 +67,14 @@ class LaunchWorkflowCommandBase(CommandBase):
         pass
 
 
+    @defer.inlineCallbacks
     def _execute(self, parsed_arguments):
         workflow, net, start_place = self.construct_net(parsed_arguments.xml,
                 parsed_arguments.inputs_file, parsed_arguments.resource_file)
 
         self.setup_services(net)
 
-        self.start_net(net, start_place)
+        yield self.start_net(net, start_place)
 
         if self.complete():
             self.write_outputs(net, workflow.child_adapter.operation_id,
@@ -86,12 +88,12 @@ class LaunchWorkflowCommandBase(CommandBase):
         return self.completion_handler.status == 'success'
 
 
+    @defer.inlineCallbacks
     def start_net(self, net, start_place):
         cg = net.add_color_group(1)
         orchestrator = self.service_locator['orchestrator']
-        orchestrator.create_token(net.key, start_place, cg.begin, cg.idx)
-
-        self.broker.listen()
+        yield orchestrator.create_token(net.key, start_place, cg.begin, cg.idx)
+        yield self.broker.listen()
 
     def construct_net(self, xml_filename, inputs_filename, resources_filename):
         xml = load_xml(xml_filename)
