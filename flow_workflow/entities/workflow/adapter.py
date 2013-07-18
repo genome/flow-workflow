@@ -7,6 +7,17 @@ from flow_workflow.adapter_base import AdapterBase
 import flow_workflow.factory
 
 
+class InputStorageAdapter(AdapterBase):
+    operation_class = 'input_storage'
+
+    def future_net(self, resources):
+        raise RuntimeError('InputStorageAdapter has no future net')
+
+    @property
+    def name(self):
+        return 'InputStorage'
+
+
 class WorkflowAdapter(AdapterBase):
     operation_class = 'null'
 
@@ -15,7 +26,8 @@ class WorkflowAdapter(AdapterBase):
         self.inputs = inputs
         self.local_workflow = local_workflow
 
-        self.dummy_adapter = flow_workflow.factory.adapter('null')
+        self.inputs_storage_adapter = flow_workflow.factory.adapter(
+                'input_storage')
         self._future_net = None
         self._child_adapter = None
 
@@ -24,13 +36,15 @@ class WorkflowAdapter(AdapterBase):
         return 'Workflow'
 
     def store_inputs(self, net):
-        io.store_outputs(net, self.dummy_adapter.operation_id, self.inputs,
+        input_storage_operation = flow_workflow.factory.load_operation(net,
+                self.inputs_storage_adapter.operation_id)
+        input_storage_operation.store_outputs(self.inputs,
                 parallel_id=ParallelIdentifier())
 
     @property
     def input_connections(self):
         return {
-            self.dummy_adapter.operation_id:
+            self.inputs_storage_adapter.operation_id:
                 {name: name for name, value in self.inputs.iteritems()}
         }
 
@@ -59,8 +73,8 @@ class WorkflowAdapter(AdapterBase):
 
     def future_operations(self, parent_future_operation,
             input_connections, output_properties):
-        return self.dummy_adapter.future_operations(NullFutureOperation(),
-                    input_connections, output_properties
+        return self.inputs_storage_adapter.future_operations(
+                NullFutureOperation(), input_connections, output_properties
                     ) + self.child_adapter.future_operations(
                             NullFutureOperation(),
                             self.input_connections,

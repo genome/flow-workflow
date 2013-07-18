@@ -1,21 +1,21 @@
 from flow.util.containers import head
 import pkg_resources
 import re
+import logging
+
+LOG = logging.getLogger(__name__)
 
 
-MODULE = None
-
-
-_NEXT_OPERATION_ID = 0
+_NEXT_OPERATION_ID = -1
 
 
 def adapter(operation_type, *args, **kwargs):
     global _NEXT_OPERATION_ID
+    _NEXT_OPERATION_ID += 1
     ep = head(pkg_resources.iter_entry_points('flow_workflow.adapters',
         sanitize_operation_type(operation_type)))
     cls = ep.load()
     obj = cls(operation_id=_NEXT_OPERATION_ID, *args, **kwargs)
-    _NEXT_OPERATION_ID += 1
 
     return obj
 
@@ -40,8 +40,10 @@ def load_operation(net, operation_id):
     ep = head(pkg_resources.iter_entry_points(
         'flow_workflow.operations', operation_dict.pop('_class')))
     cls = ep.load()
-    return cls(**operation_dict)
+    LOG.debug('Loaded operation %s (%r) from net %s: %s',
+            operation_id, cls, net.key, operation_dict)
+    return cls(net=net, **operation_dict)
 
 
 def operation_variable_name(operation_id):
-    return '_wf_op_%d' % operation_id
+    return '_wf_op_%s' % operation_id

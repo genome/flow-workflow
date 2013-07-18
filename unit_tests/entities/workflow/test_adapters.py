@@ -49,7 +49,7 @@ class WorkflowTest(unittest.TestCase):
 
     def test_input_connections(self):
         expected_ics = {
-            self.workflow.dummy_adapter.operation_id:
+            self.workflow.inputs_storage_adapter.operation_id:
                 {'a': 'a', 'b': 'b'}
         }
         self.assertEqual(expected_ics, self.workflow.input_connections)
@@ -57,14 +57,6 @@ class WorkflowTest(unittest.TestCase):
     def test_output_properties(self):
         expected_ops = ['out_a', 'out_b']
         self.assertEqual(expected_ops, self.workflow.output_properties)
-
-    def test_store_inputs(self):
-        net = mock.Mock()
-        with mock.patch('flow_workflow.io.store_outputs') as store:
-            self.workflow.store_inputs(net)
-            store.assert_called_once_with(net, mock.ANY, self.inputs,
-                    parallel_id=ParallelIdentifier())
-
 
     def test_future_net(self):
         net = self.workflow.future_net(self.resources)

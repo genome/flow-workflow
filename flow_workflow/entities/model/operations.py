@@ -1,21 +1,24 @@
 from flow_workflow import operation_base
 
 
-class ConnectorOperation(operation_base.Operation):
-    def load_output(self, name, parallel_id):
-        return self.load_input(self.net, name, parallel_id)
+class InputConnectorOperation(operation_base.PassThroughOperation):
+    def load_input(self, name, parallel_id):
+        return self.parent.load_input(name, parallel_id)
 
 
-class ModelOperation(operation_base.Operation):
-    def __init__(self, *args, **kwargs):
-        operation_base.Operation.__init__(self, *args, **kwargs)
-        self._output_connector = None
 
+class ModelOperation(operation_base.DirectStorageOperation):
+    def __init__(self, parallel_by, *args, **kwargs):
+        operation_base.DirectStorageOperation.__init__(self, *args, **kwargs)
+        self.parallel_by = parallel_by
+
+    @property
     def output_connector(self):
-        if self._output_connector is None:
-            self._output_connector = self.child_named('output connector')
-
-        return self._output_connector
+        return self.child_named('output connector')
 
     def load_output(self, name, parallel_id):
-        self.output_connector.load_output(self.net, name, parallel_id)
+        if self.parallel_by:
+            return operation_base.DirectStorageOperation.load_output(self,
+                    name, parallel_id)
+        else:
+            return self.output_connector.load_output(name, parallel_id)

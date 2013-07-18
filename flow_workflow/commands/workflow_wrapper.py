@@ -3,6 +3,7 @@ from flow.commands.base import CommandBase
 from flow.configuration.inject.redis_conf import RedisConfiguration
 from flow.configuration.settings.injector import setting
 from flow.util.logannotator import LogAnnotator
+from flow_workflow import factory
 from flow_workflow import io
 from flow_workflow.parallel_id import ParallelIdentifier
 from injector import inject
@@ -67,7 +68,7 @@ class WorkflowWrapperCommand(CommandBase):
             with NamedTemporaryFile() as inputs_file:
                 with NamedTemporaryFile() as outputs_file:
                     write_inputs(inputs_file, net=net, parallel_id=parallel_id,
-                        input_connections=parsed_arguments.input_connections)
+                            operation_id=parsed_arguments.operation_id)
 
                     cmdline = copy.copy(self.perl_wrapper)
                     cmdline_builder = CMDLINE_BUILDERS[
@@ -95,10 +96,9 @@ class WorkflowWrapperCommand(CommandBase):
             raise
 
 
-def write_inputs(file_object, net, parallel_id, input_connections):
-    parsed_input_connections = json.loads(input_connections)
-    inputs = io.load_inputs(net=net, input_connections=parsed_input_connections,
-            parallel_id=parallel_id)
+def write_inputs(file_object, net, parallel_id, operation_id):
+    operation = factory.load_operation(net, operation_id)
+    inputs = operation.load_inputs(parallel_id)
 
     LOG.debug('Inputs: %s', inputs)
 

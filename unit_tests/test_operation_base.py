@@ -4,7 +4,7 @@ import mock
 import unittest
 
 
-class OperationTest(unittest.TestCase):
+class DirectStorageOperationTest(unittest.TestCase):
     def setUp(self):
         self.child_operation_ids = {
             'foo': 12,
@@ -26,7 +26,7 @@ class OperationTest(unittest.TestCase):
         self.log_dir = '/exciting/log/dir'
 
         self.net = mock.Mock()
-        self.operation = operation_base.Operation(
+        self.operation = operation_base.DirectStorageOperation(
                 net=self.net,
                 child_operation_ids=self.child_operation_ids,
                 input_connections=self.input_connections,
@@ -74,7 +74,6 @@ class OperationTest(unittest.TestCase):
         inputs = self.operation.load_inputs(parallel_id)
         self.assertItemsEqual(['in1', 'in2'], inputs.keys())
         self.assertEqual(2, load_input.call_count)
-        print load_input.mock_calls
         load_input.assert_any_call(name='in1', parallel_id=parallel_id)
 
     def test_load_outputs(self):

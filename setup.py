@@ -17,19 +17,21 @@ Command = flow_workflow.entities.command.adapter:CommandAdapter
 Converge = flow_workflow.entities.converge.adapter:ConvergeAdapter
 Event = flow_workflow.entities.event.adapter:EventAdapter
 Model = flow_workflow.entities.model.adapter:ModelAdapter
+input_storage = flow_workflow.entities.workflow.adapter:InputStorageAdapter
 input_connector = flow_workflow.entities.model.adapter:InputConnector
 output_connector = flow_workflow.entities.model.adapter:OutputConnector
 null = flow_workflow.adapter_base:NullAdapter
 
 [flow_workflow.operations]
-block = flow_workflow.operation_base:Operation
-command = flow_workflow.operation_base:Operation
-converge = flow_workflow.operation_base:Operation
-event = flow_workflow.operation_base:Operation
-input_connector = flow_workflow.entities.model.operations:ConnectorOperation
+block = flow_workflow.operation_base:PassThroughOperation
+command = flow_workflow.operation_base:DirectStorageOperation
+converge = flow_workflow.operation_base:DirectStorageOperation
+event = flow_workflow.operation_base:DirectStorageOperation
+input_connector = flow_workflow.entities.model.operations:InputConnectorOperation
 model = flow_workflow.entities.model.operations:ModelOperation
 null = flow_workflow.operation_base:NullOperation
-output_connector = flow_workflow.entities.model.operations:ConnectorOperation
+output_connector = flow_workflow.operation_base:PassThroughOperation
+input_storage = flow_workflow.operation_base:DirectStorageOperation
 '''
 
 setup(

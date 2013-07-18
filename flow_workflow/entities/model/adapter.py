@@ -4,6 +4,9 @@ from flow_workflow.entities.model import future_nets
 from flow_workflow.parallel_by import adapter_base
 import flow_workflow.adapter_base
 import flow_workflow.factory
+import logging
+
+LOG = logging.getLogger(__name__)
 
 
 class Link(object):
@@ -51,6 +54,14 @@ class ModelAdapter(adapter_base.ParallelXMLAdapterBase):
             self._add_child(child)
 
         self.links = map(Link, self.xml.findall('link'))
+
+        LOG.debug('child operation ids for model (%s): %s',
+                self.operation_id, self._child_operation_ids)
+
+    @property
+    def future_operation_properties(self):
+        return {'parallel_by': self.parallel_by}
+
 
     def _add_child(self, child):
         self.children.append(child)

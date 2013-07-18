@@ -9,6 +9,7 @@ from flow_workflow.parallel_id import ParallelIdentifier
 from flow_workflow.entities.workflow.adapter import WorkflowAdapter
 from flow_workflow.future_operation import NullFutureOperation
 from lxml import etree
+from flow_workflow import factory
 
 import abc
 import flow.interfaces
@@ -106,12 +107,12 @@ class LaunchWorkflowCommandBase(CommandBase):
         # XXX Update builder to use injector
         builder = Builder(self.storage)
         stored_net = builder.store(future_net, self.variables, self.constants)
-        workflow.store_inputs(stored_net)
 
         future_operations = workflow.future_operations(NullFutureOperation(),
                 input_connections=None, output_properties=None)
         for future_operation in future_operations:
             future_operation.save(stored_net)
+        workflow.store_inputs(stored_net)
 
         start_place_index = builder.future_places[future_net.start_place]
 
@@ -119,9 +120,8 @@ class LaunchWorkflowCommandBase(CommandBase):
 
     def write_outputs(self, net, operation_id, output_properties, outputs_file):
         if outputs_file:
-            outputs = io.load_outputs(net=net, operation_id=operation_id,
-                    property_names=output_properties,
-                    parallel_id=ParallelIdentifier())
+            op = factory.load_operation(net=net, operation_id=operation_id)
+            outputs = op.load_outputs(parallel_id=ParallelIdentifier())
             with open(outputs_file, 'w') as f:
                 json.dump(outputs, f)
 

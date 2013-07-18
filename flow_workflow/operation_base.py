@@ -1,9 +1,12 @@
 from flow_workflow import io
+import abc
 import flow_workflow.log_manager
 import flow_workflow.factory
 
 
 class Operation(object):
+    __metaclass__ = abc.ABCMeta
+
     def __init__(self, net, name, operation_id, input_connections,
             output_properties, log_dir, parent_operation_id,
             child_operation_ids):
@@ -40,7 +43,7 @@ class Operation(object):
         return result
 
     def _determine_input_source(self, name):
-        for source_op_id, property_dict in self.input_connections:
+        for source_op_id, property_dict in self.input_connections.iteritems():
             if name in property_dict:
                 source_name = property_dict[name]
                 return source_op_id, source_name
@@ -48,6 +51,7 @@ class Operation(object):
                 (name, self.name))
 
     def _load_operation(self, operation_id):
+        # XXX Make this cache operations
         return flow_workflow.factory.load_operation(net=self.net,
                 operation_id=operation_id)
 
@@ -59,21 +63,47 @@ class Operation(object):
         return {name: self.load_output(name, parallel_id)
                 for name in self.output_properties}
 
+    def store_outputs(self, outputs, parallel_id):
+        for name, value in outputs.iteritems():
+            self.store_output(name, value, parallel_id)
+
     def load_input(self, name, parallel_id):
         source_op_id, source_name = self._determine_input_source(name)
         source_op = self._load_operation(source_op_id)
         return source_op.load_output(source_name, parallel_id)
 
+    def store_input(self, name, value, parallel_id):
+        source_op_id, source_name = self._determine_input_source(name)
+        source_op = self._load_operation(source_op_id)
+        source_op.store_output(source_name, value, parallel_id)
+
+    @abc.abstractmethod
+    def load_output(self, name, parallel_id):
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def store_output(self, name, value, parallel_id):
+        raise NotImplementedError()
+
+
+class NullOperation(Operation):
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def load_output(self, name, parallel_id):
+        pass
+
+    def store_output(self, name, value, parallel_id):
+        pass
+
+
+class DirectStorageOperation(Operation):
     def load_output(self, name, parallel_id):
         return io.load_output(
                 net=self.net,
                 operation_id=self.operation_id,
                 parallel_id=parallel_id,
                 property_name=name)
-
-    def store_outputs(self, outputs, parallel_id):
-        for name, value in outputs.iteritems():
-            self.store_output(name, value, parallel_id)
 
     def store_output(self, name, value, parallel_id):
         io.store_output(
@@ -83,7 +113,9 @@ class Operation(object):
                 property_name=name,
                 value=value)
 
+class PassThroughOperation(Operation):
+    def load_output(self, name, parallel_id):
+        return self.load_input(name, parallel_id)
 
-class NullOperation(Operation):
-    def __init__(self, *args, **kwargs):
-        pass
+    def store_output(self, name, value, parallel_id):
+        return self.store_input(name, value, parallel_id)

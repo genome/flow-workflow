@@ -3,16 +3,12 @@ from flow_workflow.factory import operation_variable_name
 
 
 class FutureOperation(object):
-    def __init__(self, operation_class, name, operation_id, input_connections,
-            output_properties, log_dir, parent):
+    def __init__(self, operation_class, operation_id, name, parent, **kwargs):
         self.operation_class = operation_class
-
-        self.name = str(name)
         self.operation_id = int(operation_id)
-        self.input_connections = input_connections
-        self.output_properties = output_properties
-        self.log_dir = log_dir
+        self.name = name
         self.parent = parent
+        self.kwargs = kwargs
 
         self._children = {}
 
@@ -34,16 +30,16 @@ class FutureOperation(object):
 
     @property
     def as_dict(self):
-        return {
+        result = {
             '_class': self.operation_class,
             'child_operation_ids': self.child_operation_ids,
-            'input_connections': self.input_connections,
-            'log_dir': self.log_dir,
             'name': self.name,
             'operation_id': self.operation_id,
-            'output_properties': self.output_properties,
             'parent_operation_id': self.parent.operation_id,
         }
+
+        result.update(self.kwargs)
+        return result
 
 
 class NullFutureOperation(FutureOperation):
