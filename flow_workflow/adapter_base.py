@@ -49,10 +49,6 @@ class AdapterBase(IAdapter):
     def log_dir(self):
         return self._log_dir
 
-    @property
-    def future_operation_properties(self):
-        return {}
-
 
     def future_operation(self, parent_future_operation, input_connections,
             output_properties):
@@ -63,8 +59,7 @@ class AdapterBase(IAdapter):
             name=self.name,
             operation_id=self.operation_id,
             output_properties=output_properties,
-            parent=parent_future_operation,
-            **self.future_operation_properties)
+            parent=parent_future_operation)
 
     def future_operations(self, parent_future_operation, input_connections,
             output_properties):

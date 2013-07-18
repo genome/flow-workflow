@@ -7,18 +7,13 @@ class InputConnectorOperation(operation_base.PassThroughOperation):
 
 
 
-class ModelOperation(operation_base.DirectStorageOperation):
-    def __init__(self, parallel_by, *args, **kwargs):
-        operation_base.DirectStorageOperation.__init__(self, *args, **kwargs)
-        self.parallel_by = parallel_by
-
+class ModelOperation(operation_base.Operation):
     @property
     def output_connector(self):
         return self.child_named('output connector')
 
     def load_output(self, name, parallel_id):
-        if self.parallel_by:
-            return operation_base.DirectStorageOperation.load_output(self,
-                    name, parallel_id)
-        else:
-            return self.output_connector.load_output(name, parallel_id)
+        return self.output_connector.load_output(name, parallel_id)
+
+    def store_output(self, name, value, parallel_id):
+        return self.output_connector.store_output(name, value, parallel_id)

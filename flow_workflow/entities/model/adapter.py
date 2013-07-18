@@ -58,11 +58,6 @@ class ModelAdapter(adapter_base.ParallelXMLAdapterBase):
         LOG.debug('child operation ids for model (%s): %s',
                 self.operation_id, self._child_operation_ids)
 
-    @property
-    def future_operation_properties(self):
-        return {'parallel_by': self.parallel_by}
-
-
     def _add_child(self, child):
         self.children.append(child)
         self._child_operation_ids[child.name] = child.operation_id
