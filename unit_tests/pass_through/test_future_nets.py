@@ -1,4 +1,4 @@
-from flow_workflow.pass_through_net import PassThroughNet
+from flow_workflow.pass_through.future_nets import PassThroughNet
 
 import mock
 import unittest

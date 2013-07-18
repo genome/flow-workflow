@@ -1,4 +1,4 @@
-from flow_workflow.pass_through_net import PassThroughNet
+from flow_workflow.pass_through.future_nets import PassThroughNet
 from flow_workflow.entities.model import adapter
 from flow_workflow.future_operation import NullFutureOperation
 from flow_workflow.perl_action.future_nets import PerlActionNet

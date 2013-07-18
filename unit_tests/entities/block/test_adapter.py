@@ -1,5 +1,5 @@
 from flow_workflow.entities.block import adapter
-from flow_workflow.pass_through_net import PassThroughNet
+from flow_workflow.pass_through.future_nets import PassThroughNet
 from lxml import etree
 
 import mock
