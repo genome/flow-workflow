@@ -103,6 +103,14 @@ class DirectStorageOperationTest(unittest.TestCase):
                     parallel_id=parallel_id,
                     operation_id=self.operation_id)
 
+    def test_determine_input_source_success(self):
+        self.assertEqual((3, 'out1'),  # Fakeredis makes these unicode..
+                self.operation._determine_input_source('in1'))
+
+    def test_determine_input_source_error(self):
+        with self.assertRaises(KeyError):
+            self.operation._determine_input_source('nonsense_property')
+
 
 if __name__ == "__main__":
     unittest.main()

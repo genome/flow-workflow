@@ -22,30 +22,33 @@ class ParallelBySplit(BasicActionBase):
     def execute(self, net, color_descriptor, active_tokens, service_interfaces):
         workflow_data = io.extract_workflow_data(net, active_tokens)
 
+        parallel_property = self.args['parallel_property']
         parallel_id = _parallel_id_from_workflow_data(workflow_data)
+
         operation = factory.load_operation(net=net,
                 operation_id=self.args['operation_id'])
+
         parallel_input = operation.load_input(
-                name=self.args['parallel_property'],
+                name=parallel_property,
                 parallel_id=parallel_id)
 
-        self.store_parallel_input(net, parallel_input, parallel_id)
+        self.store_parallel_input(operation=operation,
+                parallel_input=parallel_input,
+                parallel_property=parallel_property,
+                parallel_id=parallel_id)
+
         tokens = self._create_tokens(num_tokens=len(parallel_input),
                 color_descriptor=color_descriptor,
                 workflow_data=workflow_data, net=net)
 
         return tokens, defer.succeed(None)
 
-    def store_parallel_input(self, net, parallel_input, parallel_id):
-        operation_id = self.args['operation_id']
-        op = factory.load_operation(net, operation_id)
-
-        parallel_property = self.args['parallel_property']
-
+    def store_parallel_input(self, operation, parallel_property, parallel_input,
+            parallel_id):
         for parallel_idx, value in enumerate(parallel_input):
-            op.store_input(name=parallel_property,
+            operation.store_input(name=parallel_property,
                     value=value, parallel_id=parallel_id.child_identifier(
-                        operation_id, parallel_idx))
+                        operation.operation_id, parallel_idx))
 
     def _create_tokens(self, num_tokens, color_descriptor, workflow_data, net):
         new_color_group = net.add_color_group(size=num_tokens,
