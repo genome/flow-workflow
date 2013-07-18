@@ -18,8 +18,7 @@ def _parallel_id_from_workflow_data(workflow_data):
 
 
 class PerlAction(object):
-    required_arguments = ['operation_id', 'input_connections', 'method',
-            'action_type', 'action_id']
+    required_arguments = ['operation_id', 'method', 'action_type', 'action_id']
 
 
     def environment(self, net):
@@ -37,8 +36,7 @@ class PerlAction(object):
                 '--action-id', self.args['action_id'],
                 '--net-key', net.key,
                 '--operation-id', self.args['operation_id'],
-                '--input-connections',
-                        json.dumps(self.args['input_connections'])]
+        ]
 
         parallel_id = self.get_parallel_id(token_data)
         if len(parallel_id):

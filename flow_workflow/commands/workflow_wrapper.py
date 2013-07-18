@@ -50,8 +50,6 @@ class WorkflowWrapperCommand(CommandBase):
                 help='used to look up inputs')
         parser.add_argument('--operation-id', type=int, required=True,
                 help='used to look up inputs')
-        parser.add_argument('--input-connections', required=True,
-                help='used to look up inputs')
 
         parser.add_argument('--parallel-id', default='[]',
                 help='used to look up inputs')

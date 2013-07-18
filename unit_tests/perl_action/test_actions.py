@@ -20,7 +20,6 @@ class PerlActionTest(unittest.TestCase):
             'action_type': 'action_type',
             'action_id': 'action_id',
             'operation_id': 'op_id',
-            'input_connections': {'a': {'b': 'c'}}
         }
         self.action.args = self.args
 
@@ -46,7 +45,6 @@ class PerlActionTest(unittest.TestCase):
             '--action-id', 'action_id',
             '--net-key', 'netkey',
             '--operation-id', 'op_id',
-            '--input-connections', '{"a": {"b": "c"}}',
         ]
 
         token_data = {}
@@ -61,7 +59,6 @@ class PerlActionTest(unittest.TestCase):
             '--action-id', 'action_id',
             '--net-key', 'netkey',
             '--operation-id', 'op_id',
-            '--input-connections', '{"a": {"b": "c"}}',
             '--parallel-id', '[[3, 4]]',
         ]
 

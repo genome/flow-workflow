@@ -21,7 +21,6 @@ class PerlActionNet(WorkflowNetBase):
 
         base_action_args = {
             'operation_id': operation_id,
-            'input_connections': input_connections,
             'action_id': action_id,
             'action_type': action_type,
             'stderr': stderr,
