@@ -1,5 +1,5 @@
 from collections import defaultdict
-from flow_workflow.clone_inputs_future_net import CloneInputsNet
+from flow_workflow.pass_through_net import PassThroughNet
 from flow_workflow.entities.model import future_nets
 from flow_workflow.parallel_by import adapter_base
 import flow_workflow.adapter_base
@@ -161,7 +161,7 @@ class InputConnector(ConnectorAdapter):
         self._name = name
 
     def future_net(self, input_connections, output_properties, resources):
-        return CloneInputsNet(name=self.name,
+        return PassThroughNet(name=self.name,
                 operation_id=self.operation_id,
                 input_connections=input_connections)
 
@@ -174,6 +174,6 @@ class OutputConnector(ConnectorAdapter):
         self._name = name
 
     def future_net(self, input_connections, output_properties, resources):
-        return CloneInputsNet(name=self.name,
+        return PassThroughNet(name=self.name,
                 operation_id=self.parent.operation_id,
                 input_connections=input_connections)

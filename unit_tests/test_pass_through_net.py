@@ -1,4 +1,4 @@
-from flow_workflow.clone_inputs_future_net import CloneInputsNet
+from flow_workflow.pass_through_net import PassThroughNet
 
 import mock
 import unittest
@@ -13,7 +13,7 @@ class CloneInputsNetTest(unittest.TestCase):
         self.operation_id = 12345
         self.parent_operation_id = 54321
 
-        self.net = CloneInputsNet(
+        self.net = PassThroughNet(
                 input_connections=self.input_connections,
                 name=self.name,
                 operation_id=self.operation_id,

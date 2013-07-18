@@ -1,5 +1,5 @@
 from flow_workflow.entities.block import adapter
-from flow_workflow.clone_inputs_future_net import CloneInputsNet
+from flow_workflow.pass_through_net import PassThroughNet
 from lxml import etree
 
 import mock
@@ -27,7 +27,7 @@ class BlockAdapterTest(unittest.TestCase):
                 input_connections=input_connections,
                 output_properties=mock.Mock(),
                 resources=resources),
-            CloneInputsNet)
+            PassThroughNet)
 
 
 if __name__ == "__main__":

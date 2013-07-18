@@ -2,7 +2,7 @@ from flow.petri_net.future import FutureAction
 from flow_workflow.future_nets import WorkflowNetBase
 
 
-class CloneInputsNet(WorkflowNetBase):
+class PassThroughNet(WorkflowNetBase):
     def __init__(self, name, operation_id, input_connections,
             parent_operation_id=None):
         WorkflowNetBase.__init__(self, name=name,

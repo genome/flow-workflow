@@ -1,4 +1,4 @@
-from flow_workflow.clone_inputs_future_net import CloneInputsNet
+from flow_workflow.pass_through_net import PassThroughNet
 from flow_workflow.entities.model import adapter
 from flow_workflow.future_operation import NullFutureOperation
 from flow_workflow.perl_action.future_nets import PerlActionNet
@@ -99,7 +99,7 @@ class ModelAdapterTest(unittest.TestCase):
                 resources)
         self.assertItemsEqual(['A', 'B', 'input connector', 'output connector'],
                 child_nets.keys())
-        self.assertItemsEqual([CloneInputsNet, CloneInputsNet, PerlActionNet,
+        self.assertItemsEqual([PassThroughNet, PassThroughNet, PerlActionNet,
             PerlActionNet], [c.__class__ for c in child_nets.itervalues()])
 
     def get_subnet(self, net, name):
