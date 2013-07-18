@@ -52,7 +52,7 @@ def load_output(net, operation_id, property_name, parallel_id):
         except KeyError:
             pass
 
-    raise KeyError("Output %s not found in on operation %r, parallel_id %r" %
+    raise KeyError("Output %s not found on operation %r, parallel_id %r" %
             (property_name, operation_id, parallel_id))
 
 

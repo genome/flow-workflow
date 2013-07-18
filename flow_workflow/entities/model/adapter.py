@@ -113,22 +113,16 @@ class ModelAdapter(adapter_base.ParallelXMLAdapterBase):
 
         return output_properties
 
-    def subnets(self, input_connections, output_properties, resources):
+    def subnets(self, resources):
         child_nets = {}
         for child in self.children:
             child_nets[child.name] = child.future_net(
-                    input_connections=self.child_input_connections(
-                        child.name, input_connections),
-                    output_properties=self.child_output_properties(
-                        child.name, output_properties),
                     resources=resources.get(child.name, {}))
 
         return child_nets
 
-    def single_future_net(self, input_connections, output_properties,
-            resources):
-        subnets = self.subnets(input_connections, output_properties,
-                resources.get('children', {}))
+    def single_future_net(self, resources):
+        subnets = self.subnets(resources.get('children', {}))
         return future_nets.ModelNet(subnets=subnets,
                 edges=self.edges, name=self.name,
                 operation_id=self.operation_id)

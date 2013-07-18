@@ -34,8 +34,7 @@ class PerlActionAdapterBase(adapter_base.ParallelXMLAdapterBase):
     def shortcut_action_class(self):
         return actions.ForkAction
 
-    def single_future_net(self, input_connections, output_properties,
-            resources):
+    def single_future_net(self, resources):
         return future_nets.PerlActionNet(
                 name=self.name,
                 operation_id=self.operation_id,

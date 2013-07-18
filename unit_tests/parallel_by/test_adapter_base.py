@@ -54,8 +54,6 @@ class ParallelByPerlActionAdapterBaseTest(unittest.TestCase):
 
     def test_future_net(self):
         net = self.adapter.future_net(
-                input_connections=mock.Mock(),
-                output_properties=mock.Mock(),
                 resources=mock.Mock())
         self.assertIsInstance(net, future_nets.ParallelByNet)
 

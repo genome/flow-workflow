@@ -74,7 +74,7 @@ class ParallelBySplit(BasicActionBase):
 
 
 class ParallelByJoin(BarrierActionBase):
-    requrired_arguments = ['output_properties', 'operation_id']
+    requrired_arguments = ['operation_id']
 
     def execute(self, net, color_descriptor, active_tokens, service_interfaces):
         operation_id = self.args['operation_id']
@@ -86,7 +86,7 @@ class ParallelByJoin(BarrierActionBase):
         parallel_id = _parallel_id_from_workflow_data(workflow_data)
         parent_parallel_id = parallel_id.parent_identifier
 
-        for property_name in self.args['output_properties']:
+        for property_name in op.output_properties:
             array_value = self.collect_array_output(net=net,
                     operation=op,
                     parallel_size=parallel_size,

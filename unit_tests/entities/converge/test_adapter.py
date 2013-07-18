@@ -31,7 +31,6 @@ class ConvergeAdapterTest(unittest.TestCase):
     def setUp(self):
         self.operation_id = mock.Mock()
         self.parent = mock.Mock()
-        self.input_connections = mock.Mock()
         self.resources = mock.Mock()
 
         self.adapter = adapter.ConvergeAdapter(xml=etree.XML(VALID_XML),
@@ -39,8 +38,6 @@ class ConvergeAdapterTest(unittest.TestCase):
 
     def test_init(self):
         self.assertIsInstance(self.adapter.future_net(
-                input_connections=self.input_connections,
-                output_properties=mock.Mock(),
                 resources=self.resources),
             future_nets.ConvergeNet)
 
@@ -57,7 +54,6 @@ class InvalidConvergeAdapterTest(unittest.TestCase):
     def setUp(self):
         self.operation_id = mock.Mock()
         self.parent = mock.Mock()
-        self.input_connections = mock.Mock()
         self.resources = mock.Mock()
 
         self.adapter = adapter.ConvergeAdapter(xml=etree.XML(INVALID_XML),
@@ -65,10 +61,7 @@ class InvalidConvergeAdapterTest(unittest.TestCase):
 
     def test_init_raises(self):
         with self.assertRaises(ValueError):
-            self.adapter.future_net(
-                    input_connections=self.input_connections,
-                    output_properties=mock.Mock(),
-                    resources=self.resources)
+            self.adapter.future_net(resources=self.resources)
 
 
 if __name__ == "__main__":

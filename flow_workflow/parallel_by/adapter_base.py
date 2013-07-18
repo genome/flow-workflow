@@ -6,27 +6,19 @@ import flow_workflow.adapter_base
 
 class ParallelXMLAdapterBase(flow_workflow.adapter_base.XMLAdapterBase):
     @abc.abstractmethod
-    def single_future_net(self, input_connections, output_properties,
-            resources):
+    def single_future_net(self, resources):
         raise NotImplementedError()
 
-    def future_net(self, input_connections, output_properties, resources):
+    def future_net(self, resources):
         if self.parallel_by:
-            return self._parallel_by_net(input_connections=input_connections,
-                    output_properties=output_properties, resources=resources)
+            return self._parallel_by_net(resources=resources)
         else:
-
-            return self.single_future_net(input_connections=input_connections,
-                    output_properties=output_properties, resources=resources)
+            return self.single_future_net(resources=resources)
 
     @property
     def parallel_by(self):
         return self.xml.attrib.get('parallelBy')
 
-    def _parallel_by_net(self, input_connections, output_properties, resources):
-        target_net = self.single_future_net(
-                input_connections=input_connections,
-                output_properties=output_properties,
-                resources=resources)
-        return future_nets.ParallelByNet(target_net, self.parallel_by,
-                output_properties=output_properties)
+    def _parallel_by_net(self, resources):
+        target_net = self.single_future_net(resources=resources)
+        return future_nets.ParallelByNet(target_net, self.parallel_by)

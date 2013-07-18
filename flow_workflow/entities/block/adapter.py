@@ -6,6 +6,6 @@ class BlockAdapter(flow_workflow.adapter_base.XMLAdapterBase):
     operation_class = 'pass_through'
 
 
-    def future_net(self, input_connections, output_properties, resources):
+    def future_net(self, resources):
         return future_nets.PassThroughNet(name=self.name,
                 operation_id=self.operation_id)

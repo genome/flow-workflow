@@ -92,11 +92,8 @@ class ModelAdapterTest(unittest.TestCase):
             'output connector', output_props))
 
     def test_subnets(self):
-        input_connections = {}
-        output_properties = []
         resources = {}
-        child_nets = self.adapter.subnets(input_connections, output_properties,
-                resources)
+        child_nets = self.adapter.subnets(resources)
         self.assertItemsEqual(['A', 'B', 'input connector', 'output connector'],
                 child_nets.keys())
         self.assertItemsEqual([PassThroughNet, PassThroughNet, PerlActionNet,
@@ -117,10 +114,7 @@ class ModelAdapterTest(unittest.TestCase):
 
     def test_future_net(self):
         resources = {}
-        output_properties = []
-        input_connections = {}
-        net = self.adapter.future_net(input_connections, output_properties,
-                resources)
+        net = self.adapter.future_net(resources)
 
         ic = self.get_subnet(net, 'input connector')
         oc = self.get_subnet(net, 'output connector')

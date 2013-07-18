@@ -20,12 +20,9 @@ class BlockAdapterTest(unittest.TestCase):
                 parent=self.parent)
 
     def test_future_net(self):
-        input_connections = mock.Mock()
         resources = mock.Mock()
 
         self.assertIsInstance(self.adapter.future_net(
-                input_connections=input_connections,
-                output_properties=mock.Mock(),
                 resources=resources),
             PassThroughNet)
 

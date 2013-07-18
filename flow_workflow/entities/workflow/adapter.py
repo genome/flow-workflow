@@ -59,8 +59,7 @@ class WorkflowAdapter(AdapterBase):
         return self._child_adapter
 
     def child_adapter_future_net(self, resources):
-        return self.child_adapter.future_net(self.input_connections,
-                self.output_properties, resources)
+        return self.child_adapter.future_net(resources)
 
     def future_net(self, resources):
         return WorkflowNet(self.child_adapter_future_net(resources))

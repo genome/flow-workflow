@@ -131,7 +131,7 @@ class PBJoinExecuteTest(fakeredistest.FakeRedisTest):
                 operation_id=self.operation_id,
                 name='main operation',
                 input_connections=self.input_connections,
-                output_properties=self.parallel_property)
+                output_properties=self.output_properties)
 
         for i, po in enumerate(self.parallel_output):
             self.operation.store_output(name=self.output_properties[0],

@@ -8,7 +8,7 @@ class ParallelByNet(WorkflowNetBase):
     Make a given <target_net> run parallel on the given <parallel_property>.
     The target_net must be a WorkflowNetBase net.
     """
-    def __init__(self, target_net, parallel_property, output_properties):
+    def __init__(self, target_net, parallel_property):
 
         self.target_net = target_net
 
@@ -37,7 +37,7 @@ class ParallelByNet(WorkflowNetBase):
 
         # join_transition
         join_action = FutureAction(cls=actions.ParallelByJoin,
-                operation_id=operation_id, output_properties=output_properties)
+                operation_id=operation_id)
         self.join_transition = self.add_barrier_transition(
                 name='ParallelBy(%s) join' % operation_id,
                 action=join_action)

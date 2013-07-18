@@ -19,8 +19,7 @@ class ParallelByNetTest(unittest.TestCase):
         self.parallel_property = 'foo'
 
         self.net = future_nets.ParallelByNet(target_net=self.target_net,
-                parallel_property=self.parallel_property,
-                output_properties=self.output_properties)
+                parallel_property=self.parallel_property)
 
     def test_start_path(self):
         self.assertIn(self.net.starting_split_place,
