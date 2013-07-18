@@ -68,6 +68,12 @@ class WorkflowTest(unittest.TestCase):
                 output_properties=mock.Mock())
         self.assertEqual(6, len(future_ops))
 
+    def test_unique_operation_ids(self):
+        future_ops = self.workflow.future_operations(NullFutureOperation(),
+                input_connections=mock.Mock(),
+                output_properties=mock.Mock())
+        operation_ids = set([f.operation_id for f in future_ops])
+        self.assertEqual(len(future_ops), len(operation_ids))
 
 
 if __name__ == '__main__':
