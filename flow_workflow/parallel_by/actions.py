@@ -16,8 +16,7 @@ def _parallel_id_from_workflow_data(workflow_data):
 
 
 class ParallelBySplit(BasicActionBase):
-    requrired_arguments = ['parallel_property', 'input_connections',
-            'operation_id']
+    requrired_arguments = ['parallel_property', 'operation_id']
 
     def execute(self, net, color_descriptor, active_tokens, service_interfaces):
         workflow_data = io.extract_workflow_data(net, active_tokens)

@@ -1,10 +1,102 @@
+from flow_workflow import future_operation
+from flow_workflow import factory
 from flow.petri_net import color
+from flow.petri_net.net import Net
 from flow_workflow.parallel_by import actions
 from flow_workflow.parallel_id import ParallelIdentifier
 from test_helpers import fakeredistest
 
 import mock
 import unittest
+
+
+class PBSplitExecuteTest(fakeredistest.FakeRedisTest):
+    def setUp(self):
+        fakeredistest.FakeRedisTest.setUp(self)
+
+        self.net = Net.create(self.conn)
+
+        self.parallel_property = 'pfoo'
+        self.parallel_input = ['a', 'b', 'c']
+        self.operation = self.create_operations()
+
+        self.action = self.create_action()
+
+        self.parent_color_group = self.net.add_color_group(size=1)
+        self.parent_color_descriptor = color.ColorDescriptor(
+                color=self.parent_color_group.begin,
+                group=self.parent_color_group)
+
+        self.service_interfaces = {}
+
+    def create_operations(self):
+        self.operation_id = 42
+        self.input_connections = {
+            7: {self.parallel_property: 'foosource'},
+            3: {'bar': 'barsource'},
+        }
+        self.output_properties = []
+
+
+        main_operation = self.create_operation(
+                operation_id=self.operation_id,
+                name='main operation',
+                input_connections=self.input_connections,
+                output_properties=self.output_properties)
+
+        parallel_input_operation = self.create_operation(
+                operation_id=7,
+                name='parallel input operation',
+                input_connections={},
+                output_properties='foosource')
+        parallel_input_operation.store_output(name='foosource',
+                value=self.parallel_input, parallel_id=ParallelIdentifier())
+
+        normal_input_operation = self.create_operation(
+                operation_id=3,
+                name='normal input operation',
+                input_connections={},
+                output_properties='barsource')
+        normal_input_operation.store_output(name='barsource',
+                value='bar value', parallel_id=ParallelIdentifier())
+
+        return main_operation
+
+    def create_operation(self, operation_id, name, **kwargs):
+        fop = future_operation.FutureOperation(
+                operation_class='command',  # XXX should be DirectStorage
+                operation_id=operation_id,
+                name=name,
+                parent=future_operation.NullFutureOperation(),
+                log_dir='/exciting/log/dir',
+                **kwargs)
+        fop.save(self.net)
+
+        return factory.load_operation(self.net, operation_id)
+
+
+    def create_action(self):
+        self.args = {
+            'parallel_property': self.parallel_property,
+            'operation_id': self.operation_id,
+        }
+        return actions.ParallelBySplit.create(self.conn, args=self.args)
+
+
+    def test_execute(self):
+        active_tokens = set()
+        tokens, deferred = self.action.execute(net=self.net,
+                color_descriptor=self.parent_color_descriptor,
+                active_tokens=active_tokens,
+                service_interfaces=self.service_interfaces)
+
+        self.assertEqual(len(self.parallel_input), len(tokens))
+
+        for i, val in enumerate(self.parallel_input):
+            self.assertEqual(val,
+                    self.operation.load_input(self.parallel_property,
+                        parallel_id=ParallelIdentifier().child_identifier(
+                            self.operation_id, i)))
 
 
 class ParallelBySplitTest(fakeredistest.FakeRedisTest):
@@ -36,33 +128,6 @@ class ParallelBySplitTest(fakeredistest.FakeRedisTest):
                 color=self.parent_color, group=self.parent_color_group)
 
         self.operation = mock.MagicMock()
-
-#    def test_execute(self):
-#        net = mock.MagicMock()
-#        active_tokens = [mock.Mock()]
-#        service_interfaces = mock.MagicMock()
-#
-#        self.action.store_parallel_input = mock.Mock()
-#        self.action._create_tokens = mock.Mock()
-#        with mock.patch('flow_workflow.io') as m_io:
-#            parallel_input = ['a', 'b', 'c']
-#            m_io.load_input.return_value = parallel_input
-#            self.action.execute(net=net,
-#                    color_descriptor=self.parent_color_descriptor,
-#                    active_tokens=active_tokens,
-#                    service_interfaces=service_interfaces)
-#
-#            m_io.extract_workflow_data.assert_called_once_with(net,
-#                    active_tokens)
-#            m_io.load_input.assert_called_once_with(net=net,
-#                    input_connections=self.input_connections,
-#                    property_name=self.parallel_property,
-#                    parallel_id=mock.ANY)
-#            self.action.store_parallel_input.assert_called_once_with(
-#                    net, parallel_input, mock.ANY)
-#            self.action._create_tokens.assert_called_once_with(net=net,
-#                    num_tokens=3, color_descriptor=self.parent_color_descriptor,
-#                    workflow_data=mock.ANY)
 
 
     def test_store_parallel_input(self):
