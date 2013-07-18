@@ -3,7 +3,7 @@ import flow_workflow.adapter_base
 
 
 class ConvergeAdapter(flow_workflow.adapter_base.XMLAdapterBase):
-    operation_class = 'converge'
+    operation_class = 'direct_storage'
 
     def future_net(self, input_connections, output_properties, resources):
         return ConvergeNet(name=self.name,

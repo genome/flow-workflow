@@ -64,7 +64,7 @@ class PBSplitExecuteTest(fakeredistest.FakeRedisTest):
 
     def create_operation(self, operation_id, name, **kwargs):
         fop = future_operation.FutureOperation(
-                operation_class='command',  # XXX should be DirectStorage
+                operation_class='direct_storage',
                 operation_id=operation_id,
                 name=name,
                 parent=future_operation.NullFutureOperation(),
@@ -141,7 +141,7 @@ class PBJoinExecuteTest(fakeredistest.FakeRedisTest):
 
     def create_operation(self, operation_id, name, **kwargs):
         fop = future_operation.FutureOperation(
-                operation_class='command',  # XXX should be DirectStorage
+                operation_class='direct_storage',
                 operation_id=operation_id,
                 name=name,
                 parent=future_operation.NullFutureOperation(),

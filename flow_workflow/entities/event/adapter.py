@@ -3,7 +3,6 @@ from flow_workflow.perl_action import adapter_base
 
 class EventAdapter(adapter_base.PerlActionAdapterBase):
     action_type = 'event'
-    operation_class = action_type
 
     @property
     def action_id(self):

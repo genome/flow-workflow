@@ -12,6 +12,9 @@ _NEXT_OPERATION_ID = -1
 def adapter(operation_type, *args, **kwargs):
     global _NEXT_OPERATION_ID
     _NEXT_OPERATION_ID += 1
+    LOG.debug('Loading adapter for operation_type %s, '
+            'with:\nargs: %s\nkwargs: %s',
+            operation_type, args, kwargs)
     ep = head(pkg_resources.iter_entry_points('flow_workflow.adapters',
         sanitize_operation_type(operation_type)))
     cls = ep.load()
@@ -36,6 +39,8 @@ def sanitize_operation_type(operation_type_string):
 
 def load_operation(net, operation_id):
     operation_dict = net.variables[operation_variable_name(operation_id)]
+    LOG.debug('Loading operation %s using dict: %s',
+            operation_id, operation_dict)
 
     ep = head(pkg_resources.iter_entry_points(
         'flow_workflow.operations', operation_dict.pop('_class')))

@@ -22,15 +22,11 @@ null = flow_workflow.adapter_base:NullAdapter
 pass_through = flow_workflow.pass_through.adapters:PassThroughAdapter
 
 [flow_workflow.operations]
-block = flow_workflow.operation_base:PassThroughOperation
-command = flow_workflow.operation_base:DirectStorageOperation
-converge = flow_workflow.operation_base:DirectStorageOperation
-event = flow_workflow.operation_base:DirectStorageOperation
+direct_storage = flow_workflow.operation_base:DirectStorageOperation
 input_connector = flow_workflow.entities.model.operations:InputConnectorOperation
 model = flow_workflow.entities.model.operations:ModelOperation
 null = flow_workflow.operation_base:NullOperation
-output_connector = flow_workflow.operation_base:PassThroughOperation
-input_storage = flow_workflow.operation_base:DirectStorageOperation
+pass_through = flow_workflow.operation_base:PassThroughOperation
 '''
 
 setup(

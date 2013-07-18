@@ -6,7 +6,7 @@ import flow_workflow.factory
 
 
 class InputStorageAdapter(AdapterBase):
-    operation_class = 'input_storage'
+    operation_class = 'direct_storage'
 
     def future_net(self, resources):
         raise RuntimeError('InputStorageAdapter has no future net')

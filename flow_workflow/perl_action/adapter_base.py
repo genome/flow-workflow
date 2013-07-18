@@ -7,6 +7,8 @@ import abc
 
 
 class PerlActionAdapterBase(adapter_base.ParallelXMLAdapterBase):
+    operation_class = 'direct_storage'
+
     def __init__(self, *args, **kwargs):
         adapter_base.ParallelXMLAdapterBase.__init__(self, *args, **kwargs)
         self.log_manager = LogManager(log_dir=self.log_dir,

@@ -44,7 +44,7 @@ class ModelAdapter(adapter_base.ParallelXMLAdapterBase):
                 operation_class='input_connector', parent=self)
         self.output_connector = flow_workflow.factory.adapter(
                 'pass_through', name='output connector',
-                operation_class='output_connector', parent=self)
+                operation_class='pass_through', parent=self)
 
         self._add_child(self.input_connector)
         self._add_child(self.output_connector)

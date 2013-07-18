@@ -3,7 +3,7 @@ import flow_workflow.adapter_base
 
 
 class BlockAdapter(flow_workflow.adapter_base.XMLAdapterBase):
-    operation_class = 'block'
+    operation_class = 'pass_through'
 
 
     def future_net(self, input_connections, output_properties, resources):
