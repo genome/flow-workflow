@@ -1,5 +1,3 @@
-from flow_workflow import io
-from flow_workflow.entities.workflow.action import NotificationAction
 from flow_workflow.entities.workflow.future_nets import WorkflowNet
 from flow_workflow.future_operation import NullFutureOperation
 from flow_workflow.parallel_id import ParallelIdentifier

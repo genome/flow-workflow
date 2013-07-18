@@ -1,4 +1,3 @@
-from flow.petri_net.future import FutureAction
 from flow_workflow.future_nets import WorkflowNetBase
 
 
