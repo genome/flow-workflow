@@ -14,6 +14,9 @@ class UpdateMessage(Message):
             'peer_net_key': basestring,
             'peer_operation_id': int,
             'parallel_index': int,
+            # is this a subworkflow: i.e. DV2, etc.
+            # obviously we can't inspect environment variables here to determine
+            # that.
             'is_subflow': bool,
             'status': basestring,
             'dispatch_id': basestring,
