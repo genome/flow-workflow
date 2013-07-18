@@ -25,7 +25,7 @@ class DirectStorageOperationTest(unittest.TestCase):
 
         self.log_dir = '/exciting/log/dir'
 
-        self.net = mock.Mock()
+        self.net = mock.MagicMock()
         self.operation = operation_base.DirectStorageOperation(
                 net=self.net,
                 child_operation_ids=self.child_operation_ids,
@@ -46,18 +46,17 @@ class DirectStorageOperationTest(unittest.TestCase):
 
 
     def test_child_named(self):
-        with mock.patch('flow_workflow.factory') as factory:
+        with mock.patch('flow_workflow.operation_base.load_operation') as load:
             child = self.operation.child_named('foo')
-            factory.load_operation.assert_called_once_with(net=self.net,
+            load.assert_called_once_with(net=self.net,
                     operation_id=12)
-            self.assertEqual(factory.load_operation.return_value, child)
+            self.assertEqual(load.return_value, child)
 
     def test_parent(self):
-        with mock.patch('flow_workflow.factory') as factory:
+        with mock.patch('flow_workflow.operation_base.load_operation') as load:
             parent = self.operation.parent
-            factory.load_operation.assert_called_once_with(net=self.net,
-                    operation_id=2)
-            self.assertEqual(factory.load_operation.return_value, parent)
+            load.assert_called_once_with(net=self.net, operation_id=2)
+            self.assertEqual(load.return_value, parent)
 
     def test_log_manager(self):
         self.assertEqual('/exciting/log/dir/oot.5.out',

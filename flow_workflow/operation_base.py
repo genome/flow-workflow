@@ -1,7 +1,7 @@
 from flow_workflow import io
 import abc
 import flow_workflow.log_manager
-import flow_workflow.factory
+from flow_workflow.factory import load_operation
 
 
 class Operation(object):
@@ -19,6 +19,8 @@ class Operation(object):
         self.operation_id = operation_id
         self.output_properties = output_properties
         self.parent_operation_id = parent_operation_id
+
+        self._cached_operations = {}
 
     def _child_id_from(self, name):
         return self.child_operation_ids[name]
@@ -51,9 +53,11 @@ class Operation(object):
                 (name, self.name))
 
     def _load_operation(self, operation_id):
-        # XXX Make this cache operations
-        return flow_workflow.factory.load_operation(net=self.net,
-                operation_id=operation_id)
+        if int(operation_id) not in self._cached_operations:
+            self._cached_operations[int(operation_id)] = load_operation(
+                    net=self.net, operation_id=operation_id)
+
+        return self._cached_operations[int(operation_id)]
 
     def load_inputs(self, parallel_id):
         return {name: self.load_input(name=name, parallel_id=parallel_id)
