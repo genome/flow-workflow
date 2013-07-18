@@ -18,7 +18,7 @@ class PBSplitExecuteTest(fakeredistest.FakeRedisTest):
 
         self.parallel_property = 'pfoo'
         self.parallel_input = ['a', 'b', 'c']
-        self.operation = self.create_operations()
+        self.create_operations()
 
         self.action = self.create_action()
 
@@ -60,7 +60,7 @@ class PBSplitExecuteTest(fakeredistest.FakeRedisTest):
         normal_input_operation.store_output(name='barsource',
                 value='bar value', parallel_id=ParallelIdentifier())
 
-        return main_operation
+        self.operation = main_operation
 
     def create_operation(self, operation_id, name, **kwargs):
         fop = future_operation.FutureOperation(
@@ -97,6 +97,95 @@ class PBSplitExecuteTest(fakeredistest.FakeRedisTest):
                     self.operation.load_input(self.parallel_property,
                         parallel_id=ParallelIdentifier().child_identifier(
                             self.operation_id, i)))
+
+class PBJoinExecuteTest(fakeredistest.FakeRedisTest):
+    def setUp(self):
+        fakeredistest.FakeRedisTest.setUp(self)
+
+        self.net = Net.create(self.conn)
+
+        self.parallel_property = 'pfoo'
+        self.input_connections = {
+            7: {self.parallel_property: 'foosource'},
+        }
+        self.output_properties = ['outfoo']
+        self.parallel_output = ['o0', 'o1', 'o2']
+
+        self.create_operations()
+
+        self.action = self.create_action()
+
+        self.color_group = self.net.add_color_group(
+                size=len(self.parallel_output))
+        self.color_descriptor = color.ColorDescriptor(
+                color=self.color_group.begin,
+                group=self.color_group)
+
+        self.tokens = self.create_tokens()
+
+        self.service_interfaces = {}
+
+    def create_operations(self):
+        self.operation_id = 42
+        self.operation = self.create_operation(
+                operation_id=self.operation_id,
+                name='main operation',
+                input_connections=self.input_connections,
+                output_properties=self.parallel_property)
+
+        for i, po in enumerate(self.parallel_output):
+            self.operation.store_output(name=self.output_properties[0],
+                    value=po,
+                    parallel_id=ParallelIdentifier().child_identifier(
+                        self.operation_id, i))
+
+    def create_operation(self, operation_id, name, **kwargs):
+        fop = future_operation.FutureOperation(
+                operation_class='command',  # XXX should be DirectStorage
+                operation_id=operation_id,
+                name=name,
+                parent=future_operation.NullFutureOperation(),
+                log_dir='/exciting/log/dir',
+                **kwargs)
+        fop.save(self.net)
+
+        return factory.load_operation(self.net, operation_id)
+
+    def create_action(self):
+        self.args = {
+            'output_properties': self.output_properties,
+            'operation_id': self.operation_id,
+        }
+        return actions.ParallelByJoin.create(self.conn, args=self.args)
+
+    def create_tokens(self):
+        tokens = []
+        for index, color in enumerate(self.color_group.colors):
+            tokens.append(
+                self.net.create_token(color=color,
+                        color_group_idx=self.color_group.idx,
+                        data=self.token_data_for(index)))
+        return tokens
+
+    def token_data_for(self, index):
+        return {
+            'workflow_data': {
+                'parallel_id':
+                    list(ParallelIdentifier().child_identifier(
+                        self.operation_id, index))
+            },
+        }
+
+    def test_execute(self):
+        active_tokens = set(t.index for t in self.tokens)
+        tokens, deferred = self.action.execute(net=self.net,
+                color_descriptor=self.color_descriptor,
+                active_tokens=active_tokens,
+                service_interfaces=self.service_interfaces)
+        self.assertEqual(1, len(tokens))
+
+        self.assertEqual(['o0', 'o1', 'o2'],
+                self.operation.load_output('outfoo', ParallelIdentifier()))
 
 
 class ParallelBySplitTest(fakeredistest.FakeRedisTest):
