@@ -18,9 +18,8 @@ Converge = flow_workflow.entities.converge.adapter:ConvergeAdapter
 Event = flow_workflow.entities.event.adapter:EventAdapter
 Model = flow_workflow.entities.model.adapter:ModelAdapter
 input_storage = flow_workflow.entities.workflow.adapter:InputStorageAdapter
-input_connector = flow_workflow.entities.model.adapter:InputConnector
-output_connector = flow_workflow.entities.model.adapter:OutputConnector
 null = flow_workflow.adapter_base:NullAdapter
+pass_through = flow_workflow.pass_through.adapters:PassThroughAdapter
 
 [flow_workflow.operations]
 block = flow_workflow.operation_base:PassThroughOperation

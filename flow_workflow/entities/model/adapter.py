@@ -39,10 +39,12 @@ class ModelAdapter(adapter_base.ParallelXMLAdapterBase):
         self.children = []
         self._child_operation_ids = {}
 
-        self.input_connector = flow_workflow.factory.adapter('input connector',
-                parent=self)
+        self.input_connector = flow_workflow.factory.adapter(
+                'pass_through', name='input connector',
+                operation_class='input_connector', parent=self)
         self.output_connector = flow_workflow.factory.adapter(
-                'output connector', parent=self)
+                'pass_through', name='output connector',
+                operation_class='output_connector', parent=self)
 
         self._add_child(self.input_connector)
         self._add_child(self.output_connector)
@@ -145,35 +147,3 @@ class ModelAdapter(adapter_base.ParallelXMLAdapterBase):
                 self.child_output_properties(child.name, output_properties)))
 
         return result
-
-
-class ConnectorAdapter(flow_workflow.adapter_base.AdapterBase):
-    @property
-    def name(self):
-        return self._name
-
-
-class InputConnector(ConnectorAdapter):
-    operation_class = 'input_connector'
-
-    def __init__(self, name='input connector', *args, **kwargs):
-        ConnectorAdapter.__init__(self, *args, **kwargs)
-        self._name = name
-
-    def future_net(self, input_connections, output_properties, resources):
-        return PassThroughNet(name=self.name,
-                operation_id=self.operation_id,
-                input_connections=input_connections)
-
-
-class OutputConnector(ConnectorAdapter):
-    operation_class = 'output_connector'
-
-    def __init__(self, name='output connector', *args, **kwargs):
-        ConnectorAdapter.__init__(self, *args, **kwargs)
-        self._name = name
-
-    def future_net(self, input_connections, output_properties, resources):
-        return PassThroughNet(name=self.name,
-                operation_id=self.parent.operation_id,
-                input_connections=input_connections)
