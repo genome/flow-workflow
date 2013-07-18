@@ -1,4 +1,3 @@
-from flow_workflow.operation_base import NullOperation
 from flow_workflow.factory import operation_variable_name
 
 

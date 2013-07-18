@@ -1,9 +1,7 @@
-from flow.petri_net.actions.base import BasicActionBase
 from flow.shell_command.petri_net import actions
 from flow_workflow.parallel_id import ParallelIdentifier
 from twisted.python.procutils import which
 
-import json
 import logging
 
 
