@@ -110,6 +110,7 @@ class LaunchWorkflowCommandBase(CommandBase):
 
         future_operations = workflow.future_operations(NullFutureOperation(),
                 input_connections=None, output_properties=None)
+
         for future_operation in future_operations:
             future_operation.save(stored_net)
         workflow.store_inputs(stored_net)
@@ -122,6 +123,7 @@ class LaunchWorkflowCommandBase(CommandBase):
         if outputs_file:
             op = factory.load_operation(net=net, operation_id=operation_id)
             outputs = op.load_outputs(parallel_id=ParallelIdentifier())
+
             with open(outputs_file, 'w') as f:
                 json.dump(outputs, f)
 

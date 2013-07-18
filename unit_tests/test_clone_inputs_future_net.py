@@ -21,14 +21,10 @@ class CloneInputsNetTest(unittest.TestCase):
 
 
     def test_path(self):
-        self.assertIn(self.net.starting_place,
+        self.assertIn(self.net.skipping_place,
                 self.net.internal_start_transition.arcs_out)
-        self.assertIn(self.net.store_transition,
-                self.net.starting_place.arcs_out)
-        self.assertIn(self.net.succeeding_place,
-                self.net.store_transition.arcs_out)
         self.assertIn(self.net.internal_success_transition,
-                self.net.succeeding_place.arcs_out)
+                self.net.skipping_place.arcs_out)
 
 
 if __name__ == "__main__":
