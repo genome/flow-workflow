@@ -3,6 +3,22 @@ from flow_workflow.parallel_id import ParallelIdentifier
 import mock
 import unittest
 
+class ParallelIdentifierReferTest(unittest.TestCase):
+    def setUp(self):
+        self.pi = ParallelIdentifier([(6, 2), (8, 3)])
+
+    def test_refers_to_true(self):
+        operation = mock.Mock()
+        operation.operation_id = 6
+
+        self.assertTrue(self.pi.refers_to(operation))
+
+    def test_refers_to_false(self):
+        operation = mock.Mock()
+        operation.operation_id = 2
+
+        self.assertFalse(self.pi.refers_to(operation))
+
 
 class ParallelIdentifierRepresenationTest(unittest.TestCase):
     def test_empty_list(self):
