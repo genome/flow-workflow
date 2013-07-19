@@ -94,7 +94,7 @@ class UpdateChildrenStatuses(WorkflowUpdateActionBase):
 class UpdateOperationStatus(WorkflowUpdateActionBase):
     required_args = ['operation_id', 'status']
 
-    def _execute(historian, net, color_descriptor, parallel_id, workflow_data):
+    def _execute(self, historian, net, color_descriptor, parallel_id, workflow_data):
         operation = self.operation(net)
 
         return update_operation_status(historian, net, operation,
