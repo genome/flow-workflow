@@ -28,6 +28,10 @@ class Operation(object):
     def child_named(self, name):
         return self._load_operation(self._child_id_from(name))
 
+    def iter_children(self):
+        for child_id in self.child_operation_ids.itervalues():
+            yield self._load_operation(child_id)
+
     @property
     def parent(self):
         return self._load_operation(self.parent_operation_id)

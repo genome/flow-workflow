@@ -52,6 +52,19 @@ class DirectStorageOperationTest(unittest.TestCase):
                     operation_id=12)
             self.assertEqual(load.return_value, child)
 
+
+    def test_iter_children(self):
+        load = mock.Mock()
+        self.operation._load_operation = load
+
+        children = list(self.operation.iter_children())
+        self.assertEqual([load.return_value, load.return_value], children)
+
+        self.assertEqual(2, load.call_count)
+        load.assert_any_call(12)
+        load.assert_any_call(42)
+
+
     def test_parent(self):
         with mock.patch('flow_workflow.operation_base.load_operation') as load:
             parent = self.operation.parent
