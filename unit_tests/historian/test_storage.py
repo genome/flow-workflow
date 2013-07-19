@@ -277,6 +277,8 @@ class TestStorage(unittest.TestCase):
 #        self.assertRaises(OperationalError, self.s.update, self.update_info)
 
     def test_bad_status(self):
+        self.s.update(self.update_info)
+
         self.update_info['status'] = 'bad'
         self.assertRaises(ValueError, self.s.update, self.update_info)
 

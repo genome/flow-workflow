@@ -120,7 +120,6 @@ class WorkflowHistorianStorage(object):
         LOG.debug("Attempting to insert or update '%s'", update_info['name'])
         if recursion_level > 1:
             raise RuntimeError("update should never recurse more than once!")
-        update_info = validate_update_info(update_info)
 
         try:
             instance_id = self._insert(transaction, update_info,
@@ -440,17 +439,6 @@ class SimpleTransaction(object):
         self.conn.close()
         self.conn = None
         self.trans = None
-
-
-def validate_update_info(update_info):
-    # XXX should be validated by message
-    validated_update_info = copy.copy(update_info)
-
-    status = update_info.get('status', None)
-    if status not in STATUSES:
-        raise ValueError("Status must be one of %s, not '%s'" %
-                (STATUSES, status))
-    return validated_update_info
 
 
 def execute_and_log(transaction, statement, **kwargs):
