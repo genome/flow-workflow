@@ -4,6 +4,7 @@ class UpdateMessage(Message):
     required_fields = {
             'net_key': basestring,
             'operation_id': int,
+            'color': int,
             'name': basestring,
             'workflow_plan_id': int,
      }
@@ -11,8 +12,10 @@ class UpdateMessage(Message):
     optional_fields = {
             'parent_net_key': basestring,
             'parent_operation_id': int,
+            'parent_color': int,
             'peer_net_key': basestring,
             'peer_operation_id': int,
+            'peer_color': int,
             'parallel_index': int,
             # is this a subworkflow: i.e. DV2, etc.
             # obviously we can't inspect environment variables here to determine

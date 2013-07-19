@@ -63,8 +63,9 @@ CREATE_WORKFLOW_HISTORIAN_TABLE = """
 CREATE TABLE WORKFLOW.WORKFLOW_HISTORIAN (
     NET_KEY varchar not null,
     OPERATION_ID integer not null,
+    COLOR integer not null,
     WORKFLOW_INSTANCE_ID integer,
-    PRIMARY KEY (NET_KEY, OPERATION_ID)
+    PRIMARY KEY (NET_KEY, OPERATION_ID, COLOR)
 )
 """
 CREATE_WORKFLOW_PLAN_TABLE = """
@@ -83,12 +84,14 @@ class TestStorage(unittest.TestCase):
         self.update_info = {
                 'net_key': 'test_net_key',
                 'operation_id': 1234,
+                'color': 1,
                 'name': 'test_name',
                 'workflow_plan_id': 333,
         }
         self.hrows = [{
             'net_key':self.update_info['net_key'],
             'operation_id':self.update_info['operation_id'],
+            'color':self.update_info['color'],
         }]
         self.irows = [{
             'name':self.update_info['name'],
@@ -289,6 +292,7 @@ class TestStorage(unittest.TestCase):
         u2 = copy.copy(self.update_info)
         u2['status'] = 'running'
         u2['operation_id'] = 5678
+        u2['color'] = 1
 
         self.s.update(u1)
         self.s.update(u2)
@@ -303,6 +307,7 @@ class TestStorage(unittest.TestCase):
         self.update_info['status'] = 'running'
         self.update_info['parent_net_key'] = 'test_net_key'
         self.update_info['parent_operation_id'] = 4567
+        self.update_info['parent_color'] = 1
         self.update_info['is_subflow'] = False
 
         self.s.update(self.update_info)
@@ -323,6 +328,7 @@ class TestStorage(unittest.TestCase):
         self.update_info['status'] = 'running'
         self.update_info['parent_net_key'] = 'test_net_key2'
         self.update_info['parent_operation_id'] = 4567
+        self.update_info['parent_color'] = 1
         self.update_info['is_subflow'] = True
 
         self.s.update(self.update_info)
@@ -343,7 +349,7 @@ class TestStorage(unittest.TestCase):
         self.update_info['status'] = 'running'
         self.update_info['peer_net_key'] = self.update_info['net_key']
         self.update_info['peer_operation_id'] = 4567
-
+        self.update_info['peer_color'] = 1
         self.s.update(self.update_info)
 
         rows = [
@@ -363,10 +369,12 @@ class TestStorage(unittest.TestCase):
         u1['name'] = 'peer-guy'
         u1['peer_net_key'] = u1['net_key']
         u1['peer_operation_id'] = u1['operation_id']
+        u1['peer_color'] = u1['color']
 
         u2 = copy.copy(u1)
         u2['name'] = 'another-peer-guy'
         u2['operation_id'] = 4567
+        u2['color'] = 1
 
         self.s.update(u1)
         self.s.update(u2)
