@@ -3,6 +3,17 @@ from flow_workflow.parallel_id import ParallelIdentifier
 import mock
 import unittest
 
+
+class ParallelIdentifierIndexTest(unittest.TestCase):
+    def test_index_empty(self):
+        pi = ParallelIdentifier()
+        self.assertEqual(None, pi.index)
+
+    def test_index_many(self):
+        pi = ParallelIdentifier([(6, 2), (8, 3)])
+        self.assertEqual(3, pi.index)
+
+
 class ParallelIdentifierReferTest(unittest.TestCase):
     def setUp(self):
         self.pi = ParallelIdentifier([(6, 2), (8, 3)])

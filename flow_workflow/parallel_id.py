@@ -12,6 +12,11 @@ class ParallelIdentifier(object):
         self._entries = OrderedDict([(int(op_id), int(par_idx))
                 for op_id, par_idx in parallel_id])
 
+    @property
+    def index(self):
+        if self._entries:
+            return self._entries.values()[-1]
+
     def refers_to(self, operation):
         return int(operation.operation_id) in self._entries
 
