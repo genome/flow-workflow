@@ -1,5 +1,6 @@
 from flow.petri_net import future
 from flow_workflow.entities.workflow.action import NotificationAction
+from flow_workflow.historian.new_action import UpdateOperationStatus
 
 
 class WorkflowNet(future.FutureNet):
@@ -12,6 +13,10 @@ class WorkflowNet(future.FutureNet):
 
         self.start_place.add_arc_out(child_net.start_transition)
 
+        self.observe_transition(child_net.start_transition,
+                observer_action=future.FutureAction(UpdateOperationStatus,
+                name='update_historian',
+                    operation_id=child_net.operation_id, status='new'))
         self.notify_success_transition = self.add_basic_transition(
                 name='notify_success_transition',
                 action=future.FutureAction(
