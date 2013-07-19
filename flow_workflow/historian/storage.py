@@ -440,6 +440,7 @@ class SimpleTransaction(object):
 
 
 def validate_update_info(update_info):
+    # XXX should be validated by message
     validated_update_info = copy.copy(update_info)
 
     status = update_info.get('status', None)
