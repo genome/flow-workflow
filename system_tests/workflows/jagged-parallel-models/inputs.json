@@ -1,0 +1,10 @@
+{
+    "model_prefix_lists": [
+        [99, 98, 97],
+        [96, 95],
+        [94]
+    ],
+    "model_suffixes": [" bottles of beer on the wall", " little birdies"],
+    "command_prefixes": ["He's alive", "He's dead"],
+    "command_suffix": ", Jim."
+}
