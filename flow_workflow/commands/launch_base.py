@@ -46,17 +46,17 @@ class LaunchWorkflowCommandBase(CommandBase):
                 help="File to write final outputs to (json format) "
                      "NOTE: implies --block")
 
-        # XXX Currently ignored
-        parser.add_argument('--email', '-e',
-                help="If set, send notification emails to the given address")
-
         parser.add_argument('--plan-id', '-P', type=int,
                 help="The workflow plan id")
 
+        parser.add_argument('--block', action='store_true')
+
+        # XXX Currently ignored
         parser.add_argument('--project-name', '-N',
                 help="The project name to use for submitted jobs")
 
-        parser.add_argument('--block', action='store_true')
+        parser.add_argument('--email', '-e',
+                help="If set, send notification emails to the given address")
 
     @abc.abstractproperty
     def local_workflow(self):
@@ -74,14 +74,24 @@ class LaunchWorkflowCommandBase(CommandBase):
 
         self.setup_services(net)
 
+        if parsed_arguments.plan_id:
+            net.set_constant('workflow_plan_id', parsed_arguments.plan_id)
+
         yield self.start_net(net, start_place)
 
-        if self.complete():
-            self.write_outputs(net, workflow.child_adapter.operation_id,
-                    workflow.output_properties, parsed_arguments.outputs_file)
-        else:
-            LOG.info('Workflow execution failed.')
-            exit_process(exit_codes.EXECUTE_FAILURE)
+        block = yield self.wait_for_results(parsed_arguments.block)
+
+        LOG.debug('Workflow execution done: %s', block)
+
+        if block:
+            if self.complete():
+                self.write_outputs(net, workflow.child_adapter.operation_id,
+                        workflow.output_properties,
+                        parsed_arguments.outputs_file)
+
+            else:
+                LOG.info('Workflow execution failed.')
+                exit_process(exit_codes.EXECUTE_FAILURE)
 
 
     def complete(self):
@@ -93,7 +103,6 @@ class LaunchWorkflowCommandBase(CommandBase):
         cg = net.add_color_group(1)
         orchestrator = self.service_locator['orchestrator']
         yield orchestrator.create_token(net.key, start_place, cg.begin, cg.idx)
-        yield self.broker.listen()
 
     def construct_net(self, xml_filename, inputs_filename, resources_filename):
         xml = load_xml(xml_filename)

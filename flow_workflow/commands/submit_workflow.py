@@ -6,6 +6,7 @@ from flow.orchestrator.handlers import PetriCreateTokenHandler
 from flow.orchestrator.handlers import PetriNotifyPlaceHandler
 from flow.orchestrator.handlers import PetriNotifyTransitionHandler
 from flow.shell_command.fork.handler import ForkShellCommandMessageHandler
+from twisted.internet import defer
 
 
 class SubmitWorkflowCommand(LaunchWorkflowCommandBase):
@@ -34,3 +35,6 @@ class SubmitWorkflowCommand(LaunchWorkflowCommandBase):
                 self.injector.get(PetriNotifyPlaceHandler))
         self.broker.register_handler(
                 self.injector.get(PetriNotifyTransitionHandler))
+
+    def wait_for_results(self, block):
+        return defer.succeed(block)
