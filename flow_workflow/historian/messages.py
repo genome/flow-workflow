@@ -6,6 +6,7 @@ class UpdateMessage(Message):
             'operation_id': int,
             'color': int,
             'name': basestring,
+            'status': basestring,
             'workflow_plan_id': int,
      }
 
@@ -21,7 +22,6 @@ class UpdateMessage(Message):
             # obviously we can't inspect environment variables here to determine
             # that.
             'is_subflow': bool,
-            'status': basestring,
             'dispatch_id': basestring,
             'user_name': basestring,
             'start_time': basestring,
@@ -30,3 +30,5 @@ class UpdateMessage(Message):
             'stderr': basestring,
             'exit_code': int,
     }
+
+# XXX use validate or data clumps for net_key/operation_id/color combinations.
