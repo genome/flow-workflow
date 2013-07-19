@@ -278,6 +278,7 @@ class WorkflowHistorianStorage(object):
                             operation_id     = parent_operation_id,
                             color            = parent_color,
                             workflow_plan_id = update_info['workflow_plan_id'])
+
             else:
                 putative_dict['PARENT_INSTANCE_ID'] =\
                         self._get_or_create_instance_id(

@@ -1,4 +1,9 @@
+from abc import abstractmethod
 from flow.petri_net.actions.base import BasicActionBase
+from flow_workflow import factory
+from flow_workflow import io
+from flow_workflow.parallel_id import ParallelIdentifier
+from twisted.internet import defer
 
 class WorkflowUpdateActionBase(BasicActionBase):
     required_args = ['operation_id']
@@ -13,16 +18,21 @@ class WorkflowUpdateActionBase(BasicActionBase):
         workflow_data = io.extract_workflow_data(net, active_tokens)
         parallel_id = ParallelIdentifier(workflow_data.get('parallel_id', []))
 
-        self._execute(historian=historian, net=net,
+        deferred = self._execute(historian=historian, net=net,
                 color_descriptor=color_descriptor, parallel_id=parallel_id,
                 workflow_data=workflow_data)
 
-    @property
-    def operation(self):
-        return factory.load_operation(self.args['operation_id'])
+        return [], deferred
 
-def get_workflow_plan_id(net):
-    return net.constant('workflow_plan_id')
+
+    @abstractmethod
+    def _execute(self, historian, net, color_descriptor, parallel_id,
+            workflow_data):
+        raise NotImplementedError()
+
+    def operation(self, net):
+        return factory.load_operation(net, self.args['operation_id'])
+
 
 def get_peer_fields(operation, parallel_id, color_descriptor):
     fields = {}
@@ -33,32 +43,63 @@ def get_peer_fields(operation, parallel_id, color_descriptor):
         fields['parallel_index'] = parallel_id.index
     return fields
 
-def submit_operation(historian, net, operation, color_descriptor,
-        parallel_id, workflow_data, status):
+
+def update_operation_status(historian, net, operation, color_descriptor,
+        parallel_id, workflow_data, status, **additional_properties):
     fields = {
             'net_key': operation.net_key,
             'operation_id': operation.operation_id,
             'color': color_descriptor.color,
             'name': operation.name,
-            'workflow_plan_id': get_workflow_plan_id(net),
-            'parent_net_key': operation.parent.net_key,
-            'parent_operation_id': operation.parent.operation_id,
-            'parent_color': color_descriptor.group.parent_color,
-            'status': 'new',
+            'workflow_plan_id': net.constant('workflow_plan_id'),
+            'status': status,
             }
+
+    fields.update(additional_properties)
+    fields.update(get_parent_fields(operation, parallel_id, color_descriptor))
     fields.update(get_peer_fields(operation, parallel_id, color_descriptor))
+
     return historian.update(**fields)
 
-class UpdateModelAction(WorkflowUpdateActionBase):
 
-    def _execute(historian, net, color_descriptor, parallel_id,
+def get_parent_fields(operation, parallel_id, color_descriptor):
+    fields = {}
+    if operation.parent:
+        fields['parent_net_key'] = operation.parent.net_key
+        fields['parent_operation_id'] = operation.parent.operation_id
+        if parallel_id.refers_to(operation):
+            fields['parent_color'] = color_descriptor.group.parent_color
+        else:
+            fields['parent_color'] = color_descriptor.color
+
+    return fields
+
+
+class UpdateChildrenStatuses(WorkflowUpdateActionBase):
+    required_args = ['operation_id', 'status']
+
+    def _execute(self, historian, net, color_descriptor, parallel_id,
             workflow_data):
         deferreds = []
-        for child_operation in self.operation.children:
-            deferred = self._submit_operation(historian, net, operation_id,
-                    color_descriptor, parallel_id, workflow_data)
+        operation = self.operation(net)
+        for child_operation in operation.iter_children():
+            deferred = update_operation_status(historian, net, child_operation,
+                    color_descriptor, parallel_id, workflow_data,
+                    status=self.args['status'])
             deferreds.append(deferred)
+
         return defer.gatherResults(deferreds)
+
+
+class UpdateOperationStatus(WorkflowUpdateActionBase):
+    required_args = ['operation_id', 'status']
+
+    def _execute(historian, net, color_descriptor, parallel_id, workflow_data):
+        operation = self.operation(net)
+
+        return update_operation_status(historian, net, operation,
+                    color_descriptor, parallel_id, workflow_data,
+                    status=self.args['status'])
 
 
 def env_is_perl_true(net, varname):

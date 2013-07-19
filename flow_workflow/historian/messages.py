@@ -2,32 +2,38 @@ from flow.protocol.message import Message
 
 class UpdateMessage(Message):
     required_fields = {
+            'workflow_plan_id': int,
+
             'net_key': basestring,
             'operation_id': int,
             'color': int,
+
             'name': basestring,
+
             'status': basestring,
-            'workflow_plan_id': int,
      }
 
     optional_fields = {
             'parent_net_key': basestring,
             'parent_operation_id': int,
             'parent_color': int,
+
             'peer_net_key': basestring,
             'peer_operation_id': int,
             'peer_color': int,
+
             'parallel_index': int,
-            # is this a subworkflow: i.e. DV2, etc.
-            # obviously we can't inspect environment variables here to determine
-            # that.
-            'is_subflow': bool,
+
             'dispatch_id': basestring,
+
             'user_name': basestring,
+
             'start_time': basestring,
             'end_time': basestring,
+
             'stdout': basestring,
             'stderr': basestring,
+
             'exit_code': int,
     }
 

@@ -1,4 +1,6 @@
+from flow.petri_net.future import FutureAction
 from flow_workflow.future_nets import WorkflowNetBase
+from flow_workflow.historian.new_action import UpdateChildrenStatuses
 
 
 class ModelNet(WorkflowNetBase):
@@ -17,6 +19,10 @@ class ModelNet(WorkflowNetBase):
                 self.internal_start_transition,
                 subnets['input connector'].start_transition,
                 name='starting')
+
+        self.observe_transition(self.internal_start_transition,
+                FutureAction(UpdateChildrenStatuses,
+                    operation_id=operation_id, status='new'))
 
         self.succeeding_place = self.bridge_transitions(
                 subnets['output connector'].success_transition,
