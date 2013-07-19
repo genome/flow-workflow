@@ -51,6 +51,7 @@ WHERE workflow_execution_id = :workflow_execution_id
 """
 
 STATUSES = [
+        'unknown',
         'new',
         'scheduled',
         'running',
@@ -60,13 +61,13 @@ STATUSES = [
 ]
 
 def _should_overwrite(prev_status, new_status):
-    if new_status is None or new_status == 'new':
-        return False
+#    if new_status is None or new_status == 'new':
+#        return False
 
     prev_index = STATUSES.index(prev_status)
     new_index = STATUSES.index(new_status)
 
-    return new_index >= prev_index
+    return new_index > prev_index
 
 
 TABLES = namedtuple('Tables', ['historian', 'instance', 'execution'])
@@ -371,6 +372,7 @@ class WorkflowHistorianStorage(object):
                     'net_key':net_key,
                     'operation_id':operation_id,
                     'color':color,
+                    'status':'unknown',
                     'name':'unknown name %d' % operation_id,
                     'workflow_plan_id': workflow_plan_id,
             }
@@ -445,9 +447,7 @@ def validate_update_info(update_info):
     validated_update_info = copy.copy(update_info)
 
     status = update_info.get('status', None)
-    if status is None:
-        validated_update_info['status'] = 'new'
-    elif status not in STATUSES:
+    if status not in STATUSES:
         raise ValueError("Status must be one of %s, not '%s'" %
                 (STATUSES, status))
     return validated_update_info

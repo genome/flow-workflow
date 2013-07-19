@@ -85,6 +85,7 @@ class TestStorage(unittest.TestCase):
                 'net_key': 'test_net_key',
                 'operation_id': 1234,
                 'color': 1,
+                'status': 'new',
                 'name': 'test_name',
                 'workflow_plan_id': 333,
         }
@@ -240,9 +241,9 @@ class TestStorage(unittest.TestCase):
         self._test_execution(status='done', stdout='1', stderr='2')
 
 
-        self.update_info['status'] = None
+        self.update_info['status'] = 'unknown'
 
-        # updates nothing because status is None
+        # updates nothing because status is 'unknown'
         self.s.update(self.update_info)
 
         self._test_instance(parallel_index=9)
@@ -320,7 +321,7 @@ class TestStorage(unittest.TestCase):
 
         erows = [
                 {'status':'running'},
-                {'status':'new'},
+                {'status':'unknown'},
         ]
         self._test_execution(rows=erows)
 
@@ -341,7 +342,7 @@ class TestStorage(unittest.TestCase):
 
         erows = [
                 {'status':'running'},
-                {'status':'new'},
+                {'status':'unknown'},
         ]
         self._test_execution(rows=erows)
 
@@ -360,7 +361,7 @@ class TestStorage(unittest.TestCase):
 
         rows = [
                 {'status':'running'},
-                {'status':'new'},
+                {'status':'unknown'},
         ]
         self._test_execution(rows=rows)
 
