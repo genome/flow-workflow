@@ -4,7 +4,7 @@ from flow.handler import Handler
 from flow.util.exit import exit_process
 from flow_workflow.historian.messages import UpdateMessage
 from injector import inject
-from sqlalchemy.exc import ResourceClosedError, TimeoutError, DisconnectionError
+from sqlalchemy.exc import ResourceClosedError, TimeoutError, DisconnectionError, DatabaseError
 from twisted.internet import defer
 
 import flow.interfaces
@@ -26,7 +26,7 @@ class WorkflowHistorianMessageHandler(Handler):
         try:
             self.storage.update(message_dict)
             return defer.succeed(None)
-        except (ResourceClosedError, TimeoutError, DisconnectionError):
+        except (ResourceClosedError, TimeoutError, DisconnectionError, DatabaseError):
             LOG.exception("This historian cannot handle messages anymore, "
                     "because it lost access to Oracle... exiting.")
             exit_process(exit_codes.EXECUTE_FAILURE)
