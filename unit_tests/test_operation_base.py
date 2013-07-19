@@ -64,6 +64,10 @@ class DirectStorageOperationTest(unittest.TestCase):
         load.assert_any_call(12)
         load.assert_any_call(42)
 
+    def test_null_parent(self):
+        self.operation.parent_operation_id = None
+        self.assertIsInstance(self.operation.parent,
+                operation_base.NullOperation)
 
     def test_parent(self):
         with mock.patch('flow_workflow.operation_base.load_operation') as load:

@@ -38,7 +38,10 @@ class Operation(object):
 
     @property
     def parent(self):
-        return self._load_operation(self.parent_operation_id)
+        if self.parent_operation_id:
+            return self._load_operation(self.parent_operation_id)
+        else:
+            return NullOperation()
 
     @property
     def log_manager(self):
@@ -101,6 +104,10 @@ class Operation(object):
 class NullOperation(Operation):
     def __init__(self, *args, **kwargs):
         pass
+
+    @property
+    def operation_id(self):
+        return None
 
     @property
     def net_key(self):
