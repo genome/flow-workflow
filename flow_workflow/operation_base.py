@@ -33,6 +33,10 @@ class Operation(object):
             yield self._load_operation(child_id)
 
     @property
+    def net_key(self):
+        return self.net.key
+
+    @property
     def parent(self):
         return self._load_operation(self.parent_operation_id)
 
@@ -97,6 +101,10 @@ class Operation(object):
 class NullOperation(Operation):
     def __init__(self, *args, **kwargs):
         pass
+
+    @property
+    def net_key(self):
+        return None
 
     def load_output(self, name, parallel_id):
         pass
