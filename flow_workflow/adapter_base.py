@@ -77,8 +77,7 @@ class NullAdapter(AdapterBase):
     def name(self):
         return 'NullAdapter'
 
-    def future_net(self, input_connections, output_properties, resources):
-        # XXX Should return a null net?
+    def future_net(self, resources):
         pass
 
 
