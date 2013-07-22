@@ -6,6 +6,7 @@ from flow_workflow.historian.storage import WorkflowHistorianStorage
 from flow_workflow.historian import storage
 from sqlalchemy.exc import IntegrityError, OperationalError, SQLAlchemyError
 from flow_workflow.historian.status import Status
+from flow_workflow.historian.operation_data import OperationData
 
 class TestHistorianStorage(WorkflowHistorianStorage):
     def __init__(self, *args, **kwargs):
@@ -82,18 +83,21 @@ class TestStorage(unittest.TestCase):
                 owner="WORKFLOW")
         self.s.create_tables()
         self.e = self.s.engine
+
+        self.net_key = 'test_net_key'
+        self.operation_id = 1234
+        self.color = 1
         self.update_info = {
-                'net_key': 'test_net_key',
-                'operation_id': 1234,
-                'color': 1,
+                'operation_data': OperationData(net_key=self.net_key,
+                    operation_id=self.operation_id, color=self.color),
                 'status': Status('new'),
                 'name': 'test_name',
                 'workflow_plan_id': 333,
         }
         self.hrows = [{
-            'net_key':self.update_info['net_key'],
-            'operation_id':self.update_info['operation_id'],
-            'color':self.update_info['color'],
+            'net_key': self.net_key,
+            'operation_id': self.operation_id,
+            'color': self.color,
         }]
         self.irows = [{
             'name':self.update_info['name'],
@@ -290,8 +294,8 @@ class TestStorage(unittest.TestCase):
 
         u2 = copy.copy(self.update_info)
         u2['status'] = Status('running')
-        u2['operation_id'] = 5678
-        u2['color'] = 1
+        u2['operation_data'] = OperationData(net_key=self.net_key,
+                operation_id=5678, color=self.color)
 
         self.s.update(u1)
         self.s.update(u2)
@@ -304,16 +308,15 @@ class TestStorage(unittest.TestCase):
 
     def test_recursive_update_non_subflow(self):
         self.update_info['status'] = Status('running')
-        self.update_info['parent_net_key'] = 'test_net_key'
-        self.update_info['parent_operation_id'] = 4567
-        self.update_info['parent_color'] = 1
+        self.update_info['parent_operation_data'] = OperationData(net_key=self.net_key,
+                operation_id=4567, color=self.color)
         self.update_info['is_subflow'] = False
 
         self.s.update(self.update_info)
 
         irows = [
                 {'name':'test_name', 'parent_instance_id':2},
-                {'name':'unknown name 4567'}, # was made by recursive call
+                {'name':'unknown name operation_id=4567'},
         ]
         self._test_instance(rows=irows)
 
@@ -325,16 +328,15 @@ class TestStorage(unittest.TestCase):
 
     def test_recursive_update_subflow(self):
         self.update_info['status'] = Status('running')
-        self.update_info['parent_net_key'] = 'test_net_key2'
-        self.update_info['parent_operation_id'] = 4567
-        self.update_info['parent_color'] = 1
+        self.update_info['parent_operation_data'] = OperationData(net_key='test_net_key2',
+                operation_id=4567, color=1)
         self.update_info['is_subflow'] = True
 
         self.s.update(self.update_info)
 
         irows = [
                 {'name':'test_name', 'parent_execution_id':2},
-                {'name':'unknown name 4567'}, # was made by recursive call
+                {'name':'unknown name operation_id=4567'},
         ]
         self._test_instance(rows=irows)
 
@@ -346,14 +348,14 @@ class TestStorage(unittest.TestCase):
 
     def test_recursive_update_peer(self):
         self.update_info['status'] = Status('running')
-        self.update_info['peer_net_key'] = self.update_info['net_key']
-        self.update_info['peer_operation_id'] = 4567
-        self.update_info['peer_color'] = 1
+        self.update_info['peer_operation_data'] = OperationData(
+                net_key=self.net_key, operation_id = 4567,
+                color=1)
         self.s.update(self.update_info)
 
         rows = [
                 {'peer_instance_id':2},
-                {'name':'unknown name 4567'},
+                {'name':'unknown name operation_id=4567'},
         ]
         self._test_instance(rows=rows)
 
@@ -366,14 +368,13 @@ class TestStorage(unittest.TestCase):
     def test_non_recursive_update_peer(self):
         u1 = copy.copy(self.update_info)
         u1['name'] = 'peer-guy'
-        u1['peer_net_key'] = u1['net_key']
-        u1['peer_operation_id'] = u1['operation_id']
-        u1['peer_color'] = u1['color']
+        u1['peer_operation_data'] = OperationData(net_key=self.net_key,
+                operation_id=self.operation_id, color=self.color)
 
         u2 = copy.copy(u1)
         u2['name'] = 'another-peer-guy'
-        u2['operation_id'] = 4567
-        u2['color'] = 1
+        u2['operation_data'] = OperationData(net_key=self.net_key,
+                operation_id=4567, color=self.color)
 
         self.s.update(u1)
         self.s.update(u2)
