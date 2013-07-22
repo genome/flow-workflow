@@ -1,5 +1,4 @@
 from flow.petri_net.future import FutureAction
-from flow.petri_net.future import FutureAction
 from flow_workflow.future_nets import WorkflowNetBase
 from flow_workflow.historian import new_action
 

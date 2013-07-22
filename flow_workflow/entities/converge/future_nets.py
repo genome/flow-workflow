@@ -1,6 +1,7 @@
 from flow.petri_net.future import FutureAction
 from flow_workflow.entities.converge.actions import ConvergeAction
 from flow_workflow.future_nets import WorkflowNetBase
+from flow_workflow.historian import new_action
 
 
 class ConvergeNet(WorkflowNetBase):
@@ -24,3 +25,13 @@ class ConvergeNet(WorkflowNetBase):
                 self.converge_transition,
                 self.internal_success_transition,
                 name='succeeding')
+
+        self.observe_transition(self.internal_start_transition,
+                FutureAction(new_action.UpdateOperationStatus,
+                    operation_id=operation_id, status='running',
+                    calculate_start_time=True))
+
+        self.observe_transition(self.internal_success_transition,
+                FutureAction(new_action.UpdateOperationStatus,
+                    operation_id=operation_id, status='done',
+                    calculate_end_time=True))
