@@ -5,6 +5,9 @@ from flow_workflow import io
 from flow_workflow.parallel_id import ParallelIdentifier
 from twisted.internet import defer
 from flow_workflow.historian.operation_data import OperationData
+from flow.util.containers import head
+from time import localtime, strftime
+
 
 class WorkflowUpdateActionBase(BasicActionBase):
     required_args = ['operation_id']
@@ -16,42 +19,70 @@ class WorkflowUpdateActionBase(BasicActionBase):
 
         historian = service_interfaces['workflow_historian']
 
-        workflow_data = io.extract_workflow_data(net, active_tokens)
+        token_data = net.token(head(active_tokens)).data.value
+        workflow_data = token_data.get('workflow_data', {})
         parallel_id = ParallelIdentifier(workflow_data.get('parallel_id', []))
 
         deferred = self._execute(historian=historian, net=net,
                 color_descriptor=color_descriptor, parallel_id=parallel_id,
-                workflow_data=workflow_data)
+                token_data=token_data)
 
         return [], deferred
 
 
     @abstractmethod
     def _execute(self, historian, net, color_descriptor, parallel_id,
-            workflow_data):
+            token_data):
         raise NotImplementedError()
 
     def operation(self, net):
         return factory.load_operation(net, self.args['operation_id'])
 
 
-def update_operation_status(historian, net, operation, color_descriptor,
-        parallel_id, workflow_data, status, **additional_properties):
-    operation_data = OperationData(net_key=operation.net_key,
-            operation_id=operation.operation_id,
-            color=color_descriptor.color)
-    fields = {
-            'operation_data': operation_data.to_dict,
-            'name': operation.name,
-            'workflow_plan_id': net.constant('workflow_plan_id'),
-            'status': status,
-            }
+    def update_operation_status(self, historian, net, operation,
+            color_descriptor, parallel_id, status, token_data,
+            **additional_properties):
+        operation_data = OperationData(net_key=operation.net_key,
+                operation_id=operation.operation_id,
+                color=color_descriptor.color)
+        fields = {
+                'operation_data': operation_data.to_dict,
+                'name': operation.name,
+                'workflow_plan_id': net.constant('workflow_plan_id'),
+                'status': status,
+                }
 
-    fields.update(additional_properties)
-    fields.update(get_parent_fields(operation, parallel_id, color_descriptor))
-    fields.update(get_peer_fields(operation, parallel_id, color_descriptor))
+        fields.update(additional_properties)
+        fields.update(get_parent_fields(operation, parallel_id,
+            color_descriptor))
+        fields.update(get_peer_fields(operation, parallel_id, color_descriptor))
 
-    return historian.update(**fields)
+        fields.update(self.get_shell_command_fields(token_data))
+
+        return historian.update(**fields)
+
+    def get_shell_command_fields(self, token_data):
+        fields = {}
+        if 'job_id' in token_data:
+            fields['dispatch_id'] = '%s%s' % (
+                    self.args.get('preprend_job_id_with', ''),
+                    token_data['job_id'])
+
+        if self.args.get('calculate_start_time', False):
+            fields['start_time'] = self.timestamp
+
+        if self.args.get('calculate_end_time', False):
+            fields['end_time'] = self.timestamp
+
+        return fields
+
+    @property
+    def timestamp(self):
+        now = self.connection.time()
+        # convert (sec, microsec) from redis to floating point sec
+        now = now[0] + now[1] * 1e-6
+
+        return strftime("%Y-%m-%d %H:%M:%S", localtime(now)).upper()
 
 
 def get_parent_fields(operation, parallel_id, color_descriptor):
@@ -83,13 +114,13 @@ class UpdateChildrenStatuses(WorkflowUpdateActionBase):
     required_args = ['operation_id', 'status']
 
     def _execute(self, historian, net, color_descriptor, parallel_id,
-            workflow_data):
+            token_data):
         deferreds = []
         operation = self.operation(net)
         for child_operation in operation.iter_children():
-            deferred = update_operation_status(historian, net, child_operation,
-                    color_descriptor, parallel_id, workflow_data,
-                    status=self.args['status'])
+            deferred = self.update_operation_status(historian, net,
+                    child_operation, color_descriptor, parallel_id,
+                    token_data=token_data, status=self.args['status'])
             deferreds.append(deferred)
 
         return defer.gatherResults(deferreds)
@@ -98,12 +129,13 @@ class UpdateChildrenStatuses(WorkflowUpdateActionBase):
 class UpdateOperationStatus(WorkflowUpdateActionBase):
     required_args = ['operation_id', 'status']
 
-    def _execute(self, historian, net, color_descriptor, parallel_id, workflow_data):
+    def _execute(self, historian, net, color_descriptor, parallel_id,
+            token_data):
         operation = self.operation(net)
 
-        return update_operation_status(historian, net, operation,
-                    color_descriptor, parallel_id, workflow_data,
-                    status=self.args['status'])
+        return self.update_operation_status(historian, net, operation,
+                color_descriptor, parallel_id, token_data=token_data,
+                status=self.args['status'])
 
 
 def env_is_perl_true(net, varname):

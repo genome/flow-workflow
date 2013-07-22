@@ -1,9 +1,9 @@
 VALID_STATUSES = [
         'unknown',
         'new',
+        'shortcutting',
         'scheduled',
         'running',
-        'failed',
         'crashed',
         'done',
 ]
