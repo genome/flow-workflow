@@ -1,5 +1,5 @@
 from flow.protocol.message import Message
-from flow_workflow.historian.storage import STATUSES
+from flow_workflow.historian.status import Status
 
 class UpdateMessage(Message):
     required_fields = {
@@ -40,7 +40,5 @@ class UpdateMessage(Message):
 
     def validate(self):
         Message.validate(self)
-        if self.status not in STATUSES:
-            raise ValueError('UpdateMessage.status field must be one of %s, not %s' %
-                    STATUSES, self.status)
+        Status(self.status) # throws ValueError if invalid
 # XXX use data clumps for net_key/operation_id/color combinations.

@@ -7,6 +7,7 @@ from injector import inject
 from sqlalchemy.exc import ResourceClosedError, TimeoutError, DisconnectionError, DatabaseError
 from twisted.internet import defer
 from flow_workflow.historian.storage import WorkflowHistorianStorage
+from flow_workflow.historian.status import Status
 
 import logging
 import os
@@ -23,6 +24,7 @@ class WorkflowHistorianMessageHandler(Handler):
         message_dict = message.to_dict()
         LOG.info("Updating [net_key='%s', operation_id='%s']: %r",
                 message.net_key, message.operation_id, message_dict)
+        message_dict['status'] = Status(message_dict['status'])
         try:
             self.storage.update(message_dict)
             return defer.succeed(None)
