@@ -5,6 +5,7 @@ from collections import defaultdict
 from flow_workflow.historian.storage import WorkflowHistorianStorage
 from flow_workflow.historian import storage
 from sqlalchemy.exc import IntegrityError, OperationalError, SQLAlchemyError
+from flow_workflow.historian.status import Status
 
 class TestHistorianStorage(WorkflowHistorianStorage):
     def __init__(self, *args, **kwargs):
@@ -85,7 +86,7 @@ class TestStorage(unittest.TestCase):
                 'net_key': 'test_net_key',
                 'operation_id': 1234,
                 'color': 1,
-                'status': 'new',
+                'status': Status('new'),
                 'name': 'test_name',
                 'workflow_plan_id': 333,
         }
@@ -165,16 +166,16 @@ class TestStorage(unittest.TestCase):
 
     def _test_is_done_is_running(self, status, is_done, is_running,
             second_status=None):
-        self.update_info['status'] = status
+        self.update_info['status'] = Status(status)
         self.s.update(self.update_info)
 
         expected_status = status
         if second_status is not None:
-            self.update_info['status'] = second_status
+            self.update_info['status'] = Status(second_status)
             self.s.update(self.update_info)
             expected_status = second_status
 
-        self.erows[0]['status'] = expected_status
+        self.erows[0]['status'] = str(expected_status)
         self.erows[0]['is_done'] = is_done
         self.erows[0]['is_running']= is_running
         self._test_execution(rows=self.erows)
@@ -206,29 +207,29 @@ class TestStorage(unittest.TestCase):
 
     def test_update(self):
         self.s.update(self.update_info)
-        self.update_info['status'] = 'done'
+        self.update_info['status'] = Status('done')
         self.s.update(self.update_info)
 
-        self.erows[0]['status'] = self.update_info['status']
+        self.erows[0]['status'] = str(self.update_info['status'])
         self._test_instance(rows=self.irows)
         self._test_execution(rows=self.erows)
 
     def test_non_overwriting_status_update(self):
-        self.update_info['status'] = 'done'
+        self.update_info['status'] = Status('done')
         self.update_info['stdout'] = '1'
         self.update_info['parallel_index'] = 9
 
         self.s.update(self.update_info)
 
         self.irows[0]['parallel_index'] = self.update_info['parallel_index']
-        self.erows[0]['status'] = self.update_info['status']
+        self.erows[0]['status'] = str(self.update_info['status'])
         self.erows[0]['stdout'] = self.update_info['stdout']
 
         self._test_instance(rows=self.irows)
         self._test_execution(rows=self.erows)
 
 
-        self.update_info['status'] = 'running'
+        self.update_info['status'] = Status('running')
         self.update_info['parallel_index'] = 0
         self.update_info['stdout'] = 'X'
         self.update_info['stderr'] = '2'
@@ -241,7 +242,7 @@ class TestStorage(unittest.TestCase):
         self._test_execution(status='done', stdout='1', stderr='2')
 
 
-        self.update_info['status'] = 'unknown'
+        self.update_info['status'] = Status('unknown')
 
         # updates nothing because status is 'unknown'
         self.s.update(self.update_info)
@@ -250,7 +251,7 @@ class TestStorage(unittest.TestCase):
         self._test_execution(status='done', stdout='1', stderr='2')
 
     def test_overwriting_status_update(self):
-        self.update_info['status'] = 'new'
+        self.update_info['status'] = Status('new')
         self.update_info['stdout'] = '1'
         self.update_info['parallel_index'] = 9
 
@@ -259,7 +260,7 @@ class TestStorage(unittest.TestCase):
         self._test_instance(parallel_index=9)
         self._test_execution(status='new', stdout='1')
 
-        self.update_info['status'] = 'running'
+        self.update_info['status'] = Status('running')
         self.update_info['parallel_index'] = 0
         self.update_info['stdout'] = 'X'
         self.update_info['stderr'] = '2'
@@ -276,11 +277,6 @@ class TestStorage(unittest.TestCase):
 #        # create
 #        self.assertRaises(OperationalError, self.s.update, self.update_info)
 
-    def test_bad_status(self):
-        self.s.update(self.update_info)
-
-        self.update_info['status'] = 'bad'
-        self.assertRaises(ValueError, self.s.update, self.update_info)
 
     def test_default_insertion_values(self):
         # no 'status' in update_info
@@ -290,10 +286,10 @@ class TestStorage(unittest.TestCase):
 
     def test_double_insert(self):
         u1 = copy.copy(self.update_info)
-        u1['status'] = 'new'
+        u1['status'] = Status('new')
 
         u2 = copy.copy(self.update_info)
-        u2['status'] = 'running'
+        u2['status'] = Status('running')
         u2['operation_id'] = 5678
         u2['color'] = 1
 
@@ -307,7 +303,7 @@ class TestStorage(unittest.TestCase):
         self._test_execution(rows=rows)
 
     def test_recursive_update_non_subflow(self):
-        self.update_info['status'] = 'running'
+        self.update_info['status'] = Status('running')
         self.update_info['parent_net_key'] = 'test_net_key'
         self.update_info['parent_operation_id'] = 4567
         self.update_info['parent_color'] = 1
@@ -328,7 +324,7 @@ class TestStorage(unittest.TestCase):
         self._test_execution(rows=erows)
 
     def test_recursive_update_subflow(self):
-        self.update_info['status'] = 'running'
+        self.update_info['status'] = Status('running')
         self.update_info['parent_net_key'] = 'test_net_key2'
         self.update_info['parent_operation_id'] = 4567
         self.update_info['parent_color'] = 1
@@ -349,7 +345,7 @@ class TestStorage(unittest.TestCase):
         self._test_execution(rows=erows)
 
     def test_recursive_update_peer(self):
-        self.update_info['status'] = 'running'
+        self.update_info['status'] = Status('running')
         self.update_info['peer_net_key'] = self.update_info['net_key']
         self.update_info['peer_operation_id'] = 4567
         self.update_info['peer_color'] = 1

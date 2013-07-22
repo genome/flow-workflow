@@ -6,6 +6,7 @@ from sqlalchemy import event
 from sqlalchemy.dialects.oracle import dialect as oracle_dialect
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.pool import StaticPool
+from flow_workflow.historian.status import Status
 
 import copy
 import logging
@@ -49,25 +50,6 @@ STATEMENTS_DICT['select_execution'] = """
     SELECT * from %s.workflow_instance_execution
 WHERE workflow_execution_id = :workflow_execution_id
 """
-
-STATUSES = [
-        'unknown',
-        'new',
-        'scheduled',
-        'running',
-        'failed',
-        'crashed',
-        'done',
-]
-
-def _should_overwrite(prev_status, new_status):
-#    if new_status is None or new_status == 'new':
-#        return False
-
-    prev_index = STATUSES.index(prev_status)
-    new_index = STATUSES.index(new_status)
-
-    return new_index > prev_index
 
 
 TABLES = namedtuple('Tables', ['historian', 'instance', 'execution'])
@@ -143,8 +125,9 @@ class WorkflowHistorianStorage(object):
 
         instance_row, execution_row = self._get_rows(transaction,
                 instance_id)
-        should_overwrite = _should_overwrite(
-                execution_row['STATUS'], update_info['status'])
+        stored_status = Status(execution_row['STATUS'])
+        new_status = update_info['status']
+        should_overwrite = new_status.should_overwrite(stored_status)
 
         update_instance_dict = self._get_update_instance_dict(
                 transaction      = transaction,
@@ -311,8 +294,8 @@ class WorkflowHistorianStorage(object):
         putative_dict = {}
 
         status = update_info['status']
-        putative_dict['IS_RUNNING'] = status in ['running', 'scheduled']
-        putative_dict['IS_DONE'] = status == 'done'
+        putative_dict['IS_RUNNING'] = status.is_running
+        putative_dict['IS_DONE'] = status.is_done
         putative_dict['STATUS'] = status
 
         for var_name in ['DISPATCH_ID', 'START_TIME', 'END_TIME', 'STDOUT',
@@ -371,7 +354,7 @@ class WorkflowHistorianStorage(object):
                     'net_key':net_key,
                     'operation_id':operation_id,
                     'color':color,
-                    'status':'unknown',
+                    'status':Status('unknown'),
                     'name':'unknown name %d' % operation_id,
                     'workflow_plan_id': workflow_plan_id,
             }
@@ -414,6 +397,10 @@ class SimpleTransaction(object):
         return conn, trans
 
     def execute(self, *args, **kwargs):
+        STRINGIFY = ['STATUS']
+        for string_key in STRINGIFY:
+            if string_key in kwargs:
+                kwargs[string_key] = str(kwargs[string_key])
         return self.conn.execute(*args, **kwargs)
 
     def commit(self, *args, **kwargs):
