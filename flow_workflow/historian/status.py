@@ -8,6 +8,15 @@ VALID_STATUSES = [
         'done',
 ]
 
+RUNNING_STATUSES = [
+        'running',
+        'scheduled',
+        ]
+
+DONE_STATUSES = [
+        'done',
+        ]
+
 class Status(object):
     def __init__(self, text=VALID_STATUSES[0]):
         self.text = text
@@ -27,4 +36,15 @@ class Status(object):
 
     def __cmp__(self, other):
         return cmp(self.index, other.index)
+
+    @property
+    def is_running(self):
+        return self.text in RUNNING_STATUSES
+
+    @property
+    def is_done(self):
+        return self.text in DONE_STATUSES
+
+    def __str__(self):
+        return str(self.text)
 
