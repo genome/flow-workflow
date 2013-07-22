@@ -1,10 +1,11 @@
 from flow.commands.service import ServiceCommand
 from flow.configuration.inject.broker import BrokerConfiguration
 from flow_workflow.configuration.inject.oltp import OLTPConfiguration
-from flow_workflow.historian.handler import WorkflowHistorianMessageHandler
+from flow_workflow.historian import handler
 from injector import inject
 
 import logging
+
 
 LOG = logging.getLogger(__name__)
 
@@ -16,6 +17,9 @@ class WorkflowHistorianCommand(ServiceCommand):
     ]
 
     def _setup(self, *args, **kwargs):
-        self.handlers = [self.injector.get(WorkflowHistorianMessageHandler)]
+        self.handlers = [
+            self.injector.get(handler.HistorianDeleteHandler),
+            self.injector.get(handler.HistorianUpdateHandler),
+        ]
 
         return ServiceCommand._setup(self, *args, **kwargs)

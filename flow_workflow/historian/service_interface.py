@@ -1,5 +1,5 @@
 from flow.configuration.settings.injector import setting
-from flow_workflow.historian.messages import UpdateMessage
+from flow_workflow.historian import messages
 from injector import inject
 from twisted.internet import defer
 
@@ -13,10 +13,12 @@ LOG = logging.getLogger(__name__)
 
 @inject(broker=flow.interfaces.IBroker,
         exchange=setting('workflow.historian.exchange'),
-        routing_key=setting('workflow.historian.routing_key'))
-class WorkflowHistorianServiceInterface(flow_workflow.interfaces.IWorkflowHistorian):
+        delete_routing_key=setting('workflow.historian.delete_routing_key'),
+        update_routing_key=setting('workflow.historian.update_routing_key'))
+class WorkflowHistorianServiceInterface(
+        flow_workflow.interfaces.IWorkflowHistorian):
     def update(self, operation_data, name, workflow_plan_id, **kwargs):
-        if workflow_plan_id < 0:
+        if workflow_plan_id is None or workflow_plan_id < 0:
             # ignore update (don't even make message)
             LOG.debug("Received negative workflow_plan_id:%s, "
                     "ignoring update (operation_data=%s, name=%s,"
@@ -28,6 +30,15 @@ class WorkflowHistorianServiceInterface(flow_workflow.interfaces.IWorkflowHistor
             LOG.debug("Sending update (operation_data=%s, name=%s,"
                     "workflow_plan_id=%s, kwargs=%s)",
                     operation_data, name, workflow_plan_id, kwargs)
-            message = UpdateMessage(operation_data=operation_data, name=name,
-                    workflow_plan_id=workflow_plan_id, **kwargs)
-            return self.broker.publish(self.exchange, self.routing_key, message)
+            message = messages.UpdateMessage(operation_data=operation_data,
+                    name=name, workflow_plan_id=workflow_plan_id, **kwargs)
+            return self.broker.publish(self.exchange, self.update_routing_key,
+                    message)
+
+    def delete(self, operation_data, workflow_plan_id):
+        if workflow_plan_id is None or workflow_plan_id < 0:
+            return defer.succeed(None)
+        else:
+            return self.broker.publish(self.exchange, self.delete_routing_key,
+                    messages.DeleteMessage(
+                        operation_data=operation_data.to_dict))

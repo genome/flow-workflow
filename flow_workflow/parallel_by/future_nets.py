@@ -1,7 +1,7 @@
 from flow.petri_net.future import FutureAction
 from flow_workflow.parallel_by import actions
 from flow_workflow.future_nets import WorkflowNetBase
-from flow_workflow.historian.new_action import UpdateOperationStatus
+from flow_workflow.historian import new_action
 
 
 class ParallelByNet(WorkflowNetBase):
@@ -20,6 +20,7 @@ class ParallelByNet(WorkflowNetBase):
 
         self.subnets.add(target_net)
 
+
         # split_transition
         split_action = FutureAction(cls=actions.ParallelBySplit,
                 operation_id=operation_id,
@@ -36,8 +37,12 @@ class ParallelByNet(WorkflowNetBase):
                 target_net.start_transition,
                 name='succeeding-split')
 
+        # historian observers
+        self.observe_transition(self.internal_start_transition,
+                FutureAction(new_action.DeletePlaceholderOperation,
+                    operation_id=self.operation_id))
         self.observe_transition(self.split_transition,
-                FutureAction(UpdateOperationStatus,
+                FutureAction(new_action.UpdateOperationStatus,
                     operation_id=self.operation_id, status='new'))
 
         # join_transition

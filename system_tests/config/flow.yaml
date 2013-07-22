@@ -15,6 +15,9 @@ bindings:
         petri_notify_transition:
             - petri.transition.notify
 
+        workflow_historian_delete:
+            - workflow_historian.delete
+
         workflow_historian_update:
             - workflow_historian.update
 
@@ -80,10 +83,12 @@ workflow:
     perl_wrapper: ['workflow-wrapper.pl']
     historian:
         exchange: flow
-        routing_key: workflow_historian.update
+        delete_routing_key: workflow_historian.delete
+        update_routing_key: workflow_historian.update
         connection_string: "oracle://wrkflo_user:wfl0us3r@gscprod"
         owner: WORKFLOW
-        queue: workflow_historian_update
+        delete_queue: workflow_historian_delete
+        update_queue: workflow_historian_update
 
 
 logging:

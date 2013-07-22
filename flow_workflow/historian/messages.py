@@ -1,15 +1,13 @@
 from flow.protocol.message import Message
 from flow_workflow.historian.status import Status
 
+
 class UpdateMessage(Message):
     required_fields = {
-            'workflow_plan_id': int,
-
-            'operation_data': dict,
-
             'name': basestring,
-
+            'operation_data': dict,
             'status': basestring,
+            'workflow_plan_id': int,
      }
 
     optional_fields = {
@@ -35,4 +33,9 @@ class UpdateMessage(Message):
     def validate(self):
         Message.validate(self)
         Status(self.status) # throws ValueError if invalid
-# XXX use data clumps for net_key/operation_id/color combinations.
+
+
+class DeleteMessage(Message):
+    required_fields = {
+        'operation_data': dict,
+    }
