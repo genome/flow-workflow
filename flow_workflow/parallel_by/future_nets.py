@@ -1,6 +1,7 @@
 from flow.petri_net.future import FutureAction
 from flow_workflow.parallel_by import actions
 from flow_workflow.future_nets import WorkflowNetBase
+from flow_workflow.historian.new_action import UpdateOperationStatus
 
 
 class ParallelByNet(WorkflowNetBase):
@@ -34,6 +35,10 @@ class ParallelByNet(WorkflowNetBase):
                 self.split_transition,
                 target_net.start_transition,
                 name='succeeding-split')
+
+        self.observe_transition(self.split_transition,
+                FutureAction(UpdateOperationStatus,
+                    operation_id=self.operation_id, status='new'))
 
         # join_transition
         join_action = FutureAction(cls=actions.ParallelByJoin,
