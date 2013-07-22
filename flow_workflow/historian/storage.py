@@ -108,9 +108,8 @@ class WorkflowHistorianStorage(object):
                     recursion_level)
             LOG.debug("Inserted '%s'", update_info['name'])
         except CannotInsertError:
-            LOG.debug("Failed to insert (net_key=%s, operation_id=%s, color=%s) into "
-                    "workflow_historian table, attempting update instead.",
-                    update_info['net_key'], update_info['operation_id'], update_info['color'])
+            LOG.debug("Failed to insert %s into workflow_historian table, "
+                    "attempting update instead.", update_info['operation_data'])
             instance_id = self._update(transaction, update_info,
                     recursion_level)
             LOG.debug("Updated '%s'", update_info['name'])
@@ -119,9 +118,7 @@ class WorkflowHistorianStorage(object):
 
     def _update(self, transaction, update_info, recursion_level):
         instance_id = self._get_instance_id(transaction,
-                net_key          = update_info['net_key'],
-                operation_id     = update_info['operation_id'],
-                color            = update_info['color'])
+                update_info['operation_data'])
 
         instance_row, execution_row = self._get_rows(transaction,
                 instance_id)
@@ -166,22 +163,16 @@ class WorkflowHistorianStorage(object):
         try:
             execute_and_log(transaction,
                     self.statements.insert_into_workflow_historian,
-                    net_key      = update_info['net_key'],
-                    operation_id = update_info['operation_id'],
-                    color        = update_info['color'])
+                    operation_data = update_info['operation_data'])
         except IntegrityError:
             raise CannotInsertError("Couldn't insert into WORKFLOW_HISTORIAN "
-                    "with (net_key=%s, operation_id=%s, color=%s)" %
-                    (update_info['net_key'], update_info['operation_id'],
-                        update_info['color']))
+                    "with %s" % update_info['operation_data'])
 
         # update workflow_historian table
         instance_id = self.next_instance_id(transaction)
         execute_and_log(transaction,
                 self.statements.update_workflow_historian,
-                net_key              = update_info['net_key'],
-                operation_id         = update_info['operation_id'],
-                color                = update_info['color'],
+                operation_data = update_info['operation_data'],
                 workflow_instance_id = instance_id)
 
         # insert into instance
@@ -249,37 +240,27 @@ class WorkflowHistorianStorage(object):
             update_info, instance_row, should_overwrite):
         putative_dict = {}
 
-        parent_net_key = update_info.get('parent_net_key', None)
-        parent_operation_id = update_info.get('parent_operation_id', None)
-        parent_color = update_info.get('parent_color', None)
-        if parent_net_key is not None:
+        parent_operation_data = update_info.get('parent_operation_data')
+        if parent_operation_data is not None:
             if update_info.get('is_subflow', None):
                 putative_dict['PARENT_EXECUTION_ID'] =\
                         self._get_or_create_execution_id(
                             transaction, recursion_level,
-                            net_key          = parent_net_key,
-                            operation_id     = parent_operation_id,
-                            color            = parent_color,
+                            operation_data   = parent_operation_data,
                             workflow_plan_id = update_info['workflow_plan_id'])
 
             else:
                 putative_dict['PARENT_INSTANCE_ID'] =\
                         self._get_or_create_instance_id(
                             transaction, recursion_level,
-                            net_key          = parent_net_key,
-                            operation_id     = parent_operation_id,
-                            color            = parent_color,
+                            operation_data   = parent_operation_data,
                             workflow_plan_id = update_info['workflow_plan_id'])
 
-        peer_net_key = update_info.get('peer_net_key', None)
-        peer_operation_id = update_info.get('peer_operation_id', None)
-        peer_color = update_info.get('peer_color', None)
-        if peer_net_key is not None:
+        peer_operation_data = update_info.get('peer_operation_data')
+        if peer_operation_data is not None:
             putative_dict['PEER_INSTANCE_ID'] = self._get_or_create_instance_id(
                     transaction, recursion_level,
-                    net_key          = peer_net_key,
-                    operation_id     = peer_operation_id,
-                    color            = peer_color,
+                    operation_data   = peer_operation_data,
                     workflow_plan_id = update_info['workflow_plan_id'])
 
         for var_name in ['PARALLEL_INDEX', 'WORKFLOW_PLAN_ID', 'NAME']:
@@ -322,10 +303,10 @@ class WorkflowHistorianStorage(object):
                     update_dict[column_name] = value
         return update_dict
 
-    def _select_instance_id(self, transaction, net_key, operation_id, color):
+    def _select_instance_id(self, transaction, operation_data):
         result = execute_and_log(transaction,
                 self.statements.select_instance_id,
-                net_key=net_key, operation_id=operation_id, color=color)
+                operation_data=operation_data)
         rows = result.fetchall()
         if rows:
             instance_id = rows[0][0]
@@ -333,9 +314,8 @@ class WorkflowHistorianStorage(object):
                 return instance_id
         return None
 
-    def _get_instance_id(self, transaction, net_key, operation_id, color):
-        instance_id = self._select_instance_id(transaction, net_key,
-                operation_id, color)
+    def _get_instance_id(self, transaction, operation_data):
+        instance_id = self._select_instance_id(transaction, operation_data)
         if instance_id is not None:
             return instance_id
         else:
@@ -343,31 +323,27 @@ class WorkflowHistorianStorage(object):
                 " table, but didn't!")
 
     def _get_or_create_instance_id(self, transaction, recursion_level,
-            net_key, operation_id, color, workflow_plan_id):
+            operation_data, workflow_plan_id):
 
-        instance_id = self._select_instance_id(transaction, net_key,
-                operation_id, color)
+        instance_id = self._select_instance_id(transaction, operation_data)
         if instance_id is not None:
             return instance_id
         else:
             update_info = {
-                    'net_key':net_key,
-                    'operation_id':operation_id,
-                    'color':color,
+                    'operation_data': operation_data,
                     'status':Status('unknown'),
-                    'name':'unknown name %d' % operation_id,
+                    'name':'unknown name operation_id=%d' %
+                        operation_data.operation_id,
                     'workflow_plan_id': workflow_plan_id,
             }
             return self._recursive_insert_or_update(transaction, update_info,
                     recursion_level+1)
 
     def _get_or_create_execution_id(self, transaction, recursion_level,
-            workflow_plan_id, net_key, operation_id, color):
+            workflow_plan_id, operation_data):
         instance_id = self._get_or_create_instance_id(transaction,
                 recursion_level  = recursion_level,
-                net_key          = net_key,
-                operation_id     = operation_id,
-                color            = color,
+                operation_data   = operation_data,
                 workflow_plan_id = workflow_plan_id)
 
         result = execute_and_log(transaction,
@@ -401,6 +377,11 @@ class SimpleTransaction(object):
         for string_key in STRINGIFY:
             if string_key in kwargs:
                 kwargs[string_key] = str(kwargs[string_key])
+        DICTIFY = ['operation_data']
+        for dict_key in DICTIFY:
+            if dict_key in kwargs:
+                operation_data = kwargs.pop(dict_key)
+                kwargs.update(operation_data.to_dict)
         return self.conn.execute(*args, **kwargs)
 
     def commit(self, *args, **kwargs):

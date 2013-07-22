@@ -5,9 +5,7 @@ class UpdateMessage(Message):
     required_fields = {
             'workflow_plan_id': int,
 
-            'net_key': basestring,
-            'operation_id': int,
-            'color': int,
+            'operation_data': dict,
 
             'name': basestring,
 
@@ -15,13 +13,9 @@ class UpdateMessage(Message):
      }
 
     optional_fields = {
-            'parent_net_key': basestring,
-            'parent_operation_id': int,
-            'parent_color': int,
+            'parent_operation_data': dict,
 
-            'peer_net_key': basestring,
-            'peer_operation_id': int,
-            'peer_color': int,
+            'peer_operation_data': dict,
 
             'parallel_index': int,
 

@@ -4,6 +4,7 @@ from flow_workflow import factory
 from flow_workflow import io
 from flow_workflow.parallel_id import ParallelIdentifier
 from twisted.internet import defer
+from flow_workflow.historian.operation_data import OperationData
 
 class WorkflowUpdateActionBase(BasicActionBase):
     required_args = ['operation_id']
@@ -34,22 +35,13 @@ class WorkflowUpdateActionBase(BasicActionBase):
         return factory.load_operation(net, self.args['operation_id'])
 
 
-def get_peer_fields(operation, parallel_id, color_descriptor):
-    fields = {}
-    if parallel_id.refers_to(operation):
-        fields['peer_net_key'] = operation.net.key
-        fields['peer_operation_id'] = operation.operation_id
-        fields['peer_color'] = color_descriptor.group.begin
-        fields['parallel_index'] = parallel_id.index
-    return fields
-
-
 def update_operation_status(historian, net, operation, color_descriptor,
         parallel_id, workflow_data, status, **additional_properties):
+    operation_data = OperationData(net_key=operation.net_key,
+            operation_id=operation.operation_id,
+            color=color_descriptor.color)
     fields = {
-            'net_key': operation.net_key,
-            'operation_id': operation.operation_id,
-            'color': color_descriptor.color,
+            'operation_data': operation_data.to_dict,
             'name': operation.name,
             'workflow_plan_id': net.constant('workflow_plan_id'),
             'status': status,
@@ -63,16 +55,28 @@ def update_operation_status(historian, net, operation, color_descriptor,
 
 
 def get_parent_fields(operation, parallel_id, color_descriptor):
-    fields = {}
-    if operation.parent:
-        fields['parent_net_key'] = operation.parent.net_key
-        fields['parent_operation_id'] = operation.parent.operation_id
+    if operation.parent.operation_id:
         if parallel_id.refers_to(operation):
-            fields['parent_color'] = color_descriptor.group.parent_color
+            color = color_descriptor.group.parent_color
         else:
-            fields['parent_color'] = color_descriptor.color
+            color = color_descriptor.color
+        operation_data = OperationData(net_key=operation.parent.net_key,
+                operation_id=operation.parent.operation_id,
+                color=color)
+        return {'parent_operation_data': operation_data.to_dict}
+    else:
+        return {}
 
-    return fields
+
+def get_peer_fields(operation, parallel_id, color_descriptor):
+    if parallel_id.refers_to(operation):
+        operation_data = OperationData(net_key=operation.net_key,
+                operation_id=operation.operation_id,
+                color=color_descriptor.group.begin)
+        return {'peer_operation_data': operation_data.to_dict,
+                'parallel_index':parallel_id.index}
+    else:
+        return {}
 
 
 class UpdateChildrenStatuses(WorkflowUpdateActionBase):

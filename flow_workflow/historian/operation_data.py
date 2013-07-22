@@ -11,9 +11,17 @@ class OperationData(object):
         pass
 
     @property
-    def as_dict(self):
+    def to_dict(self):
         return {
             'net_key': self.net_key,
             'operation_id': self.operation_id,
             'color': self.color
         }
+
+    @classmethod
+    def from_dict(cls, operation_data_dict):
+        return cls(**operation_data_dict)
+
+    def __str__(self):
+        return "OperationData(net_key=%s, operation_id=%s, color=%s)" % (
+                self.net_key, self.operation_id, self.color)
