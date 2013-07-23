@@ -1,5 +1,6 @@
 from flow.shell_command.petri_net import actions
 from flow_workflow.parallel_id import ParallelIdentifier
+from flow_workflow.historian.operation_data import OperationData
 from twisted.python.procutils import which
 
 import logging
@@ -19,12 +20,13 @@ class PerlAction(object):
     required_arguments = ['operation_id', 'method', 'action_type', 'action_id']
 
 
-    def environment(self, net):
+    def environment(self, net, color_descriptor):
         env = net.constant('environment', {})
-        parent_id = '%s %s' % (net.key, self.args['operation_id'])
+        operation_data = OperationData(net_key=net.key,
+                operation_id=self.args['operation_id'],
+                color=color_descriptor.color)
 
-        env['FLOW_WORKFLOW_PARENT_ID'] = parent_id
-
+        env['FLOW_WORKFLOW_OPERATION_DATA'] = operation_data.dumps()
         return env
 
     def command_line(self, net, token_data):

@@ -58,9 +58,9 @@ class NullFutureOperation(FutureOperation):
 
 
 class ForeignFutureOperation(object):
-    def __init__(self, operation_id, net_key):
-        self.operation_id = operation_id
-        self._net_key = net_key
+    def __init__(self, operation_data):
+        self.operation_id = operation_data.operation_id
+        self._net_key = operation_data.net_key
 
     def net_key(self, default_net_key):
         return self._net_key

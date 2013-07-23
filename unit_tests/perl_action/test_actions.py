@@ -1,6 +1,7 @@
 from flow.petri_net import color
 from flow_workflow.perl_action import actions
 from flow_workflow.parallel_id import ParallelIdentifier
+from flow_workflow.historian.operation_data import OperationData
 
 import fakeredis
 import mock
@@ -10,31 +11,39 @@ import unittest
 class PerlActionTest(unittest.TestCase):
     def setUp(self):
         self.action = actions.PerlAction()
-        self.environment = {
-            'foo': 'bar',
-            'baz': 'buz',
-        }
-
         self.args = {
             'method': 'method',
             'action_type': 'action_type',
             'action_id': 'action_id',
-            'operation_id': 'op_id',
+            'operation_id': 999,
         }
         self.action.args = self.args
 
         self.net = mock.Mock()
-        self.net.constant.return_value = self.environment
         self.net.key = 'netkey'
 
     def test_environment(self):
-        result_env = self.action.environment(self.net)
+        operation_id = 42
+        color = 9
+        color_descriptor = mock.Mock()
+        color_descriptor.color = color
+        operation_data = OperationData(net_key=self.net.key,
+                operation_id=operation_id,
+                color=color)
+
+        environment = {
+            'foo': 'bar',
+            'baz': 'buz',
+        }
+        self.net.constant.return_value = environment
+
+        result_env = self.action.environment(self.net, color_descriptor)
         self.net.constant.assert_called_once_with('environment', {})
 
         expected_environment = {
-            'FLOW_WORKFLOW_PARENT_ID': 'netkey op_id',
+                'FLOW_WORKFLOW_OPERATION_DATA': operation_data.dumps(),
         }
-        expected_environment.update(self.environment)
+        expected_environment.update(environment)
         self.assertEqual(expected_environment, result_env)
 
     def test_command_line_no_parallel_index(self):
@@ -44,7 +53,7 @@ class PerlActionTest(unittest.TestCase):
             '--action-type', 'action_type',
             '--action-id', 'action_id',
             '--net-key', 'netkey',
-            '--operation-id', 'op_id',
+            '--operation-id', '999',
         ]
 
         token_data = {}
@@ -58,7 +67,7 @@ class PerlActionTest(unittest.TestCase):
             '--action-type', 'action_type',
             '--action-id', 'action_id',
             '--net-key', 'netkey',
-            '--operation-id', 'op_id',
+            '--operation-id', '999',
             '--parallel-id', '[[3, 4]]',
         ]
 
