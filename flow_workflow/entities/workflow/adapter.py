@@ -66,13 +66,17 @@ class WorkflowAdapter(AdapterBase):
 
     def future_operation(self, parent_future_operation, input_connections,
             output_properties):
-        return NullFutureOperation()
+        return parent_future_operation
 
     def future_operations(self, parent_future_operation,
             input_connections, output_properties):
         return self.inputs_storage_adapter.future_operations(
-                NullFutureOperation(), input_connections, output_properties
+                self.future_operation(parent_future_operation,
+                    input_connections, output_properties),
+                input_connections,
+                output_properties
                     ) + self.child_adapter.future_operations(
-                            NullFutureOperation(),
+                            self.future_operation(parent_future_operation,
+                                input_connections, output_properties),
                             self.input_connections,
                             self.output_properties)

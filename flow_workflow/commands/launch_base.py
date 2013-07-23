@@ -104,6 +104,25 @@ class LaunchWorkflowCommandBase(CommandBase):
         orchestrator = self.service_locator['orchestrator']
         yield orchestrator.create_token(net.key, start_place, cg.begin, cg.idx)
 
+    @property
+    def is_subflow(self):
+        if self.net_key and self.operation_id:
+            return True
+        elif not self.net_key and not self.operation_id:
+            return False
+        else:
+            raise RuntimeError('Could not determine whether starting a '
+                    'subflow: net_key=%r operation_id=%r' % (self.net_key,
+                        self.operation_id))
+
+    @property
+    def net_key(self):
+        return os.environ.get('FLOW_WORKFLOW_NET_KEY')
+
+    @property
+    def operation_id(self):
+        return os.environ.get('FLOW_WORKFLOW_OPERATION_ID')
+
     def construct_net(self, xml_filename, inputs_filename, resources_filename):
         xml = load_xml(xml_filename)
         inputs = load_inputs(inputs_filename)
@@ -118,7 +137,15 @@ class LaunchWorkflowCommandBase(CommandBase):
         builder = Builder(self.storage)
         stored_net = builder.store(future_net, self.variables, self.constants)
 
-        future_operations = workflow.future_operations(NullFutureOperation(),
+        if self.is_subflow:
+            parent_future_op = ForeignFutureOperation(
+                    operation_id=self.operation_id,
+                    net_key=self.net_key)
+
+        else:
+            parent_future_op = NullFutureOperation()
+
+        future_operations = workflow.future_operations(parent_future_op,
                 input_connections=None, output_properties=None)
 
         for future_operation in future_operations:
