@@ -27,6 +27,9 @@ class LogManager(object):
         return re.sub("^_*|_*$", "", bname)
 
     def _resolve_log_path(self, suffix):
+        if not self.log_dir:
+            return None
+
         template_args = {
                 'base_name': self.base_name,
                 'operation_id':self.operation_id,
