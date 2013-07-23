@@ -6,13 +6,15 @@ import unittest
 
 class DirectStorageOperationTest(unittest.TestCase):
     def setUp(self):
-        self.child_operation_ids = {
-            'foo': 12,
-            'bar': 42,
+        self.net_key = 'mykey'
+        self.children = {
+            'foo': (self.net_key, 12),
+            'bar': (self.net_key, 42),
         }
         self.operation_id = 5
         self.name = 'oot'
         self.parent_operation_id = 2
+        self.parent_net_key = 'parent_net_key'
         self.output_properties = ['baz', 'buz']
         self.input_connections = {
             3: {
@@ -28,27 +30,29 @@ class DirectStorageOperationTest(unittest.TestCase):
         self.net = mock.MagicMock()
         self.operation = operation_base.DirectStorageOperation(
                 net=self.net,
-                child_operation_ids=self.child_operation_ids,
+                children=self.children,
                 input_connections=self.input_connections,
                 log_dir=self.log_dir,
                 name=self.name,
                 operation_id=self.operation_id,
                 output_properties=self.output_properties,
                 parent_operation_id=self.parent_operation_id,
+                parent_net_key=self.parent_net_key,
         )
 
-    def test_child_id_from_exists(self):
-        self.assertEqual(12, self.operation._child_id_from('foo'))
+    def test_child_net_key_and_id_from_exists(self):
+        self.assertEqual((self.net_key, 12),
+                self.operation._child_net_key_and_id_from('foo'))
 
-    def test_child_id_from_missing(self):
+    def test_child_net_key_and_id_from_missing(self):
         with self.assertRaises(KeyError):
-            self.operation._child_id_from('MISSING')
+            self.operation._child_net_key_and_id_from('MISSING')
 
 
     def test_child_named(self):
         with mock.patch('flow_workflow.operation_base.load_operation') as load:
             child = self.operation.child_named('foo')
-            load.assert_called_once_with(net=self.net,
+            load.assert_called_once_with(net=mock.ANY,
                     operation_id=12)
             self.assertEqual(load.return_value, child)
 
@@ -61,8 +65,8 @@ class DirectStorageOperationTest(unittest.TestCase):
         self.assertEqual([load.return_value, load.return_value], children)
 
         self.assertEqual(2, load.call_count)
-        load.assert_any_call(12)
-        load.assert_any_call(42)
+        load.assert_any_call(self.net_key, 12)
+        load.assert_any_call(self.net_key, 42)
 
     def test_null_parent(self):
         self.operation.parent_operation_id = None
@@ -72,7 +76,7 @@ class DirectStorageOperationTest(unittest.TestCase):
     def test_parent(self):
         with mock.patch('flow_workflow.operation_base.load_operation') as load:
             parent = self.operation.parent
-            load.assert_called_once_with(net=self.net, operation_id=2)
+            load.assert_called_once_with(net=mock.ANY, operation_id=2)
             self.assertEqual(load.return_value, parent)
 
     def test_log_manager(self):

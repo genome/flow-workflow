@@ -24,10 +24,11 @@ class FutureOperationTest(unittest.TestCase):
                 log_dir=self.log_dir)
 
 
-    def test_child_operation_ids_no_children(self):
-        self.assertEqual({}, self.future_operation.child_operation_ids)
+    def test_child_data_no_children(self):
+        net_key = 'super net key'
+        self.assertEqual({}, self.future_operation._child_data(net_key))
 
-    def test_child_operation_ids_one_child(self):
+    def test_child_data_one_child(self):
         child = FutureOperation(
                 name='my child name',
                 operation_id=12346,
@@ -37,8 +38,9 @@ class FutureOperationTest(unittest.TestCase):
                 output_properties=self.output_properties,
                 log_dir=self.log_dir)
 
-        self.assertEqual({'my child name': 12346},
-                self.future_operation.child_operation_ids)
+        net_key = 'super net key'
+        self.assertEqual({'my child name': (net_key, 12346)},
+                self.future_operation._child_data(net_key))
 
     def test_init_adds_parent(self):
         self.parent._add_child.assert_called_once_with(self.future_operation)

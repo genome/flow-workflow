@@ -1,36 +1,38 @@
+from flow.petri_net.net import Net
 from flow_workflow import io
+from flow_workflow.factory import load_operation
 import abc
 import flow_workflow.log_manager
-from flow_workflow.factory import load_operation
 
 
 class Operation(object):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, net, name, operation_id, input_connections,
-            output_properties, log_dir, parent_operation_id,
-            child_operation_ids):
+            output_properties, log_dir, parent_net_key, parent_operation_id,
+            children):
         self.net = net
 
-        self.child_operation_ids = child_operation_ids
+        self.children = children
         self.input_connections = input_connections
         self.log_dir = log_dir
         self.name = name
         self.operation_id = operation_id
         self.output_properties = output_properties
+        self.parent_net_key = parent_net_key
         self.parent_operation_id = parent_operation_id
 
         self._cached_operations = {}
 
-    def _child_id_from(self, name):
-        return self.child_operation_ids[name]
+    def _child_net_key_and_id_from(self, name):
+        return self.children[name]
 
     def child_named(self, name):
-        return self._load_operation(self._child_id_from(name))
+        return self._load_operation(*self._child_net_key_and_id_from(name))
 
     def iter_children(self):
-        for child_id in self.child_operation_ids.itervalues():
-            yield self._load_operation(child_id)
+        for net_key, child_id in self.children.itervalues():
+            yield self._load_operation(net_key, child_id)
 
     @property
     def net_key(self):
@@ -39,7 +41,8 @@ class Operation(object):
     @property
     def parent(self):
         if self.parent_operation_id:
-            return self._load_operation(self.parent_operation_id)
+            return self._load_operation(self.parent_net_key,
+                    self.parent_operation_id)
         else:
             return NullOperation()
 
@@ -63,12 +66,18 @@ class Operation(object):
         raise KeyError("Property (%s) not found on operation (%s)" %
                 (name, self.name))
 
-    def _load_operation(self, operation_id):
-        if int(operation_id) not in self._cached_operations:
-            self._cached_operations[int(operation_id)] = load_operation(
-                    net=self.net, operation_id=operation_id)
+    def _load_operation(self, net_key, operation_id):
+        cache_key = (net_key, int(operation_id))
+        if cache_key not in self._cached_operations:
+            self._cached_operations[cache_key] = load_operation(
+                    net=Net(self._connection, key=net_key),
+                    operation_id=operation_id)
 
-        return self._cached_operations[int(operation_id)]
+        return self._cached_operations[cache_key]
+
+    @property
+    def _connection(self):
+        return self.net.connection
 
     def load_inputs(self, parallel_id):
         return {name: self.load_input(name=name, parallel_id=parallel_id)
@@ -84,12 +93,12 @@ class Operation(object):
 
     def load_input(self, name, parallel_id):
         source_op_id, source_name = self._determine_input_source(name)
-        source_op = self._load_operation(source_op_id)
+        source_op = self._load_operation(self.net_key, source_op_id)
         return source_op.load_output(source_name, parallel_id)
 
     def store_input(self, name, value, parallel_id):
         source_op_id, source_name = self._determine_input_source(name)
-        source_op = self._load_operation(source_op_id)
+        source_op = self._load_operation(self.net_key, source_op_id)
         source_op.store_output(source_name, value, parallel_id)
 
     @abc.abstractmethod
