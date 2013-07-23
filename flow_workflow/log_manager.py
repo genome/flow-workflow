@@ -1,6 +1,7 @@
 import os
 import re
 
+
 LOG_NAME_TEMPLATE = '%(base_name)s.%(operation_id)s.%(suffix)s'
 MAX_BASE_NAME_LEN = 256
 
@@ -21,7 +22,8 @@ class LogManager(object):
 
     @property
     def base_name(self):
-        bname = re.sub("[^A-Za-z0-9_.-]+", "_", self.operation_name)[:MAX_BASE_NAME_LEN]
+        bname = re.sub("[^A-Za-z0-9_.-]+", "_",
+                self.operation_name)[:MAX_BASE_NAME_LEN]
         return re.sub("^_*|_*$", "", bname)
 
     def _resolve_log_path(self, suffix):
