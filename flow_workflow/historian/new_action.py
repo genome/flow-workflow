@@ -74,6 +74,9 @@ class HistorianActionBase(BasicActionBase):
         if self.args.get('calculate_end_time', False):
             fields['end_time'] = self.timestamp
 
+        if 'exit_code' in token_data:
+            fields['exit_code'] = token_data['exit_code']
+
         return fields
 
     @property

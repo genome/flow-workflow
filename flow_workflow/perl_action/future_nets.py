@@ -28,6 +28,14 @@ class ExecuteShellCommandNet(ShellCommandNet):
                 FutureAction(UpdateOperationStatus, operation_id=operation_id,
                     status='running', calculate_start_time=True))
 
+        self.observe_transition(self.dispatch_failure_transition,
+                FutureAction(UpdateOperationStatus, operation_id=operation_id,
+                    status='crashed', calculate_end_time=True))
+
+        self.observe_transition(self.execute_failure_transition,
+                FutureAction(UpdateOperationStatus, operation_id=operation_id,
+                    status='crashed', calculate_end_time=True))
+
 
 class PerlActionNet(WorkflowNetBase):
     """
@@ -83,7 +91,3 @@ class PerlActionNet(WorkflowNetBase):
         self.observe_transition(self.internal_success_transition,
                 FutureAction(UpdateOperationStatus, operation_id=operation_id,
                     status='done', calculate_end_time=True))
-
-        self.observe_transition(self.internal_failure_transition,
-                FutureAction(UpdateOperationStatus, operation_id=operation_id,
-                    status='crashed', calculate_end_time=True))
