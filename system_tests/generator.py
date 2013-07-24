@@ -47,7 +47,7 @@ class ParticularTestGenerator(object):
 
     @property
     def base_command_line(self):
-        return ['flow', 'execute-workflow',
+        return ['flow', 'execute-workflow', '--block',
                 '--xml', self.xml_path,
                 '--resource-file', self.resources_path]
 
