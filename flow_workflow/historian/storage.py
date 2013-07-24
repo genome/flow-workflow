@@ -399,16 +399,8 @@ class SimpleTransaction(object):
         return conn, trans
 
     def execute(self, *args, **kwargs):
-        STRINGIFY = ['STATUS']
-        for string_key in STRINGIFY:
-            if string_key in kwargs:
-                kwargs[string_key] = str(kwargs[string_key])
-        DICTIFY = ['operation_data']
-        for dict_key in DICTIFY:
-            if dict_key in kwargs:
-                operation_data = kwargs.pop(dict_key)
-                kwargs.update(operation_data.to_dict)
-        return self.conn.execute(*args, **kwargs)
+        statement_kwargs = get_updated_statement_kwargs(**kwargs)
+        return self.conn.execute(*args, **statement_kwargs)
 
     def commit(self, *args, **kwargs):
         LOG.debug("Commiting transaction (%r) and closing connection (%r).",
@@ -435,8 +427,22 @@ class SimpleTransaction(object):
         self.trans = None
 
 
+def get_updated_statement_kwargs(**kwargs):
+    STRINGIFY = ['STATUS']
+    for string_key in STRINGIFY:
+        if string_key in kwargs:
+            kwargs[string_key] = str(kwargs[string_key])
+    DICTIFY = ['operation_data']
+    for dict_key in DICTIFY:
+        if dict_key in kwargs:
+            operation_data = kwargs.pop(dict_key)
+            kwargs.update(operation_data.to_dict)
+    return kwargs
+
+
 def execute_and_log(transaction, statement, **kwargs):
-    log_statement(statement, **kwargs)
+    statement_kwargs = get_updated_statement_kwargs(**kwargs)
+    log_statement(statement, **statement_kwargs)
     return transaction.execute(statement, **kwargs)
 
 
