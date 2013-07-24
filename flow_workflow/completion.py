@@ -29,16 +29,3 @@ class MonitoringCompletionHandler(Handler):
     def _handle_message(self, message):
         self.status = message.status
         return defer.succeed(None)
-
-
-class ExittingCompletionHandler(Handler):
-    message_class = NotifyCompletionMessage
-
-    def __init__(self, queue_name):
-        self.queue_name = queue_name
-
-    def _handle_message(self, message):
-        if message.status == 'success':
-            exit_process(exit_codes.EXECUTE_SUCCESS)
-        else:
-            exit_process(exit_codes.EXECUTE_FAILURE)
