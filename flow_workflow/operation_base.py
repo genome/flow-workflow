@@ -48,6 +48,10 @@ class Operation(object):
             return NullOperation()
 
     @property
+    def parent_is_foreign(self):
+        return self.parent_net_key and self.parent_net_key != self.net_key
+
+    @property
     def log_manager(self):
         return flow_workflow.log_manager.LogManager(operation_name=self.name,
                 operation_id=self.operation_id, log_dir=self.log_dir)

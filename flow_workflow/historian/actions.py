@@ -105,6 +105,10 @@ class HistorianActionBase(BasicActionBase):
 
 def get_parent_fields(operation, parallel_id, color_descriptor):
     if operation.parent.operation_id:
+        result = {}
+        if operation.parent_is_foreign:
+            result['is_subflow'] = True
+
         if parallel_id.refers_to(operation):
             color = color_descriptor.group.parent_color
         else:
@@ -112,7 +116,8 @@ def get_parent_fields(operation, parallel_id, color_descriptor):
         operation_data = OperationData(net_key=operation.parent.net_key,
                 operation_id=operation.parent.operation_id,
                 color=color)
-        return {'parent_operation_data': operation_data.to_dict}
+        result['parent_operation_data'] = operation_data.to_dict
+        return result
     else:
         return {}
 
