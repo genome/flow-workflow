@@ -11,7 +11,7 @@ class ShortcutShellCommandNet(ShellCommandNet):
 
         self.observe_transition(self.execute_begin_transition,
                 FutureAction(UpdateOperationStatus, operation_id=operation_id,
-                    status='shortcutting', preprend_job_id_with='P',
+                    status='running*', preprend_job_id_with='P',
                     calculate_start_time=True))
 
 

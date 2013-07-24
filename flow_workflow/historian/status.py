@@ -1,7 +1,7 @@
 VALID_STATUSES = [
         'unknown',
         'new',
-        'shortcutting',
+        'running*',#for shortcutting
         'scheduled',
         'running',
         'crashed',
