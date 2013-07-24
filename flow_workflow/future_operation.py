@@ -62,5 +62,8 @@ class ForeignFutureOperation(object):
         self.operation_id = operation_data.operation_id
         self._net_key = operation_data.net_key
 
+    def _add_child(self, child):
+        pass
+
     def net_key(self, default_net_key):
         return self._net_key
