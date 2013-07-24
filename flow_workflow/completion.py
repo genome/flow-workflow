@@ -21,11 +21,13 @@ class WorkflowCompletionServiceInterface(IWorkflowCompletion):
 class MonitoringCompletionHandler(Handler):
     message_class = NotifyCompletionMessage
 
-    def __init__(self, queue_name):
+    def __init__(self, queue_name, done_deferred):
+        self.done_deferred = done_deferred
         self.queue_name = queue_name
 
         self.status = None
 
     def _handle_message(self, message):
         self.status = message.status
+        self.done_deferred.callback(True)
         return defer.succeed(None)

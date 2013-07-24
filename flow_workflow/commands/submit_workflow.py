@@ -17,5 +17,8 @@ class SubmitWorkflowCommand(LaunchWorkflowCommandBase):
     def setup_services(self, net):
         pass
 
-    def wait_for_results(self, block):
-        return defer.succeed(block)
+    def wait_for_results(self, net, block):
+        if block:
+            return self.setup_completion_handler(net)
+        else:
+            return defer.succeed(block)

@@ -6,7 +6,8 @@ from flow.util.exit import exit_process
 from flow_workflow.completion import MonitoringCompletionHandler
 from flow_workflow.parallel_id import ParallelIdentifier
 from flow_workflow.entities.workflow.adapter import WorkflowAdapter
-from flow_workflow.future_operation import NullFutureOperation
+from flow_workflow.future_operation import (NullFutureOperation,
+        ForeignFutureOperation)
 from flow_workflow.historian.operation_data import OperationData
 from lxml import etree
 from flow_workflow import factory
@@ -28,9 +29,15 @@ LOG = logging.getLogger(__name__)
         injector=injector.Injector)
 class LaunchWorkflowCommandBase(CommandBase):
     def setup_completion_handler(self, net):
-        self.broker.declare_queue(net.key, durable=False, exclusive=True)
+        declare_deferred = self.broker.declare_queue(net.key, durable=False, exclusive=True)
+        done_deferred = defer.Deferred()
+        declare_deferred.addCallback(self._register_completion_handler,
+                done_deferred=done_deferred, net_key=net.key)
+        return done_deferred
+
+    def _register_completion_handler(self, _, done_deferred, net_key):
         self.completion_handler = MonitoringCompletionHandler(
-                queue_name=net.key)
+                queue_name=net_key, done_deferred=done_deferred)
         self.broker.register_handler(self.completion_handler)
 
     @staticmethod
@@ -61,11 +68,15 @@ class LaunchWorkflowCommandBase(CommandBase):
 
     @abc.abstractproperty
     def local_workflow(self):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def setup_services(self, net):
         pass
+
+    @abc.abstractmethod
+    def wait_for_results(self, block):
+        raise NotImplementedError()
 
 
     @defer.inlineCallbacks
@@ -80,7 +91,7 @@ class LaunchWorkflowCommandBase(CommandBase):
 
         yield self.start_net(net, start_place)
 
-        block = yield self.wait_for_results(parsed_arguments.block)
+        block = yield self.wait_for_results(net=net, block=parsed_arguments.block)
 
         LOG.debug('Workflow execution done: %s', block)
 
