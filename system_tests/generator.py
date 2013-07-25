@@ -62,7 +62,7 @@ class ParticularTestGenerator(object):
 
     @property
     def test_name(self):
-        return self.sanitized_workflow_name + 'Test'
+        return self.sanitized_workflow_name + '_test'
 
     @property
     def xml_path(self):
