@@ -1,12 +1,16 @@
 from abc import abstractmethod
 from flow.petri_net.actions.base import BasicActionBase
-from flow_workflow import factory
-from flow_workflow import io
-from flow_workflow.parallel_id import ParallelIdentifier
-from twisted.internet import defer
-from flow_workflow.historian.operation_data import OperationData
 from flow.util.containers import head
+from flow_workflow import factory
+from flow_workflow.historian.operation_data import OperationData
+from flow_workflow.parallel_id import ParallelIdentifier
 from time import localtime, strftime
+from twisted.internet import defer
+
+import logging
+
+
+LOG = logging.getLogger(__name__)
 
 
 class HistorianActionBase(BasicActionBase):

@@ -3,26 +3,27 @@ from flow.commands.base import CommandBase
 from flow.petri_net.builder import Builder
 from flow.service_locator import ServiceLocator
 from flow.util.exit import exit_process
-from flow_workflow.completion import MonitoringCompletionHandler
-from flow_workflow.parallel_id import ParallelIdentifier
-from flow_workflow.entities.workflow.adapter import WorkflowAdapter
-from flow_workflow.future_operation import (NullFutureOperation,
-        ForeignFutureOperation)
-from flow_workflow.historian.operation_data import OperationData
-from lxml import etree
 from flow_workflow import factory
+from flow_workflow.completion import MonitoringCompletionHandler
+from flow_workflow.entities.workflow.adapter import WorkflowAdapter
+from flow_workflow.future_operation import ForeignFutureOperation
+from flow_workflow.future_operation import NullFutureOperation
+from flow_workflow.historian.operation_data import OperationData
+from flow_workflow.parallel_id import ParallelIdentifier
+from lxml import etree
 from twisted.internet import defer
 
 import abc
 import flow.interfaces
 import injector
 import json
+import logging
 import os
 import pwd
 
-import logging
 
 LOG = logging.getLogger(__name__)
+
 
 @injector.inject(storage=flow.interfaces.IStorage,
         broker=flow.interfaces.IBroker,
@@ -30,7 +31,8 @@ LOG = logging.getLogger(__name__)
         injector=injector.Injector)
 class LaunchWorkflowCommandBase(CommandBase):
     def setup_completion_handler(self, net):
-        declare_deferred = self.broker.declare_queue(net.key, durable=False, exclusive=True)
+        declare_deferred = self.broker.declare_queue(net.key, durable=False,
+                exclusive=True)
         done_deferred = defer.Deferred()
         declare_deferred.addCallback(self._register_completion_handler,
                 done_deferred=done_deferred, net_key=net.key)
@@ -76,7 +78,7 @@ class LaunchWorkflowCommandBase(CommandBase):
         pass
 
     @abc.abstractmethod
-    def wait_for_results(self, block):
+    def wait_for_results(self, net, block):
         raise NotImplementedError()
 
 
@@ -92,7 +94,8 @@ class LaunchWorkflowCommandBase(CommandBase):
 
         yield self.start_net(net, start_place)
 
-        block = yield self.wait_for_results(net=net, block=parsed_arguments.block)
+        block = yield self.wait_for_results(net=net,
+                block=parsed_arguments.block)
 
         LOG.debug('Workflow execution done: %s', block)
 
@@ -183,7 +186,6 @@ class LaunchWorkflowCommandBase(CommandBase):
     @property
     def user_name(self):
         return pwd.getpwuid(os.getuid())[0]
-
 
 
 def load_xml(filename):

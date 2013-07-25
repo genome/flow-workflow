@@ -1,14 +1,13 @@
 from collections import defaultdict, namedtuple
 from flow.configuration.settings.injector import setting
+from flow_workflow.historian.status import Status
 from injector import inject
 from sqlalchemy import create_engine
 from sqlalchemy import event
 from sqlalchemy.dialects.oracle import dialect as oracle_dialect
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.pool import StaticPool
-from flow_workflow.historian.status import Status
 
-import copy
 import logging
 import re
 
@@ -83,11 +82,12 @@ class WorkflowHistorianStorage(object):
         self.tables = TABLES(historian='%s.workflow_historian' % self.owner,
                 instance='%s.workflow_instance' % self.owner,
                 execution='%s.workflow_instance_execution' % self.owner)
-        self.sequences = SEQUENCES(instance='%s.workflow_instance_seq' % self.owner,
+        self.sequences = SEQUENCES(
+                instance='%s.workflow_instance_seq' % self.owner,
                 execution='%s.workflow_execution_seq' % self.owner)
 
-        self.engine = create_engine(self.connection_string, case_sensitive=False,
-                poolclass=StaticPool)
+        self.engine = create_engine(self.connection_string,
+                case_sensitive=False, poolclass=StaticPool)
 
         # Oracle needs us to tell it to accept strings for dates/timestamps
         if isinstance(self.engine.dialect, oracle_dialect):
@@ -269,14 +269,14 @@ class WorkflowHistorianStorage(object):
         parent_operation_data = update_info.get('parent_operation_data')
         if parent_operation_data is not None:
             if update_info.get('is_subflow', None):
-                putative_dict['PARENT_EXECUTION_ID'] =\
+                putative_dict['PARENT_EXECUTION_ID'] = \
                         self._get_or_create_execution_id(
                             transaction, recursion_level,
                             operation_data   = parent_operation_data,
                             workflow_plan_id = update_info['workflow_plan_id'])
 
             else:
-                putative_dict['PARENT_INSTANCE_ID'] =\
+                putative_dict['PARENT_INSTANCE_ID'] = \
                         self._get_or_create_instance_id(
                             transaction, recursion_level,
                             operation_data   = parent_operation_data,

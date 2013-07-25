@@ -1,5 +1,4 @@
 from flow_workflow.entities.workflow.future_nets import WorkflowNet
-from flow_workflow.future_operation import NullFutureOperation
 from flow_workflow.parallel_id import ParallelIdentifier
 from flow_workflow.adapter_base import AdapterBase
 import flow_workflow.factory

@@ -1,6 +1,4 @@
-from flow import exit_codes
 from flow.handler import Handler
-from flow.util.exit import exit_process
 from flow_workflow.interfaces import IWorkflowCompletion
 from flow_workflow.messages import NotifyCompletionMessage
 from injector import inject

@@ -1,5 +1,4 @@
 from collections import defaultdict
-from flow_workflow.pass_through.future_nets import PassThroughNet
 from flow_workflow.entities.model import future_nets
 from flow_workflow.parallel_by import adapter_base
 import flow_workflow.adapter_base
