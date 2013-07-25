@@ -77,6 +77,9 @@ sub run_event {
     my ($method, $event_id, $outputs_file) = @_;
 
     validate_method($method);
+    print "===\n";
+    print "Attempting to $method event $event_id...\n";
+    print "===\n";
 
     my $event = Genome::Model::Event->get($event_id)
             || die "No event $event_id";
@@ -101,6 +104,9 @@ sub run_command {
     my ($method, $pkg, $inputs_file, $outputs_file) = @_;
 
     validate_method($method);
+    print "===\n";
+    print "Attempting to $method command $pkg...\n";
+    print "===\n";
 
     eval "use $pkg";
 
