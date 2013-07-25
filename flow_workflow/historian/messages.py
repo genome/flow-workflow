@@ -13,6 +13,8 @@ class UpdateMessage(Message):
 
     optional_fields = {
             'parent_operation_data': dict,
+            'is_subflow': bool,
+
             'peer_operation_data': dict,
 
             'parallel_index': int,
