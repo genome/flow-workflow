@@ -168,14 +168,9 @@ class DeletePlaceholderOperation(HistorianActionBase):
 
 
 def env_is_perl_true(net, varname):
-    env = net.constant('environment')
-    try:
-        var = env.get(varname)
-        return var_is_perl_true(var)
-    except:
-        pass
-
-    return False
+    env = net.constant('environment', {})
+    var = env.get(varname)
+    return var_is_perl_true(var)
 
 
 _PERL_FALSE_VALUES = set([
