@@ -1,7 +1,7 @@
 from flow.petri_net.future import FutureAction
 from flow.shell_command.petri_net.future_nets import ShellCommandNet
 from flow_workflow.future_nets import WorkflowNetBase
-from flow_workflow.historian.new_action import UpdateOperationStatus
+from flow_workflow.historian.actions import UpdateOperationStatus
 
 
 class ShortcutShellCommandNet(ShellCommandNet):

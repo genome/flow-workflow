@@ -1,6 +1,6 @@
 from flow.petri_net import future
 from flow_workflow.entities.workflow.action import NotificationAction
-from flow_workflow.historian.new_action import UpdateOperationStatus
+from flow_workflow.historian.actions import UpdateOperationStatus
 
 
 class WorkflowNet(future.FutureNet):
