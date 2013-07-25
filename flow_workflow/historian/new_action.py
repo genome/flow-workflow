@@ -49,6 +49,7 @@ class HistorianActionBase(BasicActionBase):
                 'operation_data': operation_data.to_dict,
                 'name': operation.name,
                 'workflow_plan_id': net.constant('workflow_plan_id'),
+                'user_name': net.constant('user_name'),
                 'status': status,
                 }
 

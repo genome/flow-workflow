@@ -7,19 +7,17 @@ class UpdateMessage(Message):
             'name': basestring,
             'operation_data': dict,
             'status': basestring,
+            'user_name': basestring,
             'workflow_plan_id': int,
      }
 
     optional_fields = {
             'parent_operation_data': dict,
-
             'peer_operation_data': dict,
 
             'parallel_index': int,
 
             'dispatch_id': basestring,
-
-            'user_name': basestring,
 
             'start_time': basestring,
             'end_time': basestring,

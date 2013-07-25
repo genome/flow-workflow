@@ -18,6 +18,7 @@ import flow.interfaces
 import injector
 import json
 import os
+import pwd
 
 import logging
 
@@ -175,8 +176,13 @@ class LaunchWorkflowCommandBase(CommandBase):
             'environment': os.environ.data,
             'group_id': os.getgid(),
             'user_id': os.getuid(),
+            'user_name': self.user_name,
             'working_directory': os.getcwd(),
         }
+
+    @property
+    def user_name(self):
+        return pwd.getpwuid(os.getuid())[0]
 
 
 
