@@ -11,7 +11,7 @@ def order_outputs(inputs, input_property_order, output_properties):
     out_list = [inputs[x] for x in input_property_order]
     return {
         output_properties[0]: out_list,
-        'result': 1,  # XXX Is this needed?
+        'result': 1,
     }
 
 
@@ -27,7 +27,6 @@ class ConvergeAction(BasicActionBase):
         io.store_outputs(net=net, operation_id=self.args['operation_id'],
                 outputs=outputs, parallel_id=list(parallel_id))
 
-        # XXX We're throwing away token data here, is that what we want?
         output_token = net.create_token(color=color_descriptor.color,
                 color_group_idx=color_descriptor.group.idx,
                 data={'workflow_data': workflow_data})
