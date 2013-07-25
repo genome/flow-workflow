@@ -11,9 +11,9 @@ class FutureOperation(object):
 
         self._children = {}
 
-        parent._add_child(self)
+        parent.add_child(self)
 
-    def _add_child(self, child):
+    def add_child(self, child):
         self._children[child.name] = child
 
     def _child_data(self, default_net_key):
@@ -45,15 +45,18 @@ class FutureOperation(object):
         return result
 
 
-class NullFutureOperation(FutureOperation):
+class NullFutureOperation(object):
     def __init__(self, *args, **kwargs):
         pass
 
-    def _add_child(self, child):
+    def add_child(self, child):
         pass
 
     @property
     def operation_id(self):
+        return None
+
+    def net_key(self, default_net_key):
         return None
 
 
@@ -62,7 +65,7 @@ class ForeignFutureOperation(object):
         self.operation_id = operation_data.operation_id
         self._net_key = operation_data.net_key
 
-    def _add_child(self, child):
+    def add_child(self, child):
         pass
 
     def net_key(self, default_net_key):

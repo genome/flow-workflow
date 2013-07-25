@@ -43,7 +43,7 @@ class FutureOperationTest(unittest.TestCase):
                 self.future_operation._child_data(net_key))
 
     def test_init_adds_parent(self):
-        self.parent._add_child.assert_called_once_with(self.future_operation)
+        self.parent.add_child.assert_called_once_with(self.future_operation)
 
 
 if __name__ == "__main__":
