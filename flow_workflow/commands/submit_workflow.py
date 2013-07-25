@@ -12,7 +12,7 @@ class SubmitWorkflowCommand(LaunchWorkflowCommandBase):
             ServiceLocatorConfiguration,
     ]
 
-    local_workflow = True
+    local_workflow = False
 
     def setup_services(self, net):
         pass
