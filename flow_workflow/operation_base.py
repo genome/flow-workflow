@@ -1,6 +1,7 @@
 from flow.petri_net.net import Net
 from flow_workflow import io
 from flow_workflow.factory import load_operation
+
 import abc
 import flow_workflow.log_manager
 
@@ -144,6 +145,7 @@ class DirectStorageOperation(Operation):
                 parallel_id=parallel_id,
                 property_name=name,
                 value=value)
+
 
 class PassThroughOperation(Operation):
     def load_output(self, name, parallel_id):
