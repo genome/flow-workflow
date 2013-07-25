@@ -1,5 +1,5 @@
 from flow.petri_net import future
-from flow_workflow.entities.workflow.action import NotificationAction
+from flow_workflow.entities.workflow.actions import NotificationAction
 from flow_workflow.historian.actions import UpdateOperationStatus
 
 
