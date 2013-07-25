@@ -5,7 +5,7 @@ from flow.service_locator import ServiceLocator
 from flow.util.exit import exit_process
 from flow_workflow import factory
 from flow_workflow.completion import MonitoringCompletionHandler
-from flow_workflow.entities.workflow.adapter import WorkflowAdapter
+from flow_workflow.entities.workflow.adapters import WorkflowAdapter
 from flow_workflow.future_operation import ForeignFutureOperation
 from flow_workflow.future_operation import NullFutureOperation
 from flow_workflow.historian.operation_data import OperationData

@@ -1,4 +1,4 @@
-from flow_workflow.entities.converge import adapter
+from flow_workflow.entities.converge import adapters
 from flow_workflow.entities.converge import future_nets
 from lxml import etree
 
@@ -33,7 +33,7 @@ class ConvergeAdapterTest(unittest.TestCase):
         self.parent = mock.Mock()
         self.resources = mock.Mock()
 
-        self.adapter = adapter.ConvergeAdapter(xml=etree.XML(VALID_XML),
+        self.adapter = adapters.ConvergeAdapter(xml=etree.XML(VALID_XML),
                 operation_id=self.operation_id, parent=self.parent)
 
     def test_init(self):
@@ -56,7 +56,7 @@ class InvalidConvergeAdapterTest(unittest.TestCase):
         self.parent = mock.Mock()
         self.resources = mock.Mock()
 
-        self.adapter = adapter.ConvergeAdapter(xml=etree.XML(INVALID_XML),
+        self.adapter = adapters.ConvergeAdapter(xml=etree.XML(INVALID_XML),
                 operation_id=self.operation_id, parent=self.parent)
 
     def test_init_raises(self):

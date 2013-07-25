@@ -4,7 +4,7 @@ from lxml import etree
 
 import mock
 import unittest
-from flow_workflow.entities.workflow.adapter import WorkflowAdapter
+from flow_workflow.entities.workflow.adapters import WorkflowAdapter
 from flow_workflow.entities.workflow.future_nets import WorkflowNet
 
 

@@ -1,5 +1,5 @@
 from flow_workflow.pass_through.future_nets import PassThroughNet
-from flow_workflow.entities.model import adapter
+from flow_workflow.entities.model import adapters
 from flow_workflow.future_operation import NullFutureOperation
 from flow_workflow.perl_action.future_nets import PerlActionNet
 from lxml import etree
@@ -40,7 +40,7 @@ VALID_XML = '''
 class ModelAdapterTest(unittest.TestCase):
     def setUp(self):
         self.operation_id = 12345
-        self.adapter = adapter.ModelAdapter(xml=etree.XML(VALID_XML),
+        self.adapter = adapters.ModelAdapter(xml=etree.XML(VALID_XML),
                 operation_id=self.operation_id,
                 parent=flow_workflow.adapter_base.NullAdapter())
 

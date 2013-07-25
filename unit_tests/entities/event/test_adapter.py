@@ -1,4 +1,4 @@
-from flow_workflow.entities.event import adapter
+from flow_workflow.entities.event import adapters
 from lxml import etree
 
 import mock
@@ -14,7 +14,7 @@ VALID_XML = '''
 class EventAdapterTest(unittest.TestCase):
     def setUp(self):
         self.operation_id = 12345
-        self.adapter = adapter.EventAdapter(xml=etree.XML(VALID_XML),
+        self.adapter = adapters.EventAdapter(xml=etree.XML(VALID_XML),
                 operation_id=self.operation_id)
 
     def test_action_id(self):

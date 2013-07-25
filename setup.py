@@ -12,12 +12,12 @@ workflow_historian = flow_workflow.historian.service_interface:WorkflowHistorian
 workflow_completion = flow_workflow.completion:WorkflowCompletionServiceInterface
 
 [flow_workflow.adapters]
-Block = flow_workflow.entities.block.adapter:BlockAdapter
-Command = flow_workflow.entities.command.adapter:CommandAdapter
-Converge = flow_workflow.entities.converge.adapter:ConvergeAdapter
-Event = flow_workflow.entities.event.adapter:EventAdapter
-Model = flow_workflow.entities.model.adapter:ModelAdapter
-input_storage = flow_workflow.entities.workflow.adapter:InputStorageAdapter
+Block = flow_workflow.entities.block.adapters:BlockAdapter
+Command = flow_workflow.entities.command.adapters:CommandAdapter
+Converge = flow_workflow.entities.converge.adapters:ConvergeAdapter
+Event = flow_workflow.entities.event.adapters:EventAdapter
+Model = flow_workflow.entities.model.adapters:ModelAdapter
+input_storage = flow_workflow.entities.workflow.adapters:InputStorageAdapter
 null = flow_workflow.adapter_base:NullAdapter
 pass_through = flow_workflow.pass_through.adapters:PassThroughAdapter
 
