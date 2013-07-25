@@ -3,15 +3,14 @@ from flow.configuration.settings.injector import setting
 from flow.handler import Handler
 from flow.util.exit import exit_process
 from flow_workflow.historian import messages
-from injector import inject
-from twisted.internet import defer
-from flow_workflow.historian.storage import WorkflowHistorianStorage
-from flow_workflow.historian.status import Status
 from flow_workflow.historian.operation_data import OperationData
 from flow_workflow.historian.oracle_exceptions import EXIT_ON
+from flow_workflow.historian.status import Status
+from flow_workflow.historian.storage import WorkflowHistorianStorage
+from injector import inject
+from twisted.internet import defer
 
 import logging
-import os
 
 
 LOG = logging.getLogger(__name__)

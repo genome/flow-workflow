@@ -2,7 +2,6 @@ from flow.commands.service import ServiceCommand
 from flow.configuration.inject.broker import BrokerConfiguration
 from flow_workflow.configuration.inject.oltp import OLTPConfiguration
 from flow_workflow.historian import handler
-from injector import inject
 
 import logging
 
