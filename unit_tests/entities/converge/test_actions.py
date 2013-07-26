@@ -19,7 +19,7 @@ class OrderOutputsTest(unittest.TestCase):
         output_properties = ['ofuz', 'obuz', 'omuz']
         expected_result = {
             'ofuz': [7, 42, 14],
-            'result': 1,
+            'result': 'BQcKATE=\n',
         }
 
         self.assertEqual(expected_result, order_outputs(inputs,
@@ -90,7 +90,7 @@ class ConvergeActionTest(fakeredistest.FakeRedisTest):
             load_op.return_value = operation
 
             expected_outputs = [inputs[x] for x in self.input_property_order]
-            self.assertEqual({u'oprop': expected_outputs, 'result': 1},
+            self.assertEqual({u'oprop': expected_outputs, 'result': 'BQcKATE=\n'},
                     self.action.converge_inputs(net=self.net,
                         parallel_id=self.parallel_id))
 
