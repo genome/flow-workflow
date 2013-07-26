@@ -5,6 +5,8 @@ from flow_workflow.factory import load_operation
 import abc
 import flow_workflow.log_manager
 
+class MissingInputError(KeyError):
+    pass
 
 class Operation(object):
     __metaclass__ = abc.ABCMeta
@@ -68,7 +70,7 @@ class Operation(object):
             if name in property_dict:
                 source_name = property_dict[name]
                 return source_op_id, source_name
-        raise KeyError("Property (%s) not found on operation (%s)" %
+        raise MissingInputError("Property (%s) not found on operation (%s)" %
                 (name, self.name))
 
     def _load_operation(self, net_key, operation_id):
@@ -85,8 +87,16 @@ class Operation(object):
         return self.net.connection
 
     def load_inputs(self, parallel_id):
-        return {name: self.load_input(name=name, parallel_id=parallel_id)
-                for name in self.input_names}
+        results = {}
+        for name in self.input_names:
+            try:
+                results[name] = self.load_input(name=name,
+                        parallel_id=parallel_id)
+            except MissingInputError:
+                # this is to allow optional model inputs
+                # such as is done in InstrumentData::Composite::Workflow
+                pass
+        return results
 
     def load_outputs(self, parallel_id):
         return {name: self.load_output(name, parallel_id)
