@@ -11,7 +11,7 @@ def order_outputs(inputs, input_property_order, output_properties):
     out_list = [inputs[x] for x in input_property_order]
     return {
         output_properties[0]: out_list,
-        'result': 1,
+        'result': "BQcKATE=\n", # encoded value of 1
     }
 
 
