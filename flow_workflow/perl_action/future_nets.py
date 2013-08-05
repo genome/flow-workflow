@@ -62,7 +62,10 @@ class PerlActionNet(WorkflowNetBase):
                 dispatch_action_class=shortcut_action_class,
                 method='shortcut', **base_action_args)
 
-        lsf_options = {'project': project_name}
+        lsf_options = {
+            'project': project_name,
+            'job_name': name,
+        }
         self.execute_net = self.add_subnet(ExecuteShellCommandNet, name=name,
                 dispatch_action_class=execute_action_class,
                 lsf_options=lsf_options, method='execute',
