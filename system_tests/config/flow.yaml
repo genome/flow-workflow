@@ -38,7 +38,10 @@ orchestrator:
 
 shell_command:
     resource_types:
-        cores:
+        max_cores:
+            class: IntegerResource
+
+        min_cores:
             class: IntegerResource
 
         cpu_time:
