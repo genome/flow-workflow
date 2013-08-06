@@ -6,8 +6,8 @@
                 "limit": {
                     "max_virtual_memory": 204800
                 },
-                "require": {
-                    "min_proc": "4",
+                "request": {
+                    "min_cores": "4",
                     "temp_space": "5"
                 },
                 "reserve": {
@@ -22,8 +22,8 @@
                 "limit": {
                     "max_virtual_memory": 204800
                 },
-                "require": {
-                    "min_proc": "4",
+                "request": {
+                    "min_cores": "4",
                     "temp_space": "5"
                 },
                 "reserve": {
@@ -38,8 +38,8 @@
                 "limit": {
                     "max_virtual_memory": 204800
                 },
-                "require": {
-                    "min_proc": "4",
+                "request": {
+                    "min_cores": "4",
                     "temp_space": "5"
                 },
                 "reserve": {
@@ -54,8 +54,8 @@
                 "limit": {
                     "max_virtual_memory": 204800
                 },
-                "require": {
-                    "min_proc": "4",
+                "request": {
+                    "min_cores": "4",
                     "temp_space": "5"
                 },
                 "reserve": {

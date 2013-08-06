@@ -66,8 +66,7 @@ class NormalPerlActionAdapterBaseTest(unittest.TestCase):
                 self.adapter.execute_action_class)
 
     def test_future_net(self):
-        net = self.adapter.future_net(
-                resources=mock.Mock())
+        net = self.adapter.future_net(resources={})
         self.assertIsInstance(net, future_nets.PerlActionNet)
 
 

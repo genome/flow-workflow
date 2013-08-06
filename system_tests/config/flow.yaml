@@ -38,40 +38,55 @@ orchestrator:
 
 shell_command:
     resource_types:
-        max_cores:
-            class: IntegerResource
+        limit:
+            cpu_time:
+                resource_class: TimeResource
+                units: s
 
-        min_cores:
-            class: IntegerResource
+            max_resident_memory:
+                resource_class: StorageResource
+                units: MiB
 
-        cpu_time:
-            class: TimeResource
-            units: s
+            open_files:
+                resource_class: IntegerResource
 
-        open_files:
-            class: IntegerResource
+            processes:
+                resource_class: IntegerResource
 
-        memory:
-            class: StorageResource
-            units: GiB
+            stack_size:
+                resource_class: StorageResource
+                units: MiB
 
-        processes:
-            class: IntegerResource
+            threads:
+                resource_class: IntegerResource
 
-        stack_size:
-            class: StorageResource
-            units: MiB
+            max_virtual_memory:
+                resource_class: StorageResource
+                units: GiB
 
-        temp_space:
-            class: StorageResource
-            units: GiB
+        reserve:
+            memory:
+                resource_class: StorageResource
+                units: GiB
 
-        threads:
-            class: IntegerResource
+            temp_space:
+                resource_class: StorageResource
+                units: GiB
 
-        virtual_memory:
-            class: StorageResource
-            units: GiB
+        request:
+            max_cores:
+                resource_class: IntegerResource
+
+            min_cores:
+                resource_class: IntegerResource
+
+            memory:
+                resource_class: StorageResource
+                units: GiB
+
+            temp_space:
+                resource_class: StorageResource
+                units: GiB
 
     fork:
         exchange: flow

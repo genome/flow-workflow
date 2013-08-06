@@ -56,15 +56,15 @@ class PerlActionNet(WorkflowNetBase):
             'action_type': action_type,
             'stderr': stderr,
             'stdout': stdout,
-            'resources': resources,
         }
+        if 'resources' in resources:
+            base_action_args['resources'] = resources['resources']
         self.shortcut_net = self.add_subnet(ShortcutShellCommandNet, name=name,
                 dispatch_action_class=shortcut_action_class,
                 method='shortcut', **base_action_args)
 
         lsf_options = {
             'project': project_name,
-            'job_name': name,
         }
         self.execute_net = self.add_subnet(ExecuteShellCommandNet, name=name,
                 dispatch_action_class=execute_action_class,
