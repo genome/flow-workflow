@@ -77,9 +77,9 @@ sub run_event {
     my ($method, $event_id, $outputs_file) = @_;
 
     validate_method($method);
-    print "===\n";
-    print "Attempting to $method event $event_id...\n";
-    print "===\n";
+    print STDERR "===\n";
+    print STDERR "Attempting to $method event $event_id...\n";
+    print STDERR "vvv\n";
 
     my $event = Genome::Model::Event->get($event_id)
             || die "No event $event_id";
@@ -90,8 +90,18 @@ sub run_event {
     }
     my $ret = $event->$method();
 
-    exit(1) unless $ret;
+    unless ($ret) {
+        print STDERR "^^^\n";
+        print STDERR "Failed with $method for event $event_id...\n";
+        print STDERR "===\n";
+
+        exit(1);
+    }
     UR::Context->commit();
+
+    print STDERR "^^^\n";
+    print STDERR "Succeeded with $method for event $event_id...\n";
+    print STDERR "===\n";
 
     Flow::write_outputs($outputs_file, { result => 1 });
 }
@@ -104,9 +114,9 @@ sub run_command {
     my ($method, $pkg, $inputs_file, $outputs_file) = @_;
 
     validate_method($method);
-    print "===\n";
-    print "Attempting to $method command $pkg...\n";
-    print "===\n";
+    print STDERR "===\n";
+    print STDERR "Attempting to $method command $pkg...\n";
+    print STDERR "vvv\n";
 
     eval "use $pkg";
 
@@ -120,9 +130,19 @@ sub run_command {
 
     my $ret = $cmd->$method();
 
-    exit(1) unless $ret;
+    unless ($ret) {
+        print STDERR "^^^\n";
+        print STDERR "Failed to $method command $pkg...\n";
+        print STDERR "===\n";
+
+        exit(1);
+    }
 
     UR::Context->commit();
+
+    print STDERR "^^^\n";
+    print STDERR "Succeeded to $method command $pkg...\n";
+    print STDERR "===\n";
 
     my $outputs = get_command_outputs($cmd, $pkg);
     Flow::write_outputs($outputs_file, $outputs);
