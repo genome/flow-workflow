@@ -75,7 +75,7 @@ class WorkflowWrapperCommand(CommandBase):
                         parsed_arguments.action_id, inputs_file, outputs_file))
 
 
-                    LOG.debug('Executing (%s): %s', socket.gethostname(),
+                    LOG.info('Executing (%s): %s', socket.gethostname(),
                             " ".join(cmdline))
                     logannotator = LogAnnotator(cmdline)
                     self.exit_code = yield logannotator.start()
