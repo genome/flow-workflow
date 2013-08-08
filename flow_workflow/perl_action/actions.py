@@ -1,3 +1,4 @@
+from flow_workflow import factory
 from flow.shell_command.petri_net import actions
 from flow_workflow.parallel_id import ParallelIdentifier
 from flow_workflow.historian.operation_data import OperationData
@@ -22,11 +23,16 @@ class PerlAction(object):
 
     def environment(self, net, color_descriptor):
         env = net.constant('environment', {})
+
+        operation_id = self.args['operation_id']
+
+        operation = factory.load_operation(net, operation_id)
         operation_data = OperationData(net_key=net.key,
-                operation_id=self.args['operation_id'],
+                operation_id=operation_id,
                 color=color_descriptor.color)
 
         env['FLOW_WORKFLOW_OPERATION_DATA'] = operation_data.dumps()
+        env['FLOW_PARENT_WORKFLOW_LOG_DIR'] = operation.log_dir
         return env
 
     def command_line(self, net, token_data):
