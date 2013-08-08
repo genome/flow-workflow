@@ -22,6 +22,11 @@ class ParamAppender {
     ],
 };
 
+sub shortcut {
+    my $self = shift;
+    return $self->execute(@_);
+}
+
 sub execute {
     my $self = shift;
     my $p = $self->prefix;
