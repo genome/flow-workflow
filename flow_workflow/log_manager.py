@@ -12,12 +12,10 @@ class LogManager(object):
         self.operation_id = operation_id
         self.operation_name = operation_name
 
-    @property
-    def stderr_log_path(self):
+    def stderr_log_path(self, parallel_id):
         return self._resolve_log_path(suffix='err')
 
-    @property
-    def stdout_log_path(self):
+    def stdout_log_path(self, parallel_id):
         return self._resolve_log_path(suffix='out')
 
     @property

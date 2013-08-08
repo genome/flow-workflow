@@ -1,5 +1,7 @@
 from unittest import TestCase, main
 from flow_workflow.log_manager import LogManager
+from flow_workflow.parallel_id import ParallelIdentifier
+
 
 class LogManagerTests(TestCase):
     def setUp(self):
@@ -12,12 +14,15 @@ class LogManagerTests(TestCase):
                 operation_name=self.operation_name)
 
     def test_stderr_log_path(self):
+        parallel_id = ParallelIdentifier()
         self.assertEqual('/exciting/log/dir/test_op_name.12345.err',
-                self.log_manager.stderr_log_path)
+                self.log_manager.stderr_log_path(parallel_id))
 
     def test_stdout_log_path(self):
+        parallel_id = ParallelIdentifier()
         self.assertEqual('/exciting/log/dir/test_op_name.12345.out',
-                self.log_manager.stdout_log_path)
+                self.log_manager.stdout_log_path(parallel_id))
+
 
 if __name__ == '__main__':
     main()

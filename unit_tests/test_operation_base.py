@@ -1,4 +1,5 @@
 from flow_workflow import operation_base
+from flow_workflow.log_manager import LogManager
 
 import mock
 import unittest
@@ -80,8 +81,8 @@ class DirectStorageOperationTest(unittest.TestCase):
             self.assertEqual(load.return_value, parent)
 
     def test_log_manager(self):
-        self.assertEqual('/exciting/log/dir/oot.5.out',
-                self.operation.log_manager.stdout_log_path)
+        self.assertIsInstance(self.operation.log_manager, LogManager)
+        self.assertEqual(self.log_dir, self.operation.log_manager.log_dir)
 
     def test_input_names(self):
         self.assertEqual(['in1', 'in2'], self.operation.input_names)

@@ -20,15 +20,24 @@ def _parallel_id_from_workflow_data(workflow_data):
 class PerlAction(object):
     required_arguments = ['operation_id', 'method', 'action_type', 'action_id']
 
+    def _get_operation(self, net):
+        return factory.load_operation(net, self.args['operation_id'])
+
+    def set_io_files(self, net, executor_data, token_data):
+        parallel_id = self.get_parallel_id(token_data)
+
+        operation = self._get_operation(net)
+        log_manager = operation.log_manager
+
+        executor_data['stderr'] = log_manager.stderr_log_path(parallel_id)
+        executor_data['stdout'] = log_manager.stdout_log_path(parallel_id)
 
     def environment(self, net, color_descriptor):
         env = net.constant('environment', {})
 
-        operation_id = self.args['operation_id']
-
-        operation = factory.load_operation(net, operation_id)
+        operation = self._get_operation(net)
         operation_data = OperationData(net_key=net.key,
-                operation_id=operation_id,
+                operation_id=self.args['operation_id'],
                 color=color_descriptor.color)
 
         env['FLOW_WORKFLOW_OPERATION_DATA'] = operation_data.dumps()

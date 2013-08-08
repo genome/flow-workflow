@@ -16,16 +16,12 @@ class PerlActionNetTest(unittest.TestCase):
         self.operation_id = mock.Mock()
         self.project_name = mock.Mock()
         self.resources = mock.MagicMock()
-        self.stderr = mock.Mock()
-        self.stdout = mock.Mock()
 
         self.args = {
             'action_id': self.action_id,
             'action_type': self.action_type,
             'operation_id': self.operation_id,
             'resources': self.resources,
-            'stderr': self.stderr,
-            'stdout': self.stdout,
             'project_name': self.project_name,
         }
         self.net = future_nets.PerlActionNet(name=self.name,

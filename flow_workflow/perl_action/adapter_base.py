@@ -39,8 +39,6 @@ class PerlActionAdapterBase(adapter_base.ParallelXMLAdapterBase):
                 name=self.name,
                 operation_id=self.operation_id,
                 resources=resources,
-                stderr=self.log_manager.stderr_log_path,
-                stdout=self.log_manager.stdout_log_path,
                 action_type=self.action_type,
                 action_id=self.action_id,
                 shortcut_action_class=self.shortcut_action_class,

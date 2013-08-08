@@ -63,7 +63,7 @@ class HistorianActionBase(BasicActionBase):
         fields.update(get_peer_fields(operation, parallel_id, color_descriptor))
 
         fields.update(self.get_shell_command_fields(token_data))
-        fields.update(self.get_log_fields(operation.log_manager))
+        fields.update(self.get_log_fields(operation.log_manager, parallel_id))
 
         return historian.update(**fields)
 
@@ -85,12 +85,12 @@ class HistorianActionBase(BasicActionBase):
 
         return fields
 
-    def get_log_fields(self, log_manager):
+    def get_log_fields(self, log_manager, parallel_id):
         fields = {}
-        if log_manager.stderr_log_path:
-            fields['stderr'] = log_manager.stderr_log_path
-        if log_manager.stdout_log_path:
-            fields['stdout'] = log_manager.stdout_log_path
+        if log_manager.stderr_log_path(parallel_id):
+            fields['stderr'] = log_manager.stderr_log_path(parallel_id)
+        if log_manager.stdout_log_path(parallel_id):
+            fields['stdout'] = log_manager.stdout_log_path(parallel_id)
 
         return fields
 

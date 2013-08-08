@@ -43,10 +43,8 @@ class PerlActionNet(WorkflowNetBase):
     execute a perl action.
     """
 
-    def __init__(self, name, operation_id,
-            resources, stderr, stdout,
-            action_type, action_id,
-            shortcut_action_class, execute_action_class,
+    def __init__(self, name, operation_id, resources, action_type,
+            action_id, shortcut_action_class, execute_action_class,
             project_name=''):
         WorkflowNetBase.__init__(self, operation_id=operation_id, name=name)
 
@@ -54,8 +52,6 @@ class PerlActionNet(WorkflowNetBase):
             'operation_id': operation_id,
             'action_id': action_id,
             'action_type': action_type,
-            'stderr': stderr,
-            'stdout': stdout,
         }
         if 'resources' in resources:
             base_action_args['resources'] = resources['resources']
