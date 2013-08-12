@@ -44,7 +44,8 @@ class ExecuteWorkflowCommand(LaunchWorkflowCommandBase):
         self.broker.register_handler(
                 self.injector.get(handler.HistorianUpdateHandler))
 
-    @defer.inlineCallbacks
     def wait_for_results(self, net, block):
-        yield self.broker.listen()
-        defer.returnValue(block)
+        wait_deferred = defer.Deferred()
+        listen_deferred = self.broker.listen()
+        listen_deferred.addCallback(lambda x:wait_deferred.callback(block))
+        return wait_deferred
