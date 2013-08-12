@@ -3,6 +3,8 @@ from flow.commands.base import CommandBase
 from flow.configuration.inject.redis_conf import RedisConfiguration
 from flow.configuration.settings.injector import setting
 from flow.util.logannotator import LogAnnotator
+from flow.util.exit import exit_process
+from flow.exit_codes import EXECUTE_ERROR
 from flow_workflow import factory
 from flow_workflow import io
 from flow_workflow.parallel_id import ParallelIdentifier
@@ -54,44 +56,62 @@ class WorkflowWrapperCommand(CommandBase):
         parser.add_argument('--parallel-id', default='[]',
                 help='used to look up inputs')
 
-
-    @defer.inlineCallbacks
     def _execute(self, parsed_arguments):
-        try:
-            net = rom.get_object(self.storage, parsed_arguments.net_key)
+        net = rom.get_object(self.storage, parsed_arguments.net_key)
 
-            parallel_id = ParallelIdentifier.deserialize(
-                    parsed_arguments.parallel_id)
+        parallel_id = ParallelIdentifier.deserialize(
+                parsed_arguments.parallel_id)
 
-            with NamedTemporaryFile() as inputs_file:
-                with NamedTemporaryFile() as outputs_file:
-                    write_inputs(inputs_file, net=net, parallel_id=parallel_id,
-                            operation_id=parsed_arguments.operation_id)
+        _execute_deferred = defer.Deferred()
 
-                    cmdline = copy.copy(self.perl_wrapper)
-                    cmdline_builder = CMDLINE_BUILDERS[
-                            parsed_arguments.action_type]
-                    cmdline.extend(cmdline_builder(parsed_arguments.method,
-                        parsed_arguments.action_id, inputs_file, outputs_file))
+        inputs_file = NamedTemporaryFile()
+        outputs_file = NamedTemporaryFile()
+        write_inputs(inputs_file, net=net, parallel_id=parallel_id,
+                operation_id=parsed_arguments.operation_id)
+
+        cmdline = copy.copy(self.perl_wrapper)
+        cmdline_builder = CMDLINE_BUILDERS[
+                parsed_arguments.action_type]
+        cmdline.extend(cmdline_builder(parsed_arguments.method,
+            parsed_arguments.action_id, inputs_file, outputs_file))
 
 
-                    LOG.info('Executing (%s): %s', socket.gethostname(),
-                            " ".join(cmdline))
-                    logannotator = LogAnnotator(cmdline)
-                    self.exit_code = yield logannotator.start()
+        LOG.info('Executing (%s): %s', socket.gethostname(),
+                " ".join(cmdline))
+        logannotator = LogAnnotator(cmdline)
+        deferred = logannotator.start()
+        deferred.addCallbacks(self._finish, self._exit,
+                callbackKeywords={'parsed_arguments':parsed_arguments,
+                    'inputs_file':inputs_file,
+                    'outputs_file':outputs_file,
+                    'parallel_id':parallel_id,
+                    'net':net,
+                    '_execute_deferred':_execute_deferred,
+        })
+        deferred.addErrback(self._exit)
 
-                    if self.exit_code == 0:
-                        read_and_store_outputs(outputs_file, net=net,
-                                operation_id=parsed_arguments.operation_id,
-                                parallel_id=parallel_id)
+        return _execute_deferred
 
-                    else:
-                        LOG.info("Non-zero exit-code: %s from perl_wrapper.",
-                                self.exit_code)
+    def _finish(self, exit_code, parsed_arguments, inputs_file, outputs_file, parallel_id,
+            net, _execute_deferred):
+        self.exit_code = exit_code
+        if exit_code == 0:
+            read_and_store_outputs(outputs_file, net=net,
+                    operation_id=parsed_arguments.operation_id,
+                    parallel_id=parallel_id)
+        else:
+            LOG.info("Non-zero exit-code: %s from perl_wrapper.", exit_code)
 
-        except:
-            LOG.exception('Error in workflow-wrapper')
-            raise
+        inputs_file.close()
+        outputs_file.close()
+        _execute_deferred.callback(None)
+
+        return exit_code
+
+    def _exit(self, error):
+        LOG.critical("Unexpected error in workflow-wrapper:\n%s",
+                error.getTraceback())
+        exit_process(EXECUTE_ERROR)
 
 
 def write_inputs(file_object, net, parallel_id, operation_id):
