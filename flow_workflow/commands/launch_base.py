@@ -3,6 +3,7 @@ from flow.commands.base import CommandBase
 from flow.petri_net.builder import Builder
 from flow.service_locator import ServiceLocator
 from flow.util.exit import exit_process
+from flow.exit_codes import EXECUTE_ERROR
 from flow_workflow import factory
 from flow_workflow.completion import MonitoringCompletionHandler
 from flow_workflow.entities.workflow.adapters import WorkflowAdapter
@@ -82,7 +83,6 @@ class LaunchWorkflowCommandBase(CommandBase):
         raise NotImplementedError()
 
 
-    @defer.inlineCallbacks
     def _execute(self, parsed_arguments):
         workflow, net, start_place = self.construct_net(parsed_arguments.xml,
                 parsed_arguments.inputs_file, parsed_arguments.resource_file)
@@ -92,11 +92,26 @@ class LaunchWorkflowCommandBase(CommandBase):
         if parsed_arguments.plan_id:
             net.set_constant('workflow_plan_id', parsed_arguments.plan_id)
 
-        yield self.start_net(net, start_place)
+        _execute_deferred = defer.Deferred()
+        start_deferred = self.start_net(net, start_place)
+        start_deferred.addCallback(self._on_net_started,
+                parsed_arguments=parsed_arguments, workflow=workflow, net=net,
+                _execute_deferred=_execute_deferred)
+        start_deferred.addErrback(self._on_net_started_failed)
+        return _execute_deferred
 
-        block = yield self.wait_for_results(net=net,
+    def _on_net_started(self, _callback, parsed_arguments, workflow, net,
+            _execute_deferred):
+        results_deferred = self.wait_for_results(net=net,
                 block=parsed_arguments.block)
+        results_deferred.addCallback(self._on_results,
+                parsed_arguments=parsed_arguments, workflow=workflow, net=net,
+                _execute_deferred=_execute_deferred)
+        results_deferred.addErrback(self._on_results_failed)
+        return _callback
 
+    def _on_results(self, block, parsed_arguments, workflow, net,
+            _execute_deferred):
         LOG.debug('Workflow execution done: %s', block)
 
         if block:
@@ -108,17 +123,27 @@ class LaunchWorkflowCommandBase(CommandBase):
             else:
                 LOG.info('Workflow execution failed.')
                 exit_process(exit_codes.EXECUTE_FAILURE)
+        _execute_deferred.callback(None)
+        return block
 
+    def _on_results_failed(self, error):
+        LOG.critical("Failed to get results\n%s",
+                error.getTraceback())
+        exit_process(EXECUTE_ERROR)
+
+    def _on_net_started_failed(self, error):
+        LOG.critical("Failed to start net\n%s",
+                error.getTraceback())
+        exit_process(EXECUTE_ERROR)
 
     def complete(self):
         return self.completion_handler.status == 'success'
 
 
-    @defer.inlineCallbacks
     def start_net(self, net, start_place):
         cg = net.add_color_group(1)
         orchestrator = self.service_locator['orchestrator']
-        yield orchestrator.create_token(net.key, start_place, cg.begin, cg.idx)
+        return orchestrator.create_token(net.key, start_place, cg.begin, cg.idx)
 
     @property
     def operation_data(self):
