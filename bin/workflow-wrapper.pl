@@ -16,6 +16,10 @@ my $json = JSON->new->allow_nonref;
 $| = 1; # forces perl to not buffer output to pipes
 
 
+sub now {
+    return POSIX::strftime('%Y-%m-%d %H:%M:%S', localtime(time()));
+}
+
 sub validate_arguments {
     my $expected_arguments = shift;
 
@@ -69,6 +73,45 @@ sub get_command_outputs {
     return \%outputs;
 }
 
+sub complete_event {
+    my $event = shift;
+    my $status = shift;
+
+    set_event_params($event, {
+        date_completed => now(),
+        event_status => $status,
+    });
+}
+
+
+sub set_event_params {
+    my $event = shift;
+    my $params = shift;
+
+    UR::Context->rollback();
+
+    for my $param_name (keys %$params) {
+        my $param_value = $params->{$param_name};
+        $event->$param_name($param_value);
+    }
+
+    UR::Context->commit();
+}
+
+sub print_exit_message {
+    my $message = shift;
+
+    print STDERR "^^^^^^^^^\n";
+    print STDERR $message;
+    print STDERR "=========\n";
+}
+
+sub exit_wrapper {
+    my $message = shift;
+
+    print_exit_message($message);
+    exit(1);
+}
 
 sub run_event {
     validate_arguments(["event", "<shortcut|execute>", "<event_id>",
@@ -76,32 +119,45 @@ sub run_event {
 
     my ($method, $event_id, $outputs_file) = @_;
 
-    validate_method($method);
     print STDERR "=========\n";
     print STDERR "Attempting to $method event $event_id...\n";
     print STDERR "vvvvvvvvv\n";
 
-    my $event = Genome::Model::Event->get($event_id)
-            || die "No event $event_id";
+    validate_method($method);
+
+    my $event = Genome::Model::Event->get($event_id);
+    unless ($event) {
+        exit_wrapper("Could not find event for event_id $event_id\n");
+    }
+
+    set_event_params($event, {
+        date_scheduled => now(),
+        event_status => 'Running',
+        lsf_job_id => $ENV{'LSB_JOBID'},
+        user_name => $ENV{'USER'},
+    });
 
     if (!$event->can($method)) {
-        print "Method '$method' not supported by event $event_id\n";
-        exit(1);
+        print STDERR "Method '$method' not supported by event $event_id\n";
+        exit_wrapper("Failed with $method for event $event_id...\n");
     }
-    my $ret = $event->$method();
+
+    my $ret = eval { $event->$method() };
+    my $error = $@;
+
+    if ($error) {
+        complete_event($event, 'Crashed');
+        exit_wrapper("Crashed with $method for event $event_id...\n");
+    }
 
     unless ($ret) {
-        print STDERR "^^^^^^^^^\n";
-        print STDERR "Failed with $method for event $event_id...\n";
-        print STDERR "=========\n";
-
-        exit(1);
+        complete_event($event, 'Failed');
+        exit_wrapper("Failed with $method for event $event_id...\n");
     }
     UR::Context->commit();
 
-    print STDERR "^^^^^^^^^\n";
-    print STDERR "Succeeded with $method for event $event_id...\n";
-    print STDERR "=========\n";
+    complete_event($event, 'Succeeded');
+    print_exit_message("Succeeded with $method for event $event_id...\n");
 
     Flow::write_outputs($outputs_file, { result => 1 });
 }
@@ -124,25 +180,23 @@ sub run_command {
 
     my $cmd = $pkg->create(%$inputs);
     if (!$pkg->can($method)) {
-        print "$pkg does not support method '$method'\n";
-        exit(1);
+        exit_wrapper("$pkg does not support method '$method'\n");
     }
 
-    my $ret = $cmd->$method();
+    my $ret = eval { $cmd->$method() };
+    my $error = $@;
+
+    if ($error) {
+        exit_wrapper("Crashed in $method for command $pkg...\n");
+    }
 
     unless ($ret) {
-        print STDERR "^^^^^^^^^\n";
-        print STDERR "Failed to $method command $pkg...\n";
-        print STDERR "=========\n";
-
-        exit(1);
+        exit_wrapper("Failed to $method command $pkg...\n");
     }
 
     UR::Context->commit();
 
-    print STDERR "^^^^^^^^^\n";
-    print STDERR "Succeeded to $method command $pkg...\n";
-    print STDERR "=========\n";
+    print_exit_message("Succeeded to $method command $pkg...\n");
 
     my $outputs = get_command_outputs($cmd, $pkg);
     Flow::write_outputs($outputs_file, $outputs);
