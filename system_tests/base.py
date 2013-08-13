@@ -1,15 +1,15 @@
+from test_helpers import redistest
 from flow.util.mkdir import make_path_to
 
 import abc
 import json
 import os
-import redis
 import subprocess
 import tempfile
 import yaml
 
 
-class BaseWorkflowTest(object):
+class BaseWorkflowTest(redistest.RedisTest):
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractproperty
@@ -78,7 +78,7 @@ class BaseWorkflowTest(object):
     def temporary_configuration(self):
         return {
             'redis': {
-                'unix_socket_path': os.environ['FLOW_TEST_REDIS_SOCKET'],
+                'unix_socket_path': self.redis_unix_socket_path,
             }
         }
 
@@ -90,12 +90,6 @@ class BaseWorkflowTest(object):
     def setup_temporary_flow_config_file(self):
         yaml.dump(self.temporary_configuration,
                 open(self.temporary_config_path, 'w'))
-
-
-    def flush_redis(self):
-        conn = redis.Redis(
-                unix_socket_path=os.environ['FLOW_TEST_REDIS_SOCKET'])
-        conn.flushall()
 
 
     def setup_encoded_inputs_file(self):
@@ -119,26 +113,18 @@ class BaseWorkflowTest(object):
         os.environ['PERL5LIB'] = self.old_perl5lib
 
 
-    def setup_redis(self):
-        self.flush_redis()
-
-    def teardown_redis(self):
-        self.flush_redis()
-
-
     def setUp(self):
         self.tmp_dir = tempfile.mkdtemp()
 
         self.setup_perl5lib()
-        self.setup_redis()
         self.setup_flow_config_path()
         self.setup_temporary_flow_config_file()
         self.setup_encoded_inputs_file()
 
     def tearDown(self):
         self.teardown_flow_config_path()
-        self.teardown_redis()
         self.teardown_perl5lib()
+        redistest.RedisTest.tearDown(self)
 
 
     def execute_workflow(self):
