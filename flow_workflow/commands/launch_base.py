@@ -119,9 +119,11 @@ class LaunchWorkflowCommandBase(CommandBase):
                 self.write_outputs(net, workflow.child_adapter.operation_id,
                         workflow.output_properties,
                         parsed_arguments.outputs_file)
+                net.delete()
 
             else:
                 LOG.info('Workflow execution failed.')
+                net.delete()
                 exit_process(exit_codes.EXECUTE_FAILURE)
         _execute_deferred.callback(None)
         return block

@@ -34,4 +34,3 @@ class WorkflowNet(future.FutureNet):
         self.bridge_transitions(child_net.failure_transition,
                 self.notify_failure_transition,
                 name='notify_failure_place')
-

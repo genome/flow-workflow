@@ -114,6 +114,7 @@ class BaseWorkflowTest(redistest.RedisTest):
 
 
     def setUp(self):
+        self.maxDiff = None
         self.tmp_dir = tempfile.mkdtemp()
 
         self.setup_perl5lib()
@@ -154,7 +155,10 @@ class BaseWorkflowTest(redistest.RedisTest):
         json.dump(actual_outputs, open(self.converted_outputs_path, 'w'))
         self.assertEqual(self.expected_outputs, actual_outputs)
 
+    def verify_redis_empty(self):
+        self.assertEqual([], self.conn.keys())
 
     def test_workflow(self):
         self.execute_workflow()
         self.verify_outputs()
+        self.verify_redis_empty()
