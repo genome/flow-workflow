@@ -80,14 +80,13 @@ class WorkflowWrapperCommand(CommandBase):
                 " ".join(cmdline))
         logannotator = LogAnnotator(cmdline)
         deferred = logannotator.start()
-        deferred.addCallbacks(self._finish, self._exit,
-                callbackKeywords={'parsed_arguments':parsed_arguments,
-                    'inputs_file':inputs_file,
-                    'outputs_file':outputs_file,
-                    'parallel_id':parallel_id,
-                    'net':net,
-                    '_execute_deferred':_execute_deferred,
-        })
+        deferred.addCallbacks(self._finish,
+                parsed_arguments=parsed_arguments,
+                    inputs_file=inputs_file,
+                    outputs_file=outputs_file,
+                    parallel_id=parallel_id,
+                    net=net,
+                    _execute_deferred=_execute_deferred)
         deferred.addErrback(self._exit)
 
         return _execute_deferred
