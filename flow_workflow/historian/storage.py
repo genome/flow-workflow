@@ -50,16 +50,6 @@ STATEMENTS_DICT['select_execution'] = """
 WHERE workflow_execution_id = :workflow_execution_id
 """
 
-STATEMENTS_DICT['delete_instance'] = """
-    DELETE FROM %s.workflow_instance
-WHERE workflow_instance_id = :workflow_instance_id
-"""
-
-STATEMENTS_DICT['delete_execution'] = """
-    DELETE FROM %s.workflow_instance_execution
-WHERE workflow_instance_id = :workflow_instance_id
-"""
-
 
 TABLES = namedtuple('Tables', ['historian', 'instance', 'execution'])
 SEQUENCES = namedtuple('Sequences', ['instance', 'execution'])
@@ -92,23 +82,6 @@ class WorkflowHistorianStorage(object):
         # Oracle needs us to tell it to accept strings for dates/timestamps
         if isinstance(self.engine.dialect, oracle_dialect):
             event.listen(self.engine.pool, 'connect', on_oracle_connect)
-
-    def delete(self, operation_data):
-        LOG.debug("Deleting '%s'", operation_data)
-        transaction = SimpleTransaction(self.engine)
-        try:
-            instance_id = self._get_instance_id(transaction, operation_data)
-
-            execute_and_log(transaction, self.statements.delete_instance,
-                    workflow_instance_id=instance_id)
-            execute_and_log(transaction, self.statements.delete_execution,
-                    workflow_instance_id=instance_id)
-
-        except:
-            transaction.rollback()
-            raise
-        transaction.commit()
-
 
     def update(self, update_info):
         LOG.debug("Updating '%s'", update_info['name'])
