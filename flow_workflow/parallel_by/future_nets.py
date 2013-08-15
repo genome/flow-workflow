@@ -43,13 +43,16 @@ class ParallelByNet(WorkflowNetBase):
                     operation_id=self.operation_id, status='new'))
         self.observe_transition(self.internal_start_transition,
                 FutureAction(UpdateOperationStatus,
-                    operation_id=self.operation_id, status='running'))
+                    operation_id=self.operation_id, status='running',
+                    name=display_name(name)))
         self.observe_transition(self.internal_failure_transition,
                 FutureAction(UpdateOperationStatus,
-                    operation_id=self.operation_id, status='crashed'))
+                    operation_id=self.operation_id, status='crashed',
+                    name=display_name(name)))
         self.observe_transition(self.internal_success_transition,
                 FutureAction(UpdateOperationStatus,
-                    operation_id=self.operation_id, status='done'))
+                    operation_id=self.operation_id, status='done',
+                    name=display_name(name)))
 
         # join_transition
         join_action = FutureAction(cls=actions.ParallelByJoin,
@@ -79,3 +82,6 @@ class ParallelByNet(WorkflowNetBase):
                 self.target_fail_transition,
                 self.internal_failure_transition,
                 name='failing')
+
+def display_name(name):
+    return "%s (Parallel By)" % name
