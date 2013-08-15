@@ -33,6 +33,16 @@ class HistorianActionBase(BasicActionBase):
 
         return map(net.token, active_tokens), deferred
 
+    @property
+    def message_args(self):
+        whitelist = ['name', 'status']
+        result = {}
+
+        self_args = self.args.value
+        for arg in whitelist:
+            if arg in self_args:
+                result[arg] = self_args[arg]
+        return result
 
     @abstractmethod
     def _execute(self, historian, net, color_descriptor, parallel_id,
@@ -42,27 +52,19 @@ class HistorianActionBase(BasicActionBase):
     def operation(self, net):
         return factory.load_operation(net, self.args['operation_id'])
 
-    def operation_name(self, operation, parallel_id):
-        if parallel_id.refers_to(operation):
-            return "(%s)%s" % (parallel_id.index, operation.name)  
-        return operation.name
-
-
     def update_operation_status(self, historian, net, operation,
-            color_descriptor, parallel_id, status, token_data,
-            **additional_properties):
+            color_descriptor, parallel_id, token_data):
         operation_data = OperationData(net_key=operation.net_key,
                 operation_id=operation.operation_id,
                 color=color_descriptor.color)
         fields = {
                 'operation_data': operation_data.to_dict,
-                'name': self.operation_name(operation, parallel_id),
+                'name': operation.name,
                 'workflow_plan_id': net.constant('workflow_plan_id'),
                 'user_name': net.constant('user_name'),
-                'status': status,
                 }
 
-        fields.update(additional_properties)
+        fields.update(self.message_args)
         fields.update(get_parent_fields(operation, parallel_id,
             color_descriptor))
         fields.update(get_peer_fields(operation, parallel_id, color_descriptor))
@@ -148,7 +150,7 @@ class UpdateChildrenStatuses(HistorianActionBase):
         for child_operation in operation.iter_children():
             deferred = self.update_operation_status(historian, net,
                     child_operation, color_descriptor, parallel_id,
-                    token_data=token_data, status=self.args['status'])
+                    token_data=token_data)
             deferreds.append(deferred)
 
         return defer.gatherResults(deferreds)
@@ -162,8 +164,7 @@ class UpdateOperationStatus(HistorianActionBase):
         operation = self.operation(net)
 
         return self.update_operation_status(historian, net, operation,
-                color_descriptor, parallel_id, token_data=token_data,
-                status=self.args['status'])
+                color_descriptor, parallel_id, token_data=token_data)
 
 
 def env_is_perl_true(net, varname):
