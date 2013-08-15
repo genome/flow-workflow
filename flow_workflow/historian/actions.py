@@ -161,17 +161,6 @@ class UpdateOperationStatus(HistorianActionBase):
                 status=self.args['status'])
 
 
-class DeletePlaceholderOperation(HistorianActionBase):
-    required_args = ['operation_id']
-
-    def _execute(self, historian, net, color_descriptor, parallel_id,
-            token_data):
-        return historian.delete(OperationData(
-                operation_id=self.args['operation_id'],
-                color=color_descriptor.color, net_key=net.key),
-            workflow_plan_id=net.constant('workflow_plan_id'))
-
-
 def env_is_perl_true(net, varname):
     env = net.constant('environment', {})
     var = env.get(varname)
