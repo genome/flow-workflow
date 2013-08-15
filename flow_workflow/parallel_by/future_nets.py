@@ -1,7 +1,6 @@
 from flow.petri_net.future import FutureAction
 from flow_workflow.parallel_by import actions
 from flow_workflow.future_nets import WorkflowNetBase
-from flow_workflow.historian.actions import DeletePlaceholderOperation
 from flow_workflow.historian.actions import UpdateOperationStatus
 
 
@@ -39,9 +38,6 @@ class ParallelByNet(WorkflowNetBase):
                 name='succeeding-split')
 
         # historian observers
-        self.observe_transition(self.internal_start_transition,
-                FutureAction(DeletePlaceholderOperation,
-                    operation_id=self.operation_id))
         self.observe_transition(self.split_transition,
                 FutureAction(UpdateOperationStatus,
                     operation_id=self.operation_id, status='new'))
