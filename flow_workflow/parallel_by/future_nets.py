@@ -41,6 +41,15 @@ class ParallelByNet(WorkflowNetBase):
         self.observe_transition(self.split_transition,
                 FutureAction(UpdateOperationStatus,
                     operation_id=self.operation_id, status='new'))
+        self.observe_transition(self.internal_start_transition,
+                FutureAction(UpdateOperationStatus,
+                    operation_id=self.operation_id, status='running'))
+        self.observe_transition(self.internal_failure_transition,
+                FutureAction(UpdateOperationStatus,
+                    operation_id=self.operation_id, status='crashed'))
+        self.observe_transition(self.internal_success_transition,
+                FutureAction(UpdateOperationStatus,
+                    operation_id=self.operation_id, status='done'))
 
         # join_transition
         join_action = FutureAction(cls=actions.ParallelByJoin,
