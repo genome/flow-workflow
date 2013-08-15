@@ -40,8 +40,6 @@ class ExecuteWorkflowCommand(LaunchWorkflowCommandBase):
 
     def setup_historian_handler(self):
         self.broker.register_handler(
-                self.injector.get(handler.HistorianDeleteHandler))
-        self.broker.register_handler(
                 self.injector.get(handler.HistorianUpdateHandler))
 
     def wait_for_results(self, net, block):

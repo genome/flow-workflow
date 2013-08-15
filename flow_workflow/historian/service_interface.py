@@ -13,7 +13,6 @@ LOG = logging.getLogger(__name__)
 
 @inject(broker=flow.interfaces.IBroker,
         exchange=setting('workflow.historian.exchange'),
-        delete_routing_key=setting('workflow.historian.delete_routing_key'),
         update_routing_key=setting('workflow.historian.update_routing_key'))
 class WorkflowHistorianServiceInterface(
         flow_workflow.interfaces.IWorkflowHistorian):
@@ -34,11 +33,3 @@ class WorkflowHistorianServiceInterface(
                     name=name, workflow_plan_id=workflow_plan_id, **kwargs)
             return self.broker.publish(self.exchange, self.update_routing_key,
                     message)
-
-    def delete(self, operation_data, workflow_plan_id):
-        if workflow_plan_id is None or workflow_plan_id < 0:
-            return defer.succeed(None)
-        else:
-            return self.broker.publish(self.exchange, self.delete_routing_key,
-                    messages.DeleteMessage(
-                        operation_data=operation_data.to_dict))

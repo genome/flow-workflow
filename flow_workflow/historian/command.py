@@ -17,7 +17,6 @@ class WorkflowHistorianCommand(ServiceCommand):
 
     def _setup(self, *args, **kwargs):
         self.handlers = [
-            self.injector.get(handler.HistorianDeleteHandler),
             self.injector.get(handler.HistorianUpdateHandler),
         ]
 

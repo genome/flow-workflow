@@ -54,12 +54,3 @@ class HistorianUpdateHandler(HistorianHandlerBase):
 
         return message_dict
 
-
-@inject(queue_name=setting('workflow.historian.delete_queue'))
-class HistorianDeleteHandler(HistorianHandlerBase):
-    message_class = messages.DeleteMessage
-
-    def _handle_historian_message(self, message):
-        operation_data = OperationData.from_dict(message.operation_data)
-
-        self.storage.delete(operation_data)

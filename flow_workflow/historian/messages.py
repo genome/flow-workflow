@@ -34,8 +34,3 @@ class UpdateMessage(Message):
         Message.validate(self)
         Status(self.status) # throws ValueError if invalid
 
-
-class DeleteMessage(Message):
-    required_fields = {
-        'operation_data': dict,
-    }
