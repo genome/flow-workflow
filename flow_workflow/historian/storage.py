@@ -94,6 +94,7 @@ class WorkflowHistorianStorage(object):
             event.listen(self.engine.pool, 'connect', on_oracle_connect)
 
     def delete(self, operation_data):
+        LOG.debug("Deleting '%s'", operation_data)
         transaction = SimpleTransaction(self.engine)
         try:
             instance_id = self._get_instance_id(transaction, operation_data)
@@ -403,8 +404,7 @@ class SimpleTransaction(object):
         return self.conn.execute(*args, **statement_kwargs)
 
     def commit(self, *args, **kwargs):
-        LOG.debug("Commiting transaction (%r) and closing connection (%r).",
-                self.trans, self.conn)
+        LOG.debug("Commiting transaction")
         try:
             return_value = self.trans.commit(*args, **kwargs)
         except:
@@ -415,8 +415,7 @@ class SimpleTransaction(object):
         return return_value
 
     def rollback(self, *args, **kwargs):
-        LOG.debug("Rolling back transaction (%r) and closing connection (%r).",
-                self.trans, self.conn)
+        LOG.debug("Rolling back transaction.")
         return_value = self.trans.rollback(*args, **kwargs)
         self._close()
         return return_value

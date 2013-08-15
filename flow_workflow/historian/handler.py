@@ -35,7 +35,7 @@ class HistorianUpdateHandler(HistorianHandlerBase):
 
     def _handle_historian_message(self, message):
         message_dict = self._get_message_dict(message)
-        LOG.info("Updating [net_key='%s', operation_id='%s']: %r",
+        LOG.debug("Updating [net_key='%s', operation_id='%s']: %r",
                 message.operation_data['net_key'],
                 message.operation_data['operation_id'], message_dict)
         self.storage.update(message_dict)
