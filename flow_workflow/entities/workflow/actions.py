@@ -7,5 +7,5 @@ class NotificationAction(BasicActionBase):
     def execute(self, net, color_descriptor, active_tokens, service_interfaces):
         deferred = service_interfaces['workflow_completion'].notify(
                 net, status=self.args['status'])
-        return [], deferred
+        return map(net.token, active_tokens), deferred
 
