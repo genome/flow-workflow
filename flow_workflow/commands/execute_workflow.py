@@ -48,4 +48,5 @@ class ExecuteWorkflowCommand(LaunchWorkflowCommandBase):
         wait_deferred = defer.Deferred()
         listen_deferred = self.broker.listen()
         listen_deferred.addCallback(lambda x:wait_deferred.callback(block))
+        listen_deferred.addErrback(wait_deferred.errback)
         return wait_deferred
