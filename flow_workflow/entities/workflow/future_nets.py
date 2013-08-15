@@ -1,4 +1,5 @@
 from flow.petri_net import future
+from flow.petri_net.actions.expire import ExpireNetAction
 from flow_workflow.entities.workflow.actions import NotificationAction
 from flow_workflow.historian.actions import UpdateOperationStatus
 
@@ -34,3 +35,13 @@ class WorkflowNet(future.FutureNet):
         self.bridge_transitions(child_net.failure_transition,
                 self.notify_failure_transition,
                 name='notify_failure_place')
+
+        self.observe_transition(self.notify_success_transition,
+                observer_action=future.FutureAction(cls=ExpireNetAction,
+                    ttl_days='1'),
+                name='expire_on_success')
+
+        self.observe_transition(self.notify_failure_transition,
+                observer_action=future.FutureAction(cls=ExpireNetAction,
+                    ttl_days='7'),
+                name='expire_on_failure')
