@@ -42,6 +42,11 @@ class HistorianActionBase(BasicActionBase):
     def operation(self, net):
         return factory.load_operation(net, self.args['operation_id'])
 
+    def operation_name(self, operation, parallel_id):
+        if parallel_id.refers_to(operation):
+            return "(%s)%s" % (parallel_id.index, operation.name)  
+        return operation.name
+
 
     def update_operation_status(self, historian, net, operation,
             color_descriptor, parallel_id, status, token_data,
@@ -51,7 +56,7 @@ class HistorianActionBase(BasicActionBase):
                 color=color_descriptor.color)
         fields = {
                 'operation_data': operation_data.to_dict,
-                'name': operation.name,
+                'name': self.operation_name(operation, parallel_id),
                 'workflow_plan_id': net.constant('workflow_plan_id'),
                 'user_name': net.constant('user_name'),
                 'status': status,
