@@ -19,7 +19,7 @@ class HistorianActionBase(BasicActionBase):
     def execute(self, net, color_descriptor, active_tokens, service_interfaces):
         if env_is_perl_true(net, 'UR_DBI_NO_COMMIT'):
             LOG.debug('UR_DBI_NO_COMMIT is set, not updating status.')
-            return [], defer.succeed(None)
+            return map(net.token, active_tokens), defer.succeed(None)
 
         historian = service_interfaces['workflow_historian']
 
@@ -31,7 +31,7 @@ class HistorianActionBase(BasicActionBase):
                 color_descriptor=color_descriptor, parallel_id=parallel_id,
                 token_data=token_data)
 
-        return [], deferred
+        return map(net.token, active_tokens), deferred
 
 
     @abstractmethod
