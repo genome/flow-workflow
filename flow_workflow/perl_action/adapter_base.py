@@ -34,6 +34,10 @@ class PerlActionAdapterBase(adapter_base.ParallelXMLAdapterBase):
     def shortcut_action_class(self):
         return actions.ForkAction
 
+    @property
+    def project_name(self):
+        return self.operation_type_attributes.get('lsfProject')
+
     def single_future_net(self, resources):
         return future_nets.PerlActionNet(
                 name=self.name,
@@ -41,5 +45,6 @@ class PerlActionAdapterBase(adapter_base.ParallelXMLAdapterBase):
                 resources=resources,
                 action_type=self.action_type,
                 action_id=self.action_id,
+                project_name=self.project_name,
                 shortcut_action_class=self.shortcut_action_class,
                 execute_action_class=self.execute_action_class)
