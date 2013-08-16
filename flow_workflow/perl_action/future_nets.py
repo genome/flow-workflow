@@ -61,6 +61,7 @@ class PerlActionNet(WorkflowNetBase):
 
         lsf_options = {
             'project': project_name,
+            'job_name': name,
         }
         self.execute_net = self.add_subnet(ExecuteShellCommandNet, name=name,
                 dispatch_action_class=execute_action_class,
