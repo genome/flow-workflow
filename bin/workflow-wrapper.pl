@@ -6,6 +6,7 @@ use Flow;
 use IO::File;
 use JSON;
 use POSIX;
+use Switch;
 use above 'Genome';
 
 use strict;
@@ -202,6 +203,23 @@ sub run_command {
     Flow::write_outputs($outputs_file, $outputs);
 }
 
+my %_WRAPPED_FUNCTIONS = (
+    'command' => \&run_command,
+    'event' => \&run_event,
+);
+
+sub safely_wrap {
+    my $action = shift;
+
+    eval { $_WRAPPED_FUNCTIONS{$action}->(@ARGV); };
+    if ($@) {
+        my $error = $@;
+        exit_wrapper(
+            sprintf("%s failed inside Flow workflow_wrapper.pl " .
+                "(possibly related to UR::Context->commit or rollback): %s",
+                ucfirst($action), $error));
+    }
+}
 
 # --- Main ---
 if (@ARGV == 0) {
@@ -210,9 +228,16 @@ if (@ARGV == 0) {
 }
 
 my $action = shift @ARGV;
-SWITCH: for ($action) {
-    $_ eq "command" && do { run_command(@ARGV); last SWITCH; };
-    $_ eq "event" && do { run_event(@ARGV); last SWITCH; };
-    die "Unknown argument $_";
-    exit 1;
+
+switch ($action) {
+    case('command') {
+        safely_wrap('command');
+    }
+
+    case ('event') {
+        safely_wrap('event');
+    }
+    else {
+        die "Unknown action $action";
+    }
 }
