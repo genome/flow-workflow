@@ -14,7 +14,10 @@ use warnings;
 
 
 my $json = JSON->new->allow_nonref;
-$| = 1; # forces perl to not buffer output to pipes
+
+# Force perl to flush output to pipes.  This makes sure that log lines can be
+# annotated with timestamps as they're produced rather than in huge chunks.
+$| = 1;
 
 
 sub now {
