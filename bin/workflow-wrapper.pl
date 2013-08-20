@@ -211,7 +211,7 @@ my %_WRAPPED_FUNCTIONS = (
 sub safely_wrap {
     my $action = shift;
 
-    eval { $_WRAPPED_FUNCTIONS{$action}->(@ARGV); };
+    eval { $_WRAPPED_FUNCTIONS{$action}->(@_); };
     if ($@) {
         my $error = $@;
         exit_wrapper(
@@ -231,11 +231,11 @@ my $action = shift @ARGV;
 
 switch ($action) {
     case('command') {
-        safely_wrap('command');
+        safely_wrap('command', @ARGV);
     }
 
     case ('event') {
-        safely_wrap('event');
+        safely_wrap('event', @ARGV);
     }
     else {
         die "Unknown action $action";
