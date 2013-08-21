@@ -334,6 +334,9 @@ class ParallelByFailTest(fakeredistest.FakeRedisTest):
         service_interfaces = mock.MagicMock()
 
         with mock.patch('flow_workflow.io.extract_workflow_data') as wf_data:
+            wf_data.return_value = {
+                'parallel_id': [(8, 3)],
+            }
             tokens, deferred = self.action.execute(net=net,
                     color_descriptor=color_descriptor,
                     active_tokens=active_tokens,

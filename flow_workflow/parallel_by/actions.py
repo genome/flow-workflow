@@ -119,6 +119,9 @@ class ParallelByFail(BasicActionBase):
         # created token should have workflow_data on it so observers can
         # know what parallel_id failed.
         workflow_data = io.extract_workflow_data(net, active_tokens)
+        parallel_id = _parallel_id_from_workflow_data(workflow_data)
+        workflow_data['parallel_id'] = list(parallel_id.parent_identifier)
+
         data = {'workflow_data': workflow_data}
         token = net.create_token(color=color_descriptor.group.parent_color,
             color_group_idx=color_descriptor.group.parent_color_group_idx,
