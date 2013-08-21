@@ -274,31 +274,6 @@ class ParallelByJoinTest(fakeredistest.FakeRedisTest):
         self.operation = mock.MagicMock()
 
 
-#    def test_execute(self):
-#        color_descriptor = mock.Mock()
-#        active_tokens = mock.Mock()
-#        service_interfaces = mock.MagicMock()
-#
-#        parallel_id = [(3, 2)]
-#        workflow_data = {'parallel_id': parallel_id}
-#
-#        self.action.collect_array_output = mock.Mock()
-#        self.action.collect_array_output.return_value = [mock.Mock()]
-#
-#        with mock.patch('flow_workflow.io') as m_io:
-#            m_io.extract_workflow_data.return_value = workflow_data
-#            self.action.execute(net=self.net,
-#                    color_descriptor=color_descriptor,
-#                    active_tokens=active_tokens,
-#                    service_interfaces=service_interfaces)
-#            m_io.extract_workflow_data.assert_called_once_with(self.net,
-#                    active_tokens)
-#            m_io.store_output.assert_called_once_with(net=self.net,
-#                    operation_id=self.operation_id, property_name='bar',
-#                    value=mock.ANY, parallel_id=mock.ANY)
-#
-#        self.net.create_token.assert_called_once()
-
 
     def test_collect_array_output(self):
         property_name = 'bar'
