@@ -166,6 +166,7 @@ class LaunchWorkflowCommandBase(CommandBase):
         # XXX Update builder to use injector
         builder = Builder(self.storage)
         stored_net = builder.store(future_net, self.variables, self.constants)
+        LOG.info('Created net with key (%s)', stored_net.key)
 
         if self.operation_data:
             parent_future_op = ForeignFutureOperation(
