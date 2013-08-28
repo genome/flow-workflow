@@ -205,6 +205,8 @@ class LaunchWorkflowCommandBase(CommandBase):
             'environment': os.environ.data,
             'group_id': os.getgid(),
             'user_id': os.getuid(),
+            'groups': os.getgroups(),
+            'umask': self.get_umask(),
             'user_name': self.user_name,
             'working_directory': os.getcwd(),
         }
@@ -212,6 +214,12 @@ class LaunchWorkflowCommandBase(CommandBase):
     @property
     def user_name(self):
         return pwd.getpwuid(os.getuid())[0]
+
+    def get_umask(self):
+        # there is no os.getumask() :(
+        old = os.umask(0)
+        os.umask(old)
+        return old
 
 
 def load_xml(filename):
