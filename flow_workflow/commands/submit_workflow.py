@@ -22,3 +22,7 @@ class SubmitWorkflowCommand(LaunchWorkflowCommandBase):
             return self.setup_completion_handler(net)
         else:
             return defer.succeed(block)
+
+    @property
+    def additional_constants(self):
+        return { 'groups': os.getgroups() }

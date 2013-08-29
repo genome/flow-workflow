@@ -201,15 +201,22 @@ class LaunchWorkflowCommandBase(CommandBase):
 
     @property
     def constants(self):
-        return {
+        params = {
             'environment': os.environ.data,
             'group_id': os.getgid(),
             'user_id': os.getuid(),
-            'groups': os.getgroups(),
             'umask': self.get_umask(),
             'user_name': self.user_name,
             'working_directory': os.getcwd(),
         }
+        params.update(self.additional_constants)
+
+        return params
+
+
+    @property
+    def additional_constants(self):
+        return {}
 
     @property
     def user_name(self):
