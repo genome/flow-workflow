@@ -4,6 +4,8 @@ from flow.configuration.inject.redis_conf import RedisConfiguration
 from flow.configuration.inject.service_locator import ServiceLocatorConfiguration
 from twisted.internet import defer
 
+import os
+
 
 class SubmitWorkflowCommand(LaunchWorkflowCommandBase):
     injector_modules = [
