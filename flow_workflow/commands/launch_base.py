@@ -223,7 +223,6 @@ class LaunchWorkflowCommandBase(CommandBase):
         return pwd.getpwuid(os.getuid())[0]
 
     def get_umask(self):
-        # there is no os.getumask() :(
         old = os.umask(0)
         os.umask(old)
         return old
