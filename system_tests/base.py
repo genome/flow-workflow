@@ -6,10 +6,11 @@ import json
 import os
 import subprocess
 import tempfile
+import unittest
 import yaml
 
 
-class BaseWorkflowTest(redistest.RedisTest):
+class BaseWorkflowTest(unittest.TestCase):
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractproperty
@@ -76,11 +77,7 @@ class BaseWorkflowTest(redistest.RedisTest):
 
     @property
     def temporary_configuration(self):
-        return {
-            'redis': {
-                'unix_socket_path': self.redis_unix_socket_path,
-            }
-        }
+        return {}
 
     @property
     def encode_inputs_command_line(self):
@@ -124,7 +121,6 @@ class BaseWorkflowTest(redistest.RedisTest):
     def tearDown(self):
         self.teardown_flow_config_path()
         self.teardown_perl5lib()
-        redistest.RedisTest.tearDown(self)
 
 
     def execute_workflow(self):
@@ -154,15 +150,6 @@ class BaseWorkflowTest(redistest.RedisTest):
         json.dump(actual_outputs, open(self.converted_outputs_path, 'w'))
         self.assertEqual(self.expected_outputs, actual_outputs)
 
-    def verify_redis_keys_expired(self):
-        failed_to_expire = []
-        for key in self.conn.keys():
-            if self.conn.ttl(key) is None:
-                failed_to_expire.append(key)
-
-        self.assertEqual([], failed_to_expire)
-
     def test_workflow(self):
         self.execute_workflow()
         self.verify_outputs()
-        self.verify_redis_keys_expired()
