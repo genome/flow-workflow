@@ -1,5 +1,5 @@
 from flow.configuration.inject.local_broker import BrokerConfiguration
-from flow.configuration.inject.redis_conf import LocalRedisConfiguration
+from flow.configuration.inject.redis_conf import RedisConfiguration
 from flow.configuration.inject.service_locator import ServiceLocatorConfiguration
 from flow.orchestrator.handlers import PetriCreateTokenHandler
 from flow.orchestrator.handlers import PetriNotifyPlaceHandler
@@ -13,7 +13,7 @@ from twisted.internet import defer
 class ExecuteWorkflowCommand(LaunchWorkflowCommandBase):
     injector_modules = [
             BrokerConfiguration,
-            LocalRedisConfiguration,
+            RedisConfiguration,
             ServiceLocatorConfiguration,
     ]
 
