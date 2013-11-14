@@ -151,7 +151,7 @@ sub run_event {
 
     if ($error) {
         complete_event($event, 'Crashed');
-        exit_wrapper("Crashed with $method for event $event_id...\n");
+        exit_wrapper("Crashed with $method for event $event_id:\n$error\n");
     }
 
     unless ($ret) {
@@ -191,7 +191,7 @@ sub run_command {
     my $error = $@;
 
     if ($error) {
-        exit_wrapper("Crashed in $method for command $pkg...\n");
+        exit_wrapper("Crashed in $method for command $pkg:\n$error\n");
     }
 
     unless ($ret) {
