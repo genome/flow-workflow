@@ -1,0 +1,36 @@
+{
+    "children": {
+        "ShortcutCrasher": {
+            "queue": "short",
+            "resources": {
+                "limit": {
+                    "max_virtual_memory": 204800
+                },
+                "request": {
+                    "min_cores": "4",
+                    "temp_space": "5"
+                },
+                "reserve": {
+                    "memory": "200",
+                    "temp_space": "5"
+                }
+            }
+        },
+        "ExecuteCrasher": {
+            "queue": "short",
+            "resources": {
+                "limit": {
+                    "max_virtual_memory": 204800
+                },
+                "request": {
+                    "min_cores": "4",
+                    "temp_space": "5"
+                },
+                "reserve": {
+                    "memory": "200",
+                    "temp_space": "5"
+                }
+            }
+        }
+    }
+}

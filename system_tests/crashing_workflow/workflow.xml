@@ -1,0 +1,30 @@
+<?xml version='1.0' standalone='yes'?>
+<workflow name="CrashingWorkflow"
+    executor="Workflow::Executor::SerialDeferred"
+    logDir="test_logs/crashing_workflow">
+
+    <operation name="ShortcutCrasher">
+        <operationtype commandClass="CrashingCommand"
+            typeClass="Workflow::OperationType::Command" />
+    </operation>
+    <link fromOperation="input connector" fromProperty="constant_shortcut"
+        toOperation="ShortcutCrasher" toProperty="crashing_stage" />
+    <link fromOperation="ShortcutCrasher" fromProperty="out"
+        toOperation="output connector" toProperty="shortcut_crasher_out" />
+
+    <operation name="ExecuteCrasher">
+        <operationtype commandClass="CrashingCommand"
+            typeClass="Workflow::OperationType::Command" />
+    </operation>
+    <link fromOperation="input connector" fromProperty="constant_execute"
+        toOperation="ExecuteCrasher" toProperty="crashing_stage" />
+    <link fromOperation="ExecuteCrasher" fromProperty="out"
+        toOperation="output connector" toProperty="execute_crasher_out" />
+
+    <operationtype typeClass="Workflow::OperationType::Model">
+        <inputproperty>constant_shortcut</inputproperty>
+        <inputproperty>constant_execute</inputproperty>
+        <outputproperty>shortcut_out</outputproperty>
+        <outputproperty>execute_out</outputproperty>
+    </operationtype>
+</workflow>
