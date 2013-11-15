@@ -111,8 +111,11 @@ sub print_exit_message {
 }
 
 sub exit_wrapper {
-    my $message = shift;
+    my ($message, $error) = @_;
 
+    if ($error) {
+        print STDERR $error, "\n";
+    }
     print_exit_message($message);
     exit(1);
 }
@@ -151,7 +154,7 @@ sub run_event {
 
     if ($error) {
         complete_event($event, 'Crashed');
-        exit_wrapper("Crashed with $method for event $event_id:\n$error\n");
+        exit_wrapper("Crashed with $method for event $event_id:\n", $error);
     }
 
     unless ($ret) {
@@ -191,7 +194,7 @@ sub run_command {
     my $error = $@;
 
     if ($error) {
-        exit_wrapper("Crashed in $method for command $pkg:\n$error\n");
+        exit_wrapper("Crashed in $method for command $pkg.\n", $error);
     }
 
     unless ($ret) {
