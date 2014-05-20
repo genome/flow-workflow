@@ -226,7 +226,7 @@ sub safely_wrap {
     if ($@) {
         my $error = $@;
         exit_wrapper(
-            sprintf("%s failed inside Flow workflow_wrapper.pl: %s",
+            sprintf("%s failed inside Flow workflow-wrapper.pl: %s",
                 ucfirst($action), $error));
     }
 }
@@ -247,7 +247,7 @@ sub _commit_or_rollback {
     };
     my $error = $@;
     if ($error) {
-        exit_wrapper("Failed to $method inside workflow_wrapper.pl: $error");
+        exit_wrapper("Failed to $method inside workflow-wrapper.pl: $error");
     }
 }
 
