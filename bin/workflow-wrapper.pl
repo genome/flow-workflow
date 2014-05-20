@@ -92,14 +92,14 @@ sub set_event_params {
     my $event = shift;
     my $params = shift;
 
-    UR::Context->rollback();
+    rollback();
 
     for my $param_name (keys %$params) {
         my $param_value = $params->{$param_name};
         $event->$param_name($param_value);
     }
 
-    UR::Context->commit();
+    commit();
 }
 
 sub print_exit_message {
@@ -161,7 +161,7 @@ sub run_event {
         complete_event($event, 'Failed');
         exit_wrapper("Failed with $method for event $event_id...\n");
     }
-    UR::Context->commit();
+    commit();
 
     complete_event($event, 'Succeeded');
     print_exit_message("Succeeded with $method for event $event_id...\n");
@@ -185,14 +185,19 @@ sub run_command {
 
     my $inputs = load_inputs($inputs_file);
 
-    my $cmd = $pkg->create(%$inputs);
+    my $cmd = eval { $pkg->create(%$inputs) };
+    my $error = $@;
+
+    if ($error) {
+        exit_wrapper("Failed to instantiate command $pkg: $error\n");
+    }
+
     if (!$pkg->can($method)) {
         exit_wrapper("$pkg does not support method '$method'\n");
     }
 
     my $ret = eval { $cmd->$method() };
-    my $error = $@;
-
+    $error = $@;
     if ($error) {
         exit_wrapper("Crashed in $method for command $pkg.\n", $error);
     }
@@ -201,7 +206,7 @@ sub run_command {
         exit_wrapper("Failed to $method command $pkg...\n");
     }
 
-    UR::Context->commit();
+    commit();
 
     print_exit_message("Succeeded to $method command $pkg...\n");
 
@@ -221,9 +226,28 @@ sub safely_wrap {
     if ($@) {
         my $error = $@;
         exit_wrapper(
-            sprintf("%s failed inside Flow workflow_wrapper.pl " .
-                "(possibly related to UR::Context->commit or rollback): %s",
+            sprintf("%s failed inside Flow workflow_wrapper.pl: %s",
                 ucfirst($action), $error));
+    }
+}
+
+sub commit {
+    _commit_or_rollback('commit');
+}
+
+sub rollback {
+    _commit_or_rollback('rollback');
+}
+
+sub _commit_or_rollback {
+    my $method = shift;
+
+    eval {
+        UR::Context->$method();
+    };
+    my $error = $@;
+    if ($error) {
+        exit_wrapper("Failed to $method inside workflow_wrapper.pl: $error");
     }
 }
 
