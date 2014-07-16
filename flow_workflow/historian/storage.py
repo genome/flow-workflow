@@ -43,11 +43,13 @@ workflow_instance_id=:workflow_instance_id
 STATEMENTS_DICT['select_instance'] = """
     SELECT * from %s.workflow_instance
 WHERE workflow_instance_id = :workflow_instance_id
+FOR UPDATE
 """
 
 STATEMENTS_DICT['select_execution'] = """
     SELECT * from %s.workflow_instance_execution
 WHERE workflow_execution_id = :workflow_execution_id
+FOR UPDATE
 """
 
 
