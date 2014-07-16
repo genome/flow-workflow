@@ -16,7 +16,7 @@ class OperationData(object):
     @property
     def to_dict(self):
         return {
-            'net_key': self.net_key,
+            'net_key': str(self.net_key),
             'operation_id': self.operation_id,
             'color': self.color
         }
