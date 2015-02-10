@@ -45,7 +45,7 @@ class PerlActionNet(WorkflowNetBase):
 
     def __init__(self, name, operation_id, resources, action_type,
             action_id, shortcut_action_class, execute_action_class,
-            lsf_queue=None, project_name=None):
+            lsf_queue=None, job_group=None, project_name=None):
         WorkflowNetBase.__init__(self, operation_id=operation_id, name=name)
 
         base_action_args = {
@@ -66,6 +66,8 @@ class PerlActionNet(WorkflowNetBase):
             lsf_options['project'] = project_name
         if lsf_queue:
             lsf_options['queue'] = lsf_queue
+        if job_group:
+            lsf_options['job_group'] = job_group
 
         self.execute_net = self.add_subnet(ExecuteShellCommandNet, name=name,
                 dispatch_action_class=execute_action_class,

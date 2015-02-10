@@ -42,6 +42,9 @@ class PerlActionAdapterBase(adapter_base.ParallelXMLAdapterBase):
         return resources.get('queue',
                 self.operation_type_attributes.get('lsfQueue'))
 
+    def job_group(self, resources):
+        return resources.get('job_group')
+
     def single_future_net(self, resources):
         return future_nets.PerlActionNet(
                 name=self.name,
@@ -51,5 +54,6 @@ class PerlActionAdapterBase(adapter_base.ParallelXMLAdapterBase):
                 action_id=self.action_id,
                 project_name=self.project_name,
                 lsf_queue=self.lsf_queue(resources),
+                job_group=self.job_group(resources),
                 shortcut_action_class=self.shortcut_action_class,
                 execute_action_class=self.execute_action_class)
