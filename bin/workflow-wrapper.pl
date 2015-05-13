@@ -243,7 +243,7 @@ sub _commit_or_rollback {
     my $method = shift;
 
     eval {
-        UR::Context->$method();
+        UR::Context->$method() or die "UR::Context->$method returned undef";
     };
     my $error = $@;
     if ($error) {
