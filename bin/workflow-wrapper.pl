@@ -113,6 +113,8 @@ sub print_exit_message {
 sub exit_wrapper {
     my ($message, $error) = @_;
 
+    rollback();
+
     if ($error) {
         print STDERR $error, "\n";
     }
